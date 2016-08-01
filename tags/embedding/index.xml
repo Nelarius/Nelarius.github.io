@@ -1,0 +1,574 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Embedding on My stuff</title>
+    <link>nelari.us/tags/embedding/</link>
+    <description>Recent content in Embedding on My stuff</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 05 May 2016 00:00:00 +0000</lastBuildDate>
+    <atom:link href="nelari.us/tags/embedding/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Embedding Wren in C&#43;&#43;, part 1</title>
+      <link>/nelari.us/post/wren/</link>
+      <pubDate>Thu, 05 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>/nelari.us/post/wren/</guid>
+      <description>
+
+&lt;p&gt;Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. As such, it fills very much the same niche as Lua. Why would you choose Wren over Lua in your application? It boils mostly down to stylistic preferences. Wren is very class oriented, and adheres to the curly-brace style tradition, in contrast to Lua&amp;rsquo;s &lt;code&gt;begin...end&lt;/code&gt; blocks. If one of the first things you always did in your Lua projects was design a class model, then Wren might be worth checking out. If you&amp;rsquo;re in the mood for surveying new tech for your C++ application or game engine, then definitely check it out! Wren is currently under active development, so breaking changes might be occasionally introduced. The source code lives on &lt;a href=&#34;https://github.com/munificent/wren&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Even though Wren&amp;rsquo;s embedding API is simple to use, it can be a lot of work to manually write all of the binding code. For that reason, I&amp;rsquo;ve worked on a template-based library to automatically generate the binding code for you. It&amp;rsquo;s called Wren++, and is heavily inspired by libraries like Luabridge for the Lua programming language. You can find it on &lt;a href=&#34;https://github.com/Nelarius/wrenpp&#34;&gt;github&lt;/a&gt; as well.&lt;/p&gt;
+
+&lt;p&gt;This post is divided into two parts. First, I will give an introduction on using Wren&amp;rsquo;s C API via a few examples. You will see how to handle method arguments and return values, as well as how binding C++ classes to Wren works. After you&amp;rsquo;ve seen how Wren&amp;rsquo;s embedding API works, I&amp;rsquo;ll show how those same examples could be done using Wren++.&lt;/p&gt;
+
+&lt;p&gt;A tour of the language itself is a bit beyond the scope of this article, but a very good overview of the language is presented on the Wren website: &lt;a href=&#34;http://wren.io&#34;&gt;wren.io&lt;/a&gt;. If you are not familiar with the language, then I suggest you go there and read before proceeding with this post. You can even test Wren code in the browser over at the &lt;a href=&#34;http://ppvk.github.io/wren-nest/&#34;&gt;wren-nest&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;the-wren-embedding-api&#34;&gt;The wren embedding API&lt;/h2&gt;
+
+&lt;p&gt;In order to use Wren, you need to link the wren static library to your program. The header file &lt;code&gt;wren.h&lt;/code&gt; also need to be included (located in &lt;code&gt;wren/src/include/&lt;/code&gt;). When you include &lt;code&gt;wren.h&lt;/code&gt; into your C++ source code, don&amp;rsquo;t forget to put it in an &lt;code&gt;extern &amp;quot;C&amp;quot;&lt;/code&gt; block to disable C++ name mangling on the C code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;extern &amp;quot;C&amp;quot; {
+#include &amp;lt;wren.h&amp;gt;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The best guide to the embedding API is the &lt;code&gt;wren.h&lt;/code&gt; header file itself, at the moment. I recommend that you have it open and refer to it as needed while reading this post!&lt;/p&gt;
+
+&lt;h3 id=&#34;creating-a-vm&#34;&gt;Creating a VM&lt;/h3&gt;
+
+&lt;p&gt;Having gotten the project set-up out of the way, let&amp;rsquo;s create a new instance of the virtual machine and execute some code.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// create the configuration that the virtual machine will use
+WrenConfiguration configuration;
+// fill the configuration with default values
+wrenInitConfiguration(&amp;amp;configuration);
+
+WrenVM* vm = wrenNewVM(&amp;amp;configuration);
+
+// do something with your vm!
+WrenInterpretResult result = wrenInterpret(vm, &amp;quot;System.print(\&amp;quot;Hello, world!\&amp;quot;)&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If everything went okay, then result will be &lt;code&gt;WREN_RESULT_SUCCESS&lt;/code&gt;, but &lt;code&gt;WREN_RESULT_COMPILE_ERROR&lt;/code&gt; and &lt;code&gt;WREN_RESULT_RUNTIME_ERROR&lt;/code&gt; can be returned as well. Once you are done with the VM, it can be freed by calling &lt;code&gt;wrenFreeVM(WrenVM* vm)&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&#34;basic-configuration&#34;&gt;Basic configuration&lt;/h3&gt;
+
+&lt;p&gt;The above example doesn&amp;rsquo;t actually print anything, because Wren doesn&amp;rsquo;t know what to do with the &lt;code&gt;System.print&lt;/code&gt; call. You have to provide that function yourself. You can do this by assigning a callback to the configuration&amp;rsquo;s  &lt;code&gt;writeFn&lt;/code&gt; field, which must be a function with the &lt;code&gt;void(WrenVM*, const char*)&lt;/code&gt; signature.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void write(WrenVM* vm, const char* str) {
+  std::printf(&amp;quot;%s&amp;quot;, str);
+}
+
+// elsewhere...
+WrenConfiguration config;
+wrenInitConfiguration(&amp;amp;config);
+config.writeFn = write;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Wren doesn&amp;rsquo;t load modules either by default. Again, you have to provide that function yourself. The module loading function must have the signature &lt;code&gt;char*(WrenVM*, const char*)&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// in this example, module names work the same way as they do in the
+// CLI. That is, the module name is specified without the .wren postfix.
+char* loadModule(WrenVM* vm, const char* name) {
+  std::string path( name );
+  path += &amp;quot;.wren&amp;quot;;
+  std::ifstream fin;
+  fin.open( path, std::ios::in );
+  std::stringstream buffer;
+  buffer &amp;lt;&amp;lt; fin.rdbuf() &amp;lt;&amp;lt; &#39;\0&#39;;
+  std::string source = buffer.str();
+  
+  char* cbuffer = (char*) malloc( source.size() );
+  memcpy( cbuffer, source.c_str(), source.size() );
+  return cbuffer;
+}
+
+// elsewhere...
+config.loadModuleFn = loadModule;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now that our VM is configured, let&amp;rsquo;s bind some C++ code to it.&lt;/p&gt;
+
+&lt;h3 id=&#34;binding-free-functions-to-wren&#34;&gt;Binding free functions to Wren&lt;/h3&gt;
+
+&lt;p&gt;There are two different hooks for foreign code in Wren. C++ code can be called from foreign methods.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;class Math {
+  foreign static cos(num)
+  foreign static sin(num)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;C++ state may be stored in foreign classes.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;foreign class Vec3 {
+  foreign plus(rhs)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When Wren encounters a foreign method, it calls a callback function which implements the method. All foreign method callbacks have the same type, &lt;code&gt;typedef void (*WrenForeignMethodFn)(WrenVM*)&lt;/code&gt;, as defined in &lt;code&gt;wren.h&lt;/code&gt;. These callbacks are where your glue code or implementation lives. How does Wren find them? Wren uses another callback function, which should return the correct callback function based on the foreign method&amp;rsquo;s signature. This callback finder (&lt;code&gt;WrenBindForeignMethodFn&lt;/code&gt; in &lt;code&gt;wren.h&lt;/code&gt;) can be assigned to the &lt;code&gt;bindForeignMethodFn&lt;/code&gt; field of &lt;code&gt;WrenConfiguration&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;One way of implementing the callback finder is to store the foreign method callback functions as values in a global data structure such as a map, and have the &lt;code&gt;bindForeignMethodFn&lt;/code&gt; find the them using the foreign method signature as a key. Here&amp;rsquo;s the gist of what Wren++ does:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// a map between the foreign method signature and the callback function
+std::map&amp;lt;std::string, WrenForeignMethodFn&amp;gt; boundForeignMethods{};
+
+// this function has the signature corresponding to bindForeignMethodFn
+WrenForeignMethodFn bindForeignMethod(WrenVM* vm,
+                                      const char* module,
+                                      const char* className,
+                                      bool isStatic,
+                                      const char* signature
+                                      ) {
+  std::string fullSignature{ module };
+  fullSignature += className;
+  fullSignature += signature;
+  if (isStatic) {
+      fullSignature += &amp;quot;s&amp;quot;;
+  }
+  auto it = boundForeignMethods.find(fullSignature);
+  if (it != boundsForeignMethods.end()) {
+      return it-&amp;gt;second;
+  }
+  return nullptr;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now that we have that in place, let&amp;rsquo;s implement the methods of the &lt;code&gt;Math&lt;/code&gt; class from above. We are going to implement two functions to match the foreign methods in Wren: &lt;code&gt;wrenSin&lt;/code&gt; and &lt;code&gt;wrenCos&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Looking at the declaration for &lt;code&gt;WrenForeignMethodFn&lt;/code&gt;, we can see that we have only the Wren VM instance to work with in our glue code. The Wren VM provides a slot API which we can use to access method arguments, as well as pass return values back to Wren.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;extern &amp;quot;C&amp;quot; {
+#include &amp;lt;wren.h&amp;gt;
+}
+#include &amp;lt;cmath&amp;gt;
+
+void wrenCos(WrenVM* vm) {
+  // method arguments are placed in slots 1 and up
+  // the receiver of the method (the object) is always in slot 0
+  //
+  // in Wren, the Number type is actually just a double. So when we pass 
+  // a Number as a method argument in Wren, we need to get a double
+  // from the slot in C++
+  double x = wrenGetSlotDouble(vm, 1);
+
+  // identical methods exist for bool, string, wren values, and foreign objects
+
+  // the method&#39;s return value is taken from slot 0, so let&#39;s place our
+  // result there
+  wrenSetSlotDouble(vm, 0, std::cos(x));
+}
+
+void wrenSin(WrenVM* vm) {
+  double x = wrenGetSlotDouble(vm, 1);
+  wrenSetSlotDouble(vm, 0, std::sin(x));
+}
+
+std::map&amp;lt;std::string, WrenForeignMethodFn&amp;gt; boundForeignMethods{
+  { &amp;quot;mainMathcos(_)s&amp;quot;, wrenCos },
+  { &amp;quot;mainMathsin(_)s&amp;quot;, wrenSin }
+};
+
+WrenForeignMethodFn bindForeignMethod(WrenVM* vm,
+                                      const char* module,
+                                      const char* className,
+                                      bool isStatic,
+                                      const char* signature
+                                      ) {
+  std::string signature{ module };
+  signature += className;
+  signature += signature;
+  if (isStatic) {
+      signature += &amp;quot;s&amp;quot;;
+  }
+  auto it = boundForeignMethods.find(signature);
+  if (it != boundsForeignMethods.end()) {
+      return it-&amp;gt;second;
+  }
+  return nullptr;
+}
+
+int main() {
+  WrenConfiguration configuration;
+  wrenInitConfiguration(&amp;amp;configuration);
+  configuration.bindForeignMethodFn = bindForeignMethod;
+  configuration.writeFn= write;
+  configuration.loadModuleFn = loadModule;
+
+  WrenVM* vm = wrenNewVM(&amp;amp;configuration);
+  // you can now use the math class
+  wrenInterpret(
+    vm,
+    &amp;quot;class Math {\n&amp;quot;
+    &amp;quot;  foreign static cos(num)\n&amp;quot;
+    &amp;quot;  foreign static sin(num)\n&amp;quot;
+    &amp;quot;}\n&amp;quot;
+    &amp;quot;System.print(\&amp;quot;%(Math.cos(1.570796326))\&amp;quot;)\n&amp;quot;
+  );
+  wrenFreeVM(vm);
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Note that when we initialized &lt;code&gt;boundForeignMethods&lt;/code&gt; with the two bound callbacks, the module&amp;rsquo;s name was &lt;code&gt;main&lt;/code&gt;. If the class whose methods you are implementing are not in a separate file (as was the case above), then the module&amp;rsquo;s name is &lt;code&gt;main&lt;/code&gt;. If the math class had been defined in, say, &lt;code&gt;math.wren&lt;/code&gt;, then the module name would have been &lt;code&gt;math&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;We can get away with our expensive string concatenation and map-find operations within &lt;code&gt;bindForeignMethod&lt;/code&gt;, because it gets called for each method only once, when the class is defined.&lt;/p&gt;
+
+&lt;p&gt;Also, note that we wrote the signature as &lt;code&gt;cos(_)&lt;/code&gt; and &lt;code&gt;sin(_)&lt;/code&gt;. You don&amp;rsquo;t spell out the argument name in the signature, but instead you replace each argument with an underscore. Since the argument underscores are part of the method signature, you can bind functions to overloaded methods in Wren.&lt;/p&gt;
+
+&lt;h3 id=&#34;binding-classes-to-wren&#34;&gt;Binding classes to Wren&lt;/h3&gt;
+
+&lt;p&gt;Wren can store user-defined state in an instance of a foreign class. We are going to use this feature to bind our C++ types to Wren.&lt;/p&gt;
+
+&lt;p&gt;When Wren encounters a foreign class, it looks up the allocator and finalizer callbacks for that class via a class-finder callback, which behaves very similarly to the &lt;code&gt;bindForeignMethodFn&lt;/code&gt; that we just implemented. Wren uses the allocator callback to create a byte array within the object, and initialize whatever state the user might want to reside within the byte array. The byte array can be accessed via the slot API. The finalizer can be used to call a destructor on the byte array, if necessary. That&amp;rsquo;s all we need to place our C++ objects within Wren objects.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s a small foreign class.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;foreign class Vec3 {
+  // this constructor doesn&#39;t do anything in wren, so we leave it empty
+  // however, we want a constructor to fire in C++!
+  construct new(x, y, z) {}
+
+  foreign norm()
+  foreign dot( rhs )
+  foreign cross( rhs )    // returns the result as a new vector
+
+  // accessors
+  foreign x
+  foreign x=( rhs )
+  foreign y
+  foreign y=( rhs )
+  foreign z
+  foreign z=( rhs )
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s look at binding the following C++ struct to &lt;code&gt;Vec3&lt;/code&gt; in Wren.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct Vec3f {
+  union {
+    float v[3];
+    struct { float x, y, z; };
+  };
+
+  Vec3( float x, float y, float z )
+  : v{ x, y, z } {}
+
+  Vec3()
+  : v{ 0.f, 0.f, 0.f } {}
+
+  float norm() const {
+    return sqrt( x*x + y*y + z*z );
+  }
+
+  float dot( const Vec3&amp;amp; rhs ) const {
+    return x*rhs.x + y*rhs.y + z*rhs.z;
+  }
+
+  Vec3 cross( const Vec3&amp;amp; rhs ) const {
+    return Vec3 {
+      y*rhs.z - z*rhs.y,
+      z*rhs.x - x*rhs.z,
+      x*rhs.y - y*rhs.x
+    };
+  }
+}; 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The binding code is fairly straight forward. We use the slot API like we did before, but this time we also use it to access the foreign byte arrays.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// the allocator has the same signature as any other WrenForeignMethodFn
+// the allocator gets called during Vec3.new(_,_,_)
+void vec3fAllocate(WrenVM* vm) {
+  // this function creates a new instance of the foreign class stored 
+  // the slot denoted by the third argument, and places the resulting
+  // object in the slot denoted by the second argument
+  // remember that the receiver (the Vec3 class) is already in slot zero
+  // the fourth argument denotes the size of the byte array to be created
+  // finally, the function returns the byte array that it just created
+  void* bytes = wrenSetSlotNewForeign(vm, 0, 0, sizeof(Vec3f));
+  new (bytes) Vec3f(
+    wrenGetSlotDouble(vm, 1),
+    wrenGetSlotDouble(vm, 2),
+    wrenGetSlotDouble(vm, 3)
+  );
+}
+
+// the finalizer function has a different signature
+// no access to the VM is allowed, because when the finalzer is called,
+// the VM is in the middle of a garbage collection
+void vec3fFinalize(void* bytes) {
+  // do nothing
+}
+
+void vec3fNorm(WrenVM* vm) {
+  // we can access the byte array of the object in slot zero
+  const Vec3f* v = (const Vec3f*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, v-&amp;gt;norm());
+}
+
+void vec3fDot(WrenVM* vm) {
+  const Vec3f* lhs = (const Vec3f*)wrenGetSlotForeign(vm, 0);
+  const Vec3f* rhs = (const Vec3f*)wrenGetSlotForeign(vm, 1);
+  wrenSetSlotDouble(vm, 0, lhs-&amp;gt;dot(*rhs));
+}
+
+void vec3fCross(WrenVM* vm) {
+  const Vec3f* lhs = (const Vec3f*)wrenGetSlotForeign(vm, 0);
+  const Vec3f* rhs = (const Vec3f*)wrenGetSlotForeign(vm, 1);
+  Vec3f result = lhs-&amp;gt;cross(*rhs);
+  // we need to return a new Vec3f to wren, so we mimic
+  // the constructor here
+  void* bytes = wrenSetSlotNewForeign(vm, 0, 0, sizeof(Vec3f));
+  new (bytes) Vec3f(result);
+}
+
+void vec3fGetX(WrenVM* vm) {
+  const Vec3f* v = (const Vec3f*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, v-&amp;gt;x);
+}
+
+void vec3fSetX(WrenVM* vm) {
+  Vec3f* v = (Vec3f*)wrenGetSlotForeign(vm, 0);
+  double newx = wrenGetSlotDouble(vm, 1);
+  v-&amp;gt;x = newx;
+}
+
+// repeat for y and z
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next, we need to store our methods, allocators and finalizers in their respective data structures, as well as provide Wren a callback for locating the allocators and finalizers based on the module and class name. The class-finder will work much the same way as our method-finder did earlier. Here&amp;rsquo;s what the rest of the program now looks like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// note that according to the &amp;quot;vector&amp;quot; module name, our Vec3 definition
+// now lies in the file vector.wren
+std::map&amp;lt;std::string, WrenForeignMethodFn&amp;gt; boundForeignMethods{
+  { &amp;quot;vectorVec3norm()&amp;quot;,   vec3fNorm },
+  { &amp;quot;vectorVec3dot(_)&amp;quot;,   vec3fDot },
+  { &amp;quot;vectorVec3cross(_)&amp;quot;, vec3fCross },
+  { &amp;quot;vectorVec3x&amp;quot;,        vec3fGetX },
+  { &amp;quot;vectorVec3x=(_)&amp;quot;,    vec3fSetX},
+  { &amp;quot;vectorVec3y&amp;quot;,        vec3fGetY },
+  { &amp;quot;vectorVec3y=(_)&amp;quot;,    vec3fSetY },
+  { &amp;quot;vectorVec3z&amp;quot;,        vec3fGetZ },
+  { &amp;quot;vectorVec3z=(_)&amp;quot;,    vec3fSetZ }
+};
+
+WrenForeignMethodFn bindForeignMethod(WrenVM*,
+                                      const char* module,
+                                      const char* className,
+                                      bool isStatic,
+                                      const char* signature
+                                      ) {
+  // as before
+}
+
+// WrenForeignClassMethods is just a struct containing a
+// WrenForeignMethodFn, and a WrenFinalizerFn
+std::map&amp;lt;std::string, WrenForeignClassMethods&amp;gt; boundForeignClasses{
+  { &amp;quot;vectorVec3&amp;quot;, { vec3fAllocate, vec3fFinalize } }
+};
+
+WrenForeignClassFn bindForeignClass(WrenVM*,
+                                    const char* module,
+                                    const char* className
+                                    ) {
+  std::string identifier{ module };
+  name += className;
+  auto it = boundForeignClasses.find(identifier);
+  if (it != boundForeignClasses.end()) {
+    return it-&amp;gt;second;
+  }
+  return WrenForeignClassMethods{ nullptr, nullptr };
+}
+
+int main() {
+  WrenConfiguration configuration;
+  wrenInitConfiguration(&amp;amp;configuration);
+  configuration.bindForeignMethodFn = bindForeignMethod;
+  configuration.bindForeignClassFn = bindForeignClass;
+  configuration.writeFn = write;
+  configuration.loadModuleFn = loadModule;
+
+  WrenVM* vm = wrenNewVM(&amp;amp;configuration);
+  wrenInterpret(
+    vm,
+    &amp;quot;import \&amp;quot;vector\&amp;quot; for Vec3     \n&amp;quot;
+    &amp;quot;var v = Vec3.new(1.0, 2.0, 3.0)\n&amp;quot;
+    &amp;quot;var norm = v.norm()            \n&amp;quot;
+  );
+  wrenFreeVM(vm);
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;There! With fairly minimal amounts of boiler-plate, you&amp;rsquo;ve wrapped a C++ type for Wren to access. Compared to e.g. Python&amp;rsquo;s embedding API, this is smooth sailing.&lt;/p&gt;
+
+&lt;p&gt;If you have used templates in the past, then you probably were already thinking about ways to generate the above binding functions automatically via template parameters. Especially the allocator and finalizer functions are just begging to be templatized:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt;typename T&amp;gt;
+void allocateType(WrenVM* vm) {
+  void* bytes = wrenSetSlotNewForeign(vm, 0, 0, sizeof(T));
+  new (bytes) T();
+}
+
+template&amp;lt;typename T&amp;gt;
+void finalizeType(void* bytes) {
+  T* type = (T*)bytes;
+  type-&amp;gt;~T();
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Likewise, the foreign method wrappers can be parametrized by the class type as well as the method itself. In this way a unique wrapping function is automatically generated for each method, which we just did by hand. The tricky part is automatically handling arguments and return types. You need to deduce which Wren slot API function to call based on the type of argument &amp;ndash; and then generate code which calls it. It turns out that with C++14&amp;rsquo;s metaprogramming features, that&amp;rsquo;s possible with a surprisingly minimal amount of code. I wrote a separate &lt;a href=&#34;http://www.johannmuszynski.com/blog/post/modern_c_templates_are_your_friend/&#34;&gt;blog post&lt;/a&gt; about that a while back, when I was trying to figure it out for myself. The &amp;ldquo;toy problem&amp;rdquo; that the post is centered around is a template wrapper around Wren&amp;rsquo;s slot API:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// this isn&#39;t exactly the same as in the post because both Wren&#39;s C API
+// and my code worked differently back when the post was written
+template&amp;lt;typename T&amp;gt;
+struct WrenStack;
+
+template&amp;lt;&amp;gt;
+struct WrenStack&amp;lt;double&amp;gt; {
+    // use this instead of GetArgument&amp;lt;&amp;gt;
+    static double get(WrenVM* vm, int slot) {
+        return wrenGetSlotDouble( vm, slot);
+    }
+
+    // use this instead of Return&amp;lt;&amp;gt;
+    static void set(WrenVM* vm, int slot, double val) {
+        wrenSetSlotDouble(vm, slot, val);
+    }
+};
+
+template&amp;lt;&amp;gt;
+struct WrenStack&amp;lt;bool&amp;gt; {
+    static bool get( WrenVM* vm, int slot ) {
+        return wrenGetSlotBool(vm, slot);
+    }
+
+    static void set(WrenVM* vm, int slot, bool val) {
+        wrenSetSlotBool(vm, slot, val);
+    }
+};
+
+// etc.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;These structs, along with the compile-time index sequence method from my other blog post, can be used to wrap any function or method with the correct wrenGetSlot/wrenSetSlot function calls.&lt;/p&gt;
+
+&lt;h3 id=&#34;calling-wren-code-from-c&#34;&gt;Calling Wren code from C++&lt;/h3&gt;
+
+&lt;p&gt;Wren allows you to call any method from C++. Arguments are passed and return values received as usual with the slot API. Let&amp;rsquo;s look at how that&amp;rsquo;s done by calling some of the foreign math methods that we bound to wren earlier.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// get the variable based on the module it is in
+// and the variable name
+// finally, place it in slot zero
+wrenGetVariable(vm, &amp;quot;main&amp;quot;, &amp;quot;Math&amp;quot;, 0);
+WrenValue* receiver = wrenGetSlotValue(vm, 0);
+WrenValue* method = wrenMakeCallHandle(vm, &amp;quot;cos(_)&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Before we can call the method handle, we need to set up the stack via the slot API. The receiver (the object or class whose method we are calling) needs to be placed in slot zero. Any arguments need to be placed in the following slots.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// place the receiver in slot 0
+wrenSetSlotValue(vm, 0, receiver);
+wrenSetSlotDouble(vm, 1, M_PI / 2.0);
+// now the stack is set -- call the method!
+wrenCall(vm, method);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The return value is now in slot zero. We know that the return value is a double in this case. But since Wren is dynamically typed, potentially anything could be returned from a method. The C API provides a function to check what type of value is in a slot. Let&amp;rsquo;s make sure that it is indeed a double.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;WrenType returnType = wrenGetSlotType(vm, 0);
+assert(returnType == WREN_TYPE_NUM);
+double res = wrenGetSlotDouble(vm, 0);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;WrenType&lt;/code&gt; is just an enum with the following values:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;typedef enum
+{
+  WREN_TYPE_BOOL,
+  WREN_TYPE_NUM,
+  WREN_TYPE_FOREIGN,
+  WREN_TYPE_LIST,
+  WREN_TYPE_NULL,
+  WREN_TYPE_STRING,
+  
+  // The object is of a type that isn&#39;t accessible by the C API.
+  WREN_TYPE_UNKNOWN
+} WrenType;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It&amp;rsquo;s also completely possible to wrap method calls in template magic. The technique for doing this was not something covered in the previous blog post. The basic problem is the following. We have a function which takes the method call arguments as a template parameter pack. Our receiver and method pointers are set up. We need to call the appropriate &lt;code&gt;wrenSetSlot*&lt;/code&gt; functions in order per function argument.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct WrenMethod {
+  WrenValue* receiver;
+  WrenValue* method;
+  WrenVM*    vm;
+  
+  template&amp;lt;typename... Arg&amp;gt;
+  void call(Arg&amp;amp;&amp;amp;... arg) {
+    // how do we write a sequence of statements containing
+    // WrenStack&amp;lt;Arg&amp;gt;::set(vm, slot, std::forward&amp;lt;Arg&amp;gt;(arg))?
+    // We can&#39;t just expand the parameter pack directly within
+    // the function&#39;s block scope
+  }
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The idea is to use C++11 initializer lists, and expand our calls to &lt;code&gt;WrenStack&amp;lt;T&amp;gt;::set&lt;/code&gt; within the list. We need a dummy type which can be list-initialized.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct ExpandType {
+  template&amp;lt;typename... T&amp;gt;
+  ExpandType(T&amp;amp;&amp;amp; ...) {}
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Everything you need to know about expanding parameter packs within dummy initializer lists is explained beautifully in this &lt;a href=&#34;http://stackoverflow.com/questions/17339789/how-to-call-a-function-on-all-variadic-template-args&#34;&gt;StackOverflow post&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Using the index-list technique from my other blog post, the automatic method calling code will look something like this.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt;typename... Arg, std::size_t... index&amp;gt;
+void passArgumentsToWren(WrenVM* vm, 
+                         const std::tuple&amp;lt;Arg...&amp;gt;&amp;amp; tuple,
+                         std::index_sequence&amp;lt; index... &amp;gt;) {
+    using Traits = ParameterPackTraits&amp;lt;Arg...&amp;gt;;
+    ExpandType{
+        0,
+        (WrenStack&amp;lt;typename Traits::template ParameterType&amp;lt;index&amp;gt;&amp;gt;::set(
+            vm,
+            index + 1,
+            std::get&amp;lt;index&amp;gt;(tuple)
+        ), 0)...
+    };
+}
+
+struct WrenMethod {
+  WrenValue* receiver;
+  WrenValue* method;
+  WrenVM*    vm;
+  
+  template&amp;lt;typename... Arg&amp;gt;
+  void call(Arg&amp;amp;&amp;amp;... arg) {
+    constexpr std::size_t arity = sizeof...(Arg);
+    wrenSetSlotValue(vm, 0, receiver);
+    std::tuple&amp;lt;Arg...&amp;gt; tuple = std::make_tuple(arg...);
+    passArgumentsToWren(vm, tuple, std::make_index_sequence&amp;lt;arity&amp;gt;{});
+    wrenCall(vm, method);
+  }
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The beauty of templates is the fact that even though the above looks like it contains lots of overhead code, it is only compile-time overhead. After being compiled, only the correct sequence of &lt;code&gt;wrenSetSlot&lt;/code&gt; statements will remain.&lt;/p&gt;
+
+&lt;h3 id=&#34;next&#34;&gt;Next&lt;/h3&gt;
+
+&lt;p&gt;You&amp;rsquo;ve now seen some of the functionality that the Wren C API offers. Not everything was covered here; the Wren slot API contains functions for storing values directly in list elements, as well as storing null in a slot. More functions will probably be added in the future &amp;ndash; these will perhaps be visited upon in a future post once the API evolves sufficiently.&lt;/p&gt;
+
+&lt;p&gt;You can read about Wren++ in part 2.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

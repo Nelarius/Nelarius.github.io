@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>C&#43;&#43; on My stuff</title>
-    <link>/tags/c&#43;&#43;/</link>
+    <link>nelari.us/tags/c&#43;&#43;/</link>
     <description>Recent content in C&#43;&#43; on My stuff</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 05 May 2016 00:00:00 +0000</lastBuildDate>
-    <atom:link href="/tags/c&#43;&#43;/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="nelari.us/tags/c&#43;&#43;/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Embedding Wren in C&#43;&#43;, part 1</title>
-      <link>/post/wren/</link>
+      <link>/nelari.us/post/wren/</link>
       <pubDate>Thu, 05 May 2016 00:00:00 +0000</pubDate>
       
-      <guid>/post/wren/</guid>
+      <guid>/nelari.us/post/wren/</guid>
       <description>
 
 &lt;p&gt;Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. As such, it fills very much the same niche as Lua. Why would you choose Wren over Lua in your application? It boils mostly down to stylistic preferences. Wren is very class oriented, and adheres to the curly-brace style tradition, in contrast to Lua&amp;rsquo;s &lt;code&gt;begin...end&lt;/code&gt; blocks. If one of the first things you always did in your Lua projects was design a class model, then Wren might be worth checking out. If you&amp;rsquo;re in the mood for surveying new tech for your C++ application or game engine, then definitely check it out! Wren is currently under active development, so breaking changes might be occasionally introduced. The source code lives on &lt;a href=&#34;https://github.com/munificent/wren&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;

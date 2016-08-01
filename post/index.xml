@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on My stuff</title>
-    <link>nelari.us/post/</link>
+    <link>http://nelari.us/post/</link>
     <description>Recent content in Posts on My stuff</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 05 May 2016 00:00:00 +0000</lastBuildDate>
-    <atom:link href="nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Embedding Wren in C&#43;&#43;, part 1</title>
-      <link>/nelari.us/post/wren/</link>
+      <link>http://nelari.us/post/wren/</link>
       <pubDate>Thu, 05 May 2016 00:00:00 +0000</pubDate>
       
-      <guid>/nelari.us/post/wren/</guid>
+      <guid>http://nelari.us/post/wren/</guid>
       <description>
 
 &lt;p&gt;Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. As such, it fills very much the same niche as Lua. Why would you choose Wren over Lua in your application? It boils mostly down to stylistic preferences. Wren is very class oriented, and adheres to the curly-brace style tradition, in contrast to Lua&amp;rsquo;s &lt;code&gt;begin...end&lt;/code&gt; blocks. If one of the first things you always did in your Lua projects was design a class model, then Wren might be worth checking out. If you&amp;rsquo;re in the mood for surveying new tech for your C++ application or game engine, then definitely check it out! Wren is currently under active development, so breaking changes might be occasionally introduced. The source code lives on &lt;a href=&#34;https://github.com/munificent/wren&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
@@ -572,10 +572,10 @@ struct WrenMethod {
     
     <item>
       <title>Entity-component systems for fun and profit</title>
-      <link>/nelari.us/post/simple-ecs/</link>
+      <link>http://nelari.us/post/simple-ecs/</link>
       <pubDate>Wed, 29 Jul 2015 14:18:44 +0300</pubDate>
       
-      <guid>/nelari.us/post/simple-ecs/</guid>
+      <guid>http://nelari.us/post/simple-ecs/</guid>
       <description>
 
 &lt;p&gt;Separating logic and systems in a computer game can go a long way to simplifying the code base of the game. Take the simple game of minesweeper, for example. At any given time, there are a number of different looking tiles on screen, with many different outcomes depending on which tile you happen to click. The data that the scene contains is the grid containing the tile values, and the visual representation of the tiles themselves. Minesweeper also has logic involved. Do we let the tiles themselves handle what happens when you click on them, or should we let the class containing the grid figure it out?&lt;/p&gt;

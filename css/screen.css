@@ -59,7 +59,6 @@ pre {
   color: #596364;
   font-size: 1em;
   line-height: 1.2em;
-  padding: 1em;
   white-space: pre;
   white-space: pre-wrap;
   white-space: -moz-pre-wrap;
@@ -115,7 +114,7 @@ a.archive-link,
 article.preview {
   margin-bottom: 4em;
 }
-article.preview p.readmore {
+article.preview div.readmore {
   font-family: "Open Sans Condensed", "Open Sans", "Helvetica Neue", Helvetica, Arial, "Nimbus L", sans-serif;
   margin-top: 1em;
   text-transform: uppercase;
@@ -679,4 +678,16 @@ h1.posts-tagged {
   text-transform: uppercase;
   font-weight: 400;
   font-size: 16px;
+}
+
+/*
+ * This is needed if you want the mathjax equations to render in
+ * the same font style as the body text.
+ */
+code.has-jax {
+  font: inherit;
+  font-size: 100%;
+  background: inherit;
+  border: inherit;
+  color: #515151;
 }

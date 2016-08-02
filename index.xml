@@ -1,20 +1,303 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>My stuff</title>
+    <title>My thought repository</title>
     <link>http://nelari.us/</link>
-    <description>Recent content on My stuff</description>
+    <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 05 May 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 01 Aug 2016 18:55:26 +0300</lastBuildDate>
     <atom:link href="http://nelari.us/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Software</title>
+      <link>http://nelari.us/projects/</link>
+      <pubDate>Mon, 01 Aug 2016 18:55:26 +0300</pubDate>
+      
+      <guid>http://nelari.us/projects/</guid>
+      <description>
+
+&lt;p&gt;Here is an overview of some of the software projects I&amp;rsquo;ve worked on in my free time.&lt;/p&gt;
+
+&lt;h2 id=&#34;wren&#34;&gt;Wren++&lt;/h2&gt;
+
+&lt;p&gt;A C++ binding generator for the &lt;a href=&#34;http://wren.io&#34;&gt;Wren programming language&lt;/a&gt;. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.&lt;/p&gt;
+
+&lt;p&gt;I wrote a small tutorial on its usage on my &lt;a href=&#34;http://nelari.us/post/wren-embedding-2/&#34;&gt;blog&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Find it on &lt;a href=&#34;https://github.com/Nelarius/wrenpp&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;vscode-wren&#34;&gt;vscode-wren&lt;/h2&gt;
+
+&lt;p&gt;A Visual Studio Code extension for the Wren programming language. Currently the extension provides snippets and syntax highlighting for most language features.&lt;/p&gt;
+
+&lt;p&gt;Find it on &lt;a href=&#34;https://github.com/Nelarius/vscode-wren&#34;&gt;github&lt;/a&gt; and the vscode &lt;a href=&#34;https://marketplace.visualstudio.com/items?itemName=nelarius.vscode-wren&#34;&gt;marketplace&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D&#34; alt=&#34;Syntax highlighting&#34; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;secon&#34;&gt;secon&lt;/h2&gt;
+
+&lt;p&gt;An agent-based economy simulation that I wrote in Lua, based on the work of &lt;a href=&#34;http://www.cs.princeton.edu/~ken/scott.pdf&#34;&gt;Steiglitz, Honig, and Cohen&lt;/a&gt; and &lt;a href=&#34;http://larc.unt.edu/techreports/LARC-2010-03.pdf&#34;&gt;Doran and Parberry&lt;/a&gt;. The goal was to simulate the law of supply and demand for a variety of commodities and see if I could create price hikes via artificial shortages.&lt;/p&gt;
+
+&lt;p&gt;Find it on &lt;a href=&#34;https://github.com/Nelarius/secon&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>About me</title>
+      <link>http://nelari.us/about/</link>
+      <pubDate>Mon, 01 Aug 2016 18:45:47 +0300</pubDate>
+      
+      <guid>http://nelari.us/about/</guid>
+      <description>&lt;p&gt;Hi there! My name is Johann Muszynski.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;m a junior graphics programmer at &lt;a href=&#34;http://umbra3d.com&#34;&gt;Umbra&lt;/a&gt;. I originally studied theoretical physics with an emphasis on scientific computing and obtained my Master&amp;rsquo;s degree in 2015.&lt;/p&gt;
+
+&lt;p&gt;I enjoy writing all kinds of software, but I usually gravitate towards writing graphics/system stuff in C++.&lt;/p&gt;
+
+&lt;p&gt;When I&amp;rsquo;m not in front of the computer, I&amp;rsquo;m outside, riding this:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;TODO:&lt;/strong&gt; add bike picture :(&lt;/p&gt;
+
+&lt;p&gt;My biggest cycling achievement so far is completing the 217 km Pirkan Pyöräily Gran Fondo, 2015 edition. I didn&amp;rsquo;t place very well, but I finished the longest bike ride of my life so far.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Embedding Wren in C&#43;&#43;, part 2</title>
+      <link>http://nelari.us/post/wren-embedding-2/</link>
+      <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://nelari.us/post/wren-embedding-2/</guid>
+      <description>
+
+&lt;p&gt;You can read part 1 &lt;a href=&#34;http://nelari.us/post/wren-embedding-1/&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Writing you own Wren bindings gives you full control over how your code interfaces with Wren. However, manually implementing the binding code for a large C++-Wren interface can be somewhat time consuming, especially when changes are made to the interface over time. &lt;a href=&#34;https://github.com/nelarius/wrenpp&#34;&gt;Wren++&lt;/a&gt; is a small C++ library that aims to automate most code binding tasks with a minimal runtime overhead. Like Wren itself, Wren++ aims to be simple and minimalistic to use. Here are the features currently supported.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;a RAII wrapper class for the virtual machine instance and refcounted methods&lt;/li&gt;
+&lt;li&gt;automatic binding code generation for any C++ type and method&lt;/li&gt;
+&lt;li&gt;a convenient way of calling methods from C++ and accessing return values&lt;/li&gt;
+&lt;li&gt;template-based &amp;ndash; no macros! If you feel like the binding code in Wren++ is too verbose, you can roll your own macros.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The easiest way to get started with Wren++ is simply to include the source code in your project. Just remember to compile with C++14 features turned on! Alternatively, you can use the included premake script to generate a Makefile or project file for your preferred IDE to generate a static library to link to. In order to use Wren++, include &lt;code&gt;Wren++.h&lt;/code&gt; in your code. You also need to link to the Wren static library.&lt;/p&gt;
+
+&lt;h3 id=&#34;creating-a-vm-instance&#34;&gt;Creating a VM instance&lt;/h3&gt;
+
+&lt;p&gt;Wren++ provides reasonable defaults for the virtual machine configuration. To get started, just write:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;#include &amp;lt;Wren++.h&amp;gt;
+
+int main() {
+  wrenpp::VM vm;
+  wrenpp::Result result = vm.executeString(&amp;quot;System.print(\&amp;quot;Hello, world\&amp;quot;)&amp;quot;);
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Like the Wren C API itself, Wren++ provides the interpretation result as an enumeration class. The values are &lt;code&gt;Success&lt;/code&gt;, &lt;code&gt;CompileError&lt;/code&gt;, and &lt;code&gt;RuntimeError&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;You can also execute code directly from a module:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;auto result = vm.executeModule(&amp;quot;vector&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;module-class-contexts-and-binding-free-functions-to-wren&#34;&gt;Module, class contexts and binding free functions to Wren&lt;/h3&gt;
+
+&lt;p&gt;All method binding takes place in a module and class context. The binding methods return references back to the class context so that you can chain binding commands like in LuaBridge or Luabind. Let&amp;rsquo;s look at binding functions to the &lt;code&gt;Math&lt;/code&gt; class that we did earlier.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;wrenpp::beginModule(&amp;quot;main&amp;quot;)
+  .beginClass(&amp;quot;Math&amp;quot;)
+    .bindFunction&amp;lt;decltype(&amp;amp;cos), &amp;amp;cos&amp;gt;(true, &amp;quot;cos(_)&amp;quot;)
+    .bindFunction&amp;lt;decltype(&amp;amp;sin), &amp;amp;sin&amp;gt;(true, &amp;quot;sin(_)&amp;quot;)
+  .endClass()
+.endModule();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;bindFunction&lt;/code&gt; takes two template parameters and two function arguments. The template parameters are the declared type of the function, and then the function pointer value itself. Instead of writing &lt;code&gt;decltype(&amp;amp;cos)&lt;/code&gt;, we could have written &lt;code&gt;double(*)(double)&lt;/code&gt;. As for the function arguments, the boolean indicates whether the method is static, and the string is the method&amp;rsquo;s signature.&lt;/p&gt;
+
+&lt;p&gt;It is entirely optional to include &lt;code&gt;endClass()&lt;/code&gt; and &lt;code&gt;endModule()&lt;/code&gt; at the end of the binding statement. &lt;code&gt;endClass()&lt;/code&gt; returns a reference back to the enclosing module context, so that you can continue binding code to a new class without having to open the context again. Not all binding statements have to be in the same place. You can reopen the module and class contexts somewhere else and continue binding code. All that the module and class contexts do is store the module and class names for binding method to use.&lt;/p&gt;
+
+&lt;h3 id=&#34;binding-types-and-methods-to-wren&#34;&gt;Binding types and methods to Wren&lt;/h3&gt;
+
+&lt;p&gt;Binding types and their methods works very similarly. Let&amp;rsquo;s look at rebinding the &lt;code&gt;Vec3f&lt;/code&gt; example from earlier. When binding a type, we use a different class context. It&amp;rsquo;s created using the template method &lt;code&gt;bindClass&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;wrenpp::beginModule(&amp;quot;Vec3&amp;quot;)
+  .bindClass&amp;lt;Vec3f, float, float, float&amp;gt;(&amp;quot;Vec3&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;bindClass&lt;/code&gt; tells Wren++ not only to store the name of the class for future reference, but also to generate the allocator and finalizer functions for the given type. The first template parameter is the type of bound class. The following template parameters are optional &amp;ndash; they are the values that can be passed to the bound type&amp;rsquo;s constructor from Wren. The three floats in this example mean that we can construct the type from Wren using three numbers:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;foreign class Vec3 {
+  construct new(x, y, z) {}
+  // the rest of the methods as before
+}
+
+// now we can construct with values
+var v = Vec3.new(2.0, 1.0, -3.0)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Even though we can bind to overloaded methods in Wren, we can bind only one constructor to a class.&lt;/p&gt;
+
+&lt;p&gt;Binding the rest of &lt;code&gt;Vec3f&lt;/code&gt;&amp;rsquo;s methods is done using &lt;code&gt;bindMethod&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;wrenpp::beginModule(&amp;quot;Vec3&amp;quot;)
+  .bindClass&amp;lt;Vec3f, float, float, float&amp;gt;(&amp;quot;Vec3&amp;quot;)
+    .bindMethod&amp;lt;decltype(&amp;amp;Ve3f::norm),   &amp;amp;Vec3f::norm&amp;gt;(false, &amp;quot;norm()&amp;quot;)
+    .bindMethod&amp;lt;decltype(&amp;amp;Vec3f::dot),   &amp;amp;Vec3f::dot&amp;gt;(false, &amp;quot;dot(_)&amp;quot;)
+    .bindMethod&amp;lt;decltype(&amp;amp;Vec3f::cross), &amp;amp;Vec3f::cross&amp;gt;(false, &amp;quot;cross(_)&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The function arguments have the same meaning as for &lt;code&gt;bindFunction&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Finally, let&amp;rsquo;s bind the accessors for the fields themselves:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;  .bindGetter&amp;lt;decltype(Vec3::x), &amp;amp;Vec3::x&amp;gt;(&amp;quot;x&amp;quot;)
+  .bindSetter&amp;lt;decltype(Vec3::x), &amp;amp;Vec3::x&amp;gt;(&amp;quot;x=(_)&amp;quot;)
+  .bindGetter&amp;lt;decltype(Vec3::y), &amp;amp;Vec3::y&amp;gt;(&amp;quot;y&amp;quot;)
+  .bindSetter&amp;lt;decltype(Vec3::y), &amp;amp;Vec3::y&amp;gt;(&amp;quot;y=(_)&amp;quot;)
+  .bindGetter&amp;lt;decltype(Vec3::z), &amp;amp;Vec3::z&amp;gt;(&amp;quot;z&amp;quot;)
+  .bindSetter&amp;lt;decltype(Vec3::z), &amp;amp;Vec3::z&amp;gt;(&amp;quot;z=(_)&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The getters and setters are always non-static.&lt;/p&gt;
+
+&lt;h3 id=&#34;c-and-wren-lifetimes-for-returned-objects&#34;&gt;C++ and Wren lifetimes for returned objects&lt;/h3&gt;
+
+&lt;p&gt;The rules for who owns the returned objects are simple. Objects which are returned from C++ by reference or by pointer have C++ lifetime, and will not be garbage collected by Wren. Objects which are returned from C++ by value have Wren lifetime and are thus garbage collected.&lt;/p&gt;
+
+&lt;h3 id=&#34;binding-your-own-implementations&#34;&gt;Binding your own implementations&lt;/h3&gt;
+
+&lt;p&gt;Sometimes the calling convention of a C++ API is just not very amenable for binding to Wren, and you want to write your own glue code. For instance, pointers to primitive types like &lt;code&gt;float&lt;/code&gt; or &lt;code&gt;int&lt;/code&gt; might be passed to a function. Wren++ simply won&amp;rsquo;t handle function signatures like that, since Wren itself has no concept of out parameters. Instead, Wren++ allows you to bind functions of type &lt;code&gt;WrenForeignMethodFn&lt;/code&gt; directly, so that you may manually implement the foreign function implementation.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s look at binding the excellent &lt;a href=&#34;https://github.com/ocornut/imgui&#34;&gt;dear imgui&lt;/a&gt; library to Wren. Looking at &lt;code&gt;imgui.h&lt;/code&gt;, you can see lots of long function signatures with pointers to primitive types. We want to provide reasonable default arguments to most of the arguments, as well as return the new values, instead of passing in a reference to the number. Here&amp;rsquo;s the bare-bones Wren-interface we want to implement:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;in a file called imgui.wren
+
+class ImGui {
+  foreign static begin( name )
+  foreign static end()
+  
+  // unlike what C++ ImGui does, this RETURNS the new value
+  // arguments are all numbers passed by value
+  foreign static sliderFloat( label, value, min, max )
+  foreign static setWindowSize( size )
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s implement wrappers for &lt;code&gt;ImGui::Begin&lt;/code&gt; and &lt;code&gt;ImGui::SliderFloat&lt;/code&gt; with reasonable default values.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void begin(WrenVM* vm) {
+  ImGui::Begin((const char*)wrenGetSlotString(vm, 1), NULL, 0);
+}
+
+void sliderFloat(WrenVM* vm) {
+  const char* label = wrenGetSlotString(vm, 1);
+  float value = float(wrenGetSlotDouble(vm, 2));
+  float min =   float(wrenGetSlotDouble(vm, 3));
+  float max =   float(wrenGetSlotDouble(vm, 4));
+  ImGui::SliderFloat(label, &amp;amp;value, min, max);
+  wrenSetSlotDouble(vm, 0, value);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;begin&lt;/code&gt; and &lt;code&gt;sliderFloat&lt;/code&gt; functions satisfy the &lt;code&gt;WrenForeignMethodFn&lt;/code&gt; typedef, so we will bind them using the &lt;code&gt;bindCFunction&lt;/code&gt; method. The &lt;code&gt;bindCFunction&lt;/code&gt; method stores the function pointer without generating any calls to the Wren slot API, so that you can do it yourself.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;wrenpp::beginModule(&amp;quot;imgui&amp;quot;)
+  .beginClass(&amp;quot;ImGui&amp;quot;)
+    .bindCFunction(true, &amp;quot;begin(_)&amp;quot;, begin)
+    .bindFunction&amp;lt;decltype(&amp;amp;ImGui::End), &amp;amp;ImGui::End&amp;gt;(true, &amp;quot;end()&amp;quot;)
+    .bindCFunction(true, &amp;quot;sliderFloat(_,_,_,_)&amp;quot;, sliderFloat)
+  .endClass();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Note that we just bound &lt;code&gt;ImGui::End&lt;/code&gt; the usual way since it had a trivial function signature!&lt;/p&gt;
+
+&lt;h4 id=&#34;accessing-foreign-bytes-manually&#34;&gt;Accessing foreign bytes manually&lt;/h4&gt;
+
+&lt;p&gt;Next off, how do we deal with foreign types in our manual foreign method implementations? You can&amp;rsquo;t get the pointer to your foreign type just by using &lt;code&gt;wrenGetSlotForeign&lt;/code&gt;, since Wren++ contains a layer of indirection. The object may live in C++ (C++ lifetime), or within the foreign bytes (Wren lifetime) themselves. Wren++ provides a helper function: &lt;code&gt;wrenpp::getSlotForeign&amp;lt;class T&amp;gt;(WrenVM* vm, int slot)&lt;/code&gt;. To see how it&amp;rsquo;s used, let&amp;rsquo;s wrap &lt;code&gt;ImGui::SetNextWindowSize(const ImVec2&amp;amp;)&lt;/code&gt; for our Wren interface to use. Let&amp;rsquo;s assume that you&amp;rsquo;ve bound &lt;code&gt;ImGui::ImVec2&lt;/code&gt; to Wren &amp;ndash; it&amp;rsquo;s just a simple struct: &lt;code&gt;struct ImVec2 { float x, y; };&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void setWindowSize(WrenVM* vm) {
+  ImGui::SetNextWindowSize(*(wrenpp::getSlotForeign&amp;lt;ImVec2&amp;gt;(vm, 1)));
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;returning-foreign-types-manually&#34;&gt;Returning foreign types manually&lt;/h4&gt;
+
+&lt;p&gt;You can return values from your manual implementations as well. To see how, let&amp;rsquo;s look at one final slightly contrived example.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-dart&#34;&gt;class Mouse {
+  // returns a Vec2
+  foreign static coordinates
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We will implement it using our hypothetical &lt;code&gt;MouseDevice&lt;/code&gt; class.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// the mouse device
+class MouseDevice {
+public:
+  static MouseDevice* get();
+  const Vec2i&amp;amp; coordinates() const;
+};
+
+// elsewhere, in the CFunction implementation...
+void getMouseCoordinates(WrenVM* vm) {
+  Vec2i coords = MouseDevice::get()-&amp;gt;coordinates();
+  wrenpp::setSlotForeignValue&amp;lt;Vec2i&amp;gt;(vm, 0, coords);
+}
+
+// we will skip over the binding code itself, as you&#39;ve now seen it a few times
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Note that, as the function&amp;rsquo;s name indices, &lt;code&gt;setSlotForeignValue&lt;/code&gt; places &lt;code&gt;coords&lt;/code&gt; by value into the foreign bytes of a new foreign object at a given slot. Any changes in the mouse coordinates within the C++ object will not be reflected in the wren object.&lt;/p&gt;
+
+&lt;p&gt;You could also the pass the coordinates by pointer to Wren. An array of foreign bytes is created, but they only hold the pointer.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void getMouseCoordinates(WrenVM* vm) {
+  // we need to throw away the const-ness of our object -- Wren++ doesn&#39;t
+  // respect constness in reference objects
+  Vec2i* coords = const_cast&amp;lt;Vec2i*&amp;gt;(&amp;amp;MouseDevice-&amp;gt;get()-&amp;gt;coordinates());
+  wrenpp::setSlotForeignPtr&amp;lt;Vec2i&amp;gt;(vm, 0, coords);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now changes in the C++ class&amp;rsquo; coordinates will be reflected in the Wren object, since it points directly to the coordinates in C++.&lt;/p&gt;
+
+&lt;h3 id=&#34;accessing-wren-code-from-c&#34;&gt;Accessing Wren code from C++&lt;/h3&gt;
+
+&lt;p&gt;Accessing Wren code from C++ is, at the time of writing, the most incomplete feature of Wren++, and it will be worked on in the feature. Here&amp;rsquo;s what you can do currently. Wren++ allows you store a references to class methods that you can call from C++. First you need to get the method from the virtual machine instance.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// call the Math.cos(_) method from the previous part of this post
+wrenpp::Method cosMethod = vm.method(&amp;quot;main&amp;quot;, &amp;quot;Math&amp;quot;, &amp;quot;cos(_)&amp;quot;);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The three string arguments to &lt;code&gt;wrenpp::VM::method&lt;/code&gt; are the module name, the variable name that the method is attached to (note again that this would be the class name for a static method!), and finally the method signature itself.&lt;/p&gt;
+
+&lt;p&gt;We call the method by using the parenthesis operator on it.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;wrenpp::Value val = cosMethod(-5.0);
+std::cout &amp;lt;&amp;lt; val.as&amp;lt;double&amp;gt;();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Invocations on the parenthesis operator returns an instance of &lt;code&gt;wrenpp::Value&lt;/code&gt;, which is a convenience class that can hold any return value from Wren.&lt;/p&gt;
+
+&lt;h3 id=&#34;in-conclusion&#34;&gt;In conclusion&lt;/h3&gt;
+
+&lt;p&gt;There were some small details I glossed over &amp;ndash; for instance, Wren++ allows you to customize the print, error, and module functions just like in Wren. To see how, take a look at the project&amp;rsquo;s README. Also, Wren access from C++ is likely to develop somewhat as the Wren C API itself develops, but that will be documented in the README once I get around to working on it. Some things that I wish to include in the future is easy access to Wren data structures, such as maps and lists.&lt;/p&gt;
+
+&lt;p&gt;Now it is time for you to go off and explore Wren yourself. You should have the tools to embed Wren in your application with confidence. Wren doesn&amp;rsquo;t have a lot of libraries yet, so you are going to have to reinvent a lot of basic functionality yourself. But that&amp;rsquo;s the best part, naturally! :)&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Embedding Wren in C&#43;&#43;, part 1</title>
-      <link>http://nelari.us/post/wren/</link>
+      <link>http://nelari.us/post/wren-embedding-1/</link>
       <pubDate>Thu, 05 May 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://nelari.us/post/wren/</guid>
+      <guid>http://nelari.us/post/wren-embedding-1/</guid>
       <description>
 
 &lt;p&gt;Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. As such, it fills very much the same niche as Lua. Why would you choose Wren over Lua in your application? It boils mostly down to stylistic preferences. Wren is very class oriented, and adheres to the curly-brace style tradition, in contrast to Lua&amp;rsquo;s &lt;code&gt;begin...end&lt;/code&gt; blocks. If one of the first things you always did in your Lua projects was design a class model, then Wren might be worth checking out. If you&amp;rsquo;re in the mood for surveying new tech for your C++ application or game engine, then definitely check it out! Wren is currently under active development, so breaking changes might be occasionally introduced. The source code lives on &lt;a href=&#34;https://github.com/munificent/wren&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
@@ -566,253 +849,190 @@ struct WrenMethod {
 
 &lt;p&gt;You&amp;rsquo;ve now seen some of the functionality that the Wren C API offers. Not everything was covered here; the Wren slot API contains functions for storing values directly in list elements, as well as storing null in a slot. More functions will probably be added in the future &amp;ndash; these will perhaps be visited upon in a future post once the API evolves sufficiently.&lt;/p&gt;
 
-&lt;p&gt;You can read about Wren++ in part 2.&lt;/p&gt;
+&lt;p&gt;You can read about Wren++ in &lt;a href=&#34;nelari.us/post/wren-embedding-2/&#34;&gt;part 2&lt;/a&gt;.&lt;/p&gt;
 </description>
     </item>
     
     <item>
-      <title>Entity-component systems for fun and profit</title>
-      <link>http://nelari.us/post/simple-ecs/</link>
-      <pubDate>Wed, 29 Jul 2015 14:18:44 +0300</pubDate>
+      <title>Placing an arbitrary number of function calls into a function argument list using templates</title>
+      <link>http://nelari.us/post/template-function-args/</link>
+      <pubDate>Mon, 31 Aug 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://nelari.us/post/simple-ecs/</guid>
+      <guid>http://nelari.us/post/template-function-args/</guid>
       <description>
 
-&lt;p&gt;Separating logic and systems in a computer game can go a long way to simplifying the code base of the game. Take the simple game of minesweeper, for example. At any given time, there are a number of different looking tiles on screen, with many different outcomes depending on which tile you happen to click. The data that the scene contains is the grid containing the tile values, and the visual representation of the tiles themselves. Minesweeper also has logic involved. Do we let the tiles themselves handle what happens when you click on them, or should we let the class containing the grid figure it out?&lt;/p&gt;
+&lt;p&gt;While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.&lt;/p&gt;
 
-&lt;p&gt;I wrestled with this problem in my very first GUI program, a minesweeper clone. My conclusion was that there were two types of &amp;ldquo;data&amp;rdquo;: minesweeper contains entities possessing &amp;ldquo;behavior&amp;rdquo; or &amp;ldquo;drawable&amp;rdquo; traits, or both. The solution? An entity containing pointers to a Behavior and Drawable object. The game loop updated all entities, which then delegated the updating task to the behavior and drawable objects that it owned. The problem? This wasn&amp;rsquo;t true separation of logic and data, since the drawable class was responsible for drawing itself. Different entities required to be drawn in different ways, and so I had to write many new classes inheriting from Drawable. On top of that, I decided that each unique entity was to have its own class. I amassed tens of classes in my source folder, all with awe-inspiring names like SplashScreenDrawable, SplashScreenBehavior, SplashScreenEntity. I quickly became bogged down in an unmaintainable nightmare that I had created for myself.&lt;/p&gt;
+&lt;p&gt;First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.&lt;/p&gt;
 
-&lt;p&gt;More recently, I had another go at separating data from logic. I wrote a small, and strict entity component system (ECS). This means that data, such as the visual representation of a tile in minesweeper, is not to contain any logic whatsoever. The data is stored in components, which are unadorned POD structs. Logic is implemented in systems, which can use any number of components and can communicate with each other. The entity merely ties different components together and provides access to them. My ECS module is heavily based on EntityX, from which most of its API and some implementation details draw inspiration from. In this post, I will provide a small overview of my ECS module, and at the end of this post, I present the results from a small benchmark that I made.&lt;/p&gt;
-
-&lt;p&gt;In my ECS, the Entity class is simply a unique handle to data stored in the entity manager. Entities are created and dispensed by an instance of the EntityManager class:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;auto entity = entityManager.create();
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This entity handle can be invalidated or destroyed, after which you cannot use the handle anymore. The entity can be copied in the usual way.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;entity2 = entity;
-
-entity.invalidate();
-entity.isValid();   // false
-entity2.isValid();  // also false
-
-entity.destroy();   // this will now fail
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The underlying handle within the entity class can be obtained by calling entity.id(), which returns the type Id. Id actually stores two uint32_t values. The first is the unique id of the entity, and the second is the version of the entity. The EntityManager instance which created the entity also stores a version for that entity. When you destroy the entity, the entity manager increments its version value. Thus the validity of the entity object can be easily checked by comparing the entity&amp;rsquo;s version to the entity manager&amp;rsquo;s version. If they differ, then the entity was destroyed.&lt;/p&gt;
-
-&lt;h2 id=&#34;using-components&#34;&gt;Using components&lt;/h2&gt;
-
-&lt;p&gt;Data is contained in components, which are completely unadorned structs:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct Position {
-    Vector3f position;
-};
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Components are assigned to entities by using &lt;code&gt;Entity::assign&amp;lt;C&amp;gt;( Args&amp;amp;&amp;amp;... args )&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;entity.assign&amp;lt;Position&amp;gt;( 0.0f, 0.0f, 0.0f );
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Note that the component is created in memory using brace-syntax; the same parameters you would use in the aggregate initialization of the component struct must be passed to &lt;code&gt;Entity::assign&amp;lt;C&amp;gt;( Args&amp;amp;... )&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Here are a few other template methods provided by Entity:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// has the Position-component been assigned?
-entity.has&amp;lt;Position&amp;gt;();
-// remove the position component
-entity.remove&amp;lt;Position&amp;gt;();
-/*
- * The component method returns a handle.
- * The handle acts like a pointer to the desired component.
- * The actual type of &#39;pos&#39; is ComponentHandle&amp;lt;Position&amp;gt;.
- * */
-auto pos = entity.component&amp;lt;Position&amp;gt;();
-pos-&amp;gt;position = Vector3f( 1.0f, 1.0f, 1.0f );
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Using &lt;code&gt;Entity::component&amp;lt;C&amp;gt;()&lt;/code&gt; has O(1) time complexity. The pointer is obtained from a block of memory using the entity&amp;rsquo;s unique id.&lt;/p&gt;
-
-&lt;p&gt;EntityManager provides an iterator interface for accessing entities. The iterators can be obtained by using the join, join&lt;C...&gt; methods.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// iterate over all valid entities
-for ( Entity entity: entityManager.join() ) {
-    // do work
-}
-
-// iterate over all valid entities containing the Position component
-for ( Entity entity: entityManager.join&amp;lt;Position&amp;gt;() ) {
-    // do work
-}
-
-// iterate over all valid entities containing the Position and Velocity component
-for ( Entity entity: entityManager.join&amp;lt;Position, Velocity&amp;gt;() ) {
-    // do work
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;double convertToDegrees( double rad ) {
+    return rad * ( 180.0 / 3.14159265359 );
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Components are also managed by the entity manager. The entity manager allocates a block of memory for each component type. The unique entity id is used as the offset for the component within the memory block. Thus, fetching the component will always have O(1) time complexity, with the tradeoff that more memory is allocated than strictly needed.&lt;/p&gt;
+&lt;p&gt;Communication with the virtual machine is carried out with these template functions.&lt;/p&gt;
 
-&lt;h2 id=&#34;implementing-functionality-using-systems&#34;&gt;Implementing functionality using systems&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// When called, returns the argument at position index within the argument list.
+template&amp;lt; typename T&amp;gt;
+T GetArgument( int index );
 
-&lt;p&gt;Program logic is implemented using systems. Systems must inherit from the class &lt;code&gt;System&amp;lt;S&amp;gt;&lt;/code&gt;, where &lt;code&gt;S&lt;/code&gt; is the deriving class itself. Two pure virtual methods can be overridden: &lt;code&gt;configure( EventManager&amp;amp; )&lt;/code&gt; and &lt;code&gt;update( EventManager&amp;amp;, EntityManager&amp;amp;, float )&lt;/code&gt;.&lt;/p&gt;
+// when called, returns the value to the function in the virtual machine.
+template&amp;lt; typename T &amp;gt;
+void Return( T val );
+&lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Logic is implemented in the update-method using the entity manager to gain access to components. For instance, a very simple movement system might be implemented as:&lt;/p&gt;
+&lt;p&gt;I could wrap &lt;code&gt;convertToDegrees&lt;/code&gt; in the virtual machine glue code as follows, and give it to the virtual machine&amp;rsquo;s C API.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct Position {
-    Vector3f position;
-};
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void wrapper() {
+    double res = convertToDegrees( GetArgument&amp;lt;double&amp;gt;( 1 ) );
+    Return( res );
+}
+&lt;/code&gt;&lt;/pre&gt;
 
-struct Velocity {
-    Vector3f velocity;
-};
+&lt;p&gt;But writing this for every function will take time. Additionally, if I were to change the function definition, then I would have to alter the wrapper manually. I want to generate these bindings automatically.&lt;/p&gt;
 
-class Body: public System&amp;lt;Body&amp;gt; {
-    public:
-        void configure( EventManager&amp;amp; events ) override {}
-        void update( EventManager&amp;amp; events, EntityManager&amp;amp; entities, float dt ) override {
-            for ( Entity entity: entities.join&amp;lt;Position, Velocity&amp;gt;() ) {
-                entity.component&amp;lt;Position&amp;gt;()-&amp;gt;position += 
-                    entity.component&amp;lt;Velocity&amp;gt;()-&amp;gt;velocity * dt;
-            }
-        }
+&lt;p&gt;Given a free function, I want to generate the appropriate calls to GetArgument&lt;T&gt; and place them in the correct order in the function call. Thus, a way to index and get a function&amp;rsquo;s argument types is needed.&lt;/p&gt;
+
+&lt;h2 id=&#34;function-traits&#34;&gt;Function traits&lt;/h2&gt;
+
+&lt;p&gt;Storing function traits can be done easily.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename F &amp;gt;
+struct function_traits;
+
+template&amp;lt; typename R, typename... Args &amp;gt;
+struct function_traits&amp;lt; R( Args... ) &amp;gt; {
+    using return_type = R;
+
+    constexpr static const std::size_t arity = sizeof...( Args );
+
+    template&amp;lt; std::size_t N &amp;gt;
+    struct argument {
+        static_assert( N &amp;lt; arity, &amp;quot;FunctionTraits error: invalid argument count parameter&amp;quot; );
+        using type = std::tuple_element_t&amp;lt; N, std::tuple&amp;lt; Args... &amp;gt; &amp;gt;;
+    };
+
+    template&amp;lt; std::size_t N &amp;gt;
+    using argument_type = typename argument&amp;lt;N&amp;gt;::type;
 };
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Different systems can be tied together using SystemManager:&lt;/p&gt;
+&lt;p&gt;The class can be used like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;systemManager.add&amp;lt;Body&amp;gt;();
-systemManager.configure&amp;lt;Body&amp;gt;();
-systemManager.update&amp;lt;Body&amp;gt;( dt );
-std::shared_ptr&amp;lt;System&amp;gt; body = systemManager.system&amp;lt;Body&amp;gt;();
-Communicating using events
-Systems communicate between each other using events. In order for a system to receive events, it must inherit Receiver and implement the following method: void receive( const E&amp;amp; event ), where E is the type of event. Subscribe to the event using EventManager::subscribe&amp;lt;E, S&amp;gt;( const S&amp;amp; ), where S is your system. Events are emitted using EventManager::emit&amp;lt;E, Args...&amp;gt;( Args&amp;amp;&amp;amp;... ).
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;using traits = function_traits&amp;lt; decltype(convertToDegrees) &amp;gt;;
+cout &amp;lt;&amp;lt; is_same&amp;lt;double, traits::argument_type&amp;lt;0&amp;gt;&amp;gt;::value &amp;lt;&amp;lt; endl;
+cout &amp;lt;&amp;lt; is_same&amp;lt;double, traits::return_type&amp;gt;::value &amp;lt;&amp;lt; endl;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;As an example, here&amp;rsquo;s how you could implement a simple trigger system using systems, components, and events. We want a trigger event to fire when an entity wanders into a trigger zone (a rectangle). We define the following components and events:&lt;/p&gt;
+&lt;p&gt;You can use the &lt;code&gt;decltype&lt;/code&gt; specifier to get the function&amp;rsquo;s type, or just enter it manually. For &lt;code&gt;convertToDegrees&lt;/code&gt;, the type would be &lt;code&gt;double(double)&lt;/code&gt;.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;struct TriggerComponent {
-    Rectangle area;
-};
+&lt;h2 id=&#34;unpacking-a-tuple-into-a-function-argument-list&#34;&gt;Unpacking a tuple into a function argument list&lt;/h2&gt;
 
-struct PositionComponent {
-    Vector2f position;
-};
+&lt;p&gt;Tuples can be unpacked into a function call surprisingly easily. Use std::index_sequence to generate a non-type parameter pack of indices to index the tuple elements at compile time.&lt;/p&gt;
 
-struct VelocityComponent {
-    Vector2f velocity;
-    float factor;
-};
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Function, typename Tuple, std::size_t... index&amp;gt;
+decltype( auto ) invokeHelper( Function&amp;amp;&amp;amp; f, Tuple&amp;amp;&amp;amp; tup, std::index_sequence&amp;lt;index...&amp;gt; ) {
+    return f( std::get&amp;lt;index&amp;gt;( std::forward&amp;lt;Tuple&amp;gt;(tup) )... );
+}
 
-struct TriggerEvent {
-    Entity entity;
-};
+template&amp;lt; typename Function, typename Tuple &amp;gt;
+decltype( auto ) invokeWithTuple( Function&amp;amp;&amp;amp; f, Tuple&amp;amp;&amp;amp; tup ) {
+    constexpr auto Arity = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::arity;
+    return invoke_helper( 
+        std::forward&amp;lt;Function&amp;gt;( f ), 
+        std::forward&amp;lt;Tuple&amp;gt;( tup ), 
+        std::make_index_sequence&amp;lt;Arity&amp;gt;{} 
+    );
+}
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;We want the trigger system to fire the event. It can do so in the update method.&lt;/p&gt;
+&lt;p&gt;How exactly does this work? When the ellipsis operator is placed after a pattern containing a variadic parameter, the pattern is instantiated for each instance of the variadic parameter. The instances are separated by commas. In &lt;code&gt;invokeHelper&lt;/code&gt;, the (non-type) variadic parameter is &lt;code&gt;index&lt;/code&gt;.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;class Trigger: public System&amp;lt;Trigger&amp;gt; {
-public:
-    void update( EventManager&amp;amp; events, EntityManager&amp;amp; entities, float dt ) {
-        // yucky O(N^2) implementation
-        for ( auto posEnt: entities.join&amp;lt;PositionComponent&amp;gt;() ) {
-            auto pos = entity.component&amp;lt;PositionComponent&amp;gt;();
-            for ( auto triggerEnt: entities.join&amp;lt;TriggerComponent&amp;gt;() ) {
-                auto rect = entity.component&amp;lt;TriggerComponent&amp;gt;();
-                // if the entity&#39;s position is in the rectangle, then fire the event!
-                if ( InRectangle( rect, pos  ) ) {
-                    // pass the entity to the event&#39;s default constructor
-                    events.emit&amp;lt;TriggerEvent&amp;gt;( posEnt );    
-                }
-            }
-        }
+&lt;p&gt;Note the C++14-ism in the above code. In C++11, you would write &lt;code&gt;function_traits&amp;lt; typename std::remove_reference&amp;lt;decltype(f)&amp;gt;::type &amp;gt;&lt;/code&gt;. C++14 introduced aliasing, which allows this: &lt;code&gt;template&amp;lt;typename T&amp;gt; using remove_reference_t = typename remove_reference&amp;lt;T&amp;gt;::type;&lt;/code&gt;. All the type traits in &lt;code&gt;type_traits&lt;/code&gt; have aliases of this form in C++14.&lt;/p&gt;
+
+&lt;p&gt;Now this should work:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void say( int val, double val2 ) {
+    std::cout &amp;lt;&amp;lt; &amp;quot;called with &amp;quot; &amp;lt;&amp;lt; val &amp;lt;&amp;lt; &amp;quot;, &amp;quot; &amp;lt;&amp;lt; val2 &amp;lt;&amp;lt; std::endl;
+}
+
+int main() {
+    auto tup = std::make_tuple( 5, 42.0 );
+    invokeWithTuple( say, tup );
+
+    return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;placing-getargument-t-into-a-function-argument-list&#34;&gt;Placing &lt;code&gt;GetArgument&amp;lt;T&amp;gt;&lt;/code&gt; into a function argument list&lt;/h2&gt;
+
+&lt;p&gt;We can place the calls to &lt;code&gt;GetArgument&amp;lt;T&amp;gt;&lt;/code&gt; in a very similar way.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Function, std::size_t... index&amp;gt;
+decltype( auto ) invokeHelper( Function&amp;amp;&amp;amp; f, std::index_sequence&amp;lt;index...&amp;gt; ) {
+  using traits = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;;
+  return f( GetArgument&amp;lt; typename traits::template argument_type&amp;lt;index&amp;gt; &amp;gt;( index + 1 )... );
+}
+
+template&amp;lt; typename Function &amp;gt;
+decltype( auto ) invokeWithArguments( Function&amp;amp;&amp;amp; f ) {
+  constexpr auto Arity = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::arity;
+  return invoke_helper( 
+    std::forward&amp;lt;Function&amp;gt;( f ),
+    std::make_index_sequence&amp;lt;Arity&amp;gt;{} 
+  );
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;generate-a-unique-wrapper-class-for-a-function&#34;&gt;Generate a unique wrapper class for a function&lt;/h2&gt;
+
+&lt;p&gt;The last piece of my toy puzzle. I call &lt;code&gt;invokeWithArguments&lt;/code&gt; from a static method, so that I can give the static method to the virtual machine&amp;rsquo;s C API.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Signature, Signature&amp;amp; &amp;gt;
+struct ForeignMethodWrapper;
+
+template&amp;lt; typename R, typename... Args, R( &amp;amp;P )( Args... ) &amp;gt;
+struct ForeignMethodWrapper&amp;lt; R( Args... ), P &amp;gt; {
+    static void call() {
+        invokeWithArguments( P );
     }
 };
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Now let&amp;rsquo;s assume that when a trigger fires, the entity who triggered it will speed up by a factor of two. We want the body system to receive the event. We need the configure, update and receive methods to be defined. The body system must additionally inherit from Receiver:&lt;/p&gt;
+&lt;h2 id=&#34;invoking-code-conditionally&#34;&gt;Invoking code conditionally&lt;/h2&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;class Body: public System&amp;lt;Body&amp;gt;, Receiver {
-public:
-    void configure( EventManager&amp;amp; events ) override {
-        // pass a reference to yourself so that the event manager can contact you :)
-        events.subscribe&amp;lt;TriggerEvent&amp;gt;( *this );
+&lt;p&gt;Actually, I&amp;rsquo;m not done yet. I still haven&amp;rsquo;t explained how I call &lt;code&gt;Return&amp;lt;T&amp;gt;( T val )&lt;/code&gt; only when the function&amp;rsquo;s return value is not &lt;code&gt;void&lt;/code&gt;. A specialized struct can be used to store the different invocations.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// to be used with std::is_void
+template&amp;lt;bool predicate&amp;gt;
+struct InvokeWithoutReturningIf {
+  template&amp;lt; typename Function &amp;gt;
+  static void invoke( Function&amp;amp;&amp;amp; f ) {
+    invokeWithArguments( std::forward&amp;lt; Function &amp;gt;( f ) );
+  }
+};
+
+template&amp;lt;&amp;gt;
+struct InvokeWithoutReturningIf&amp;lt;false&amp;gt; {
+  template&amp;lt; typename Function &amp;gt;
+  static void invoke( Function&amp;amp;&amp;amp; f ) {
+    using R = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::return_type;
+    Return&amp;lt;R&amp;gt;( invokeWithArguments( std::forward&amp;lt;Function&amp;gt;(f) ) );
     }
-
-    void receive( const TriggerEvent&amp;amp; event ) {
-        // speed the entity up!
-        event.entity.component&amp;lt;VelocityComponent&amp;gt;()-&amp;gt;factor *= 2.0f;
-    }
-
-    void update( EventManager&amp;amp; events, EntityManager&amp;amp; entities, float dt ) override {
-        for ( Entity entity: entities.join&amp;lt;PositionComponent, VelocityComponent&amp;gt;() ) {
-            auto pos = entity.component&amp;lt;PositionComponent&amp;gt;();
-            auto vel = entity.component&amp;lt;VelocityComponent&amp;gt;();
-            pos-&amp;gt;position += vel-&amp;gt;velocity * vel-&amp;gt;factor * dt;
-        }
-    }
 };
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;EntityManager emits the following events, regardless of whether any system is subscribed to them.&lt;/p&gt;
+&lt;p&gt;Finally, I modified &lt;code&gt;ForeignMethodWrapper&lt;/code&gt; to&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;/**
- * @class EntityCreatedEvent
- * @brief Emitted when an entity is created.
- */
-struct EntityCreatedEvent {
-    Entity entity;
-};
-
-/**
- * @class EntityDestroyedEvent
- * @brief Emitted just before the entity is destroyed.
- */
-struct EntityDestroyedEvent {
-    Entity entity;
-};
-
-/**
- * @class ComponentAssignedEvent
- * @brief Emitted when an entity is assigned to a component.
- */
-template&amp;lt;typename C&amp;gt;
-struct ComponentAssignedEvent {
-    Entity entity;
-    ComponentHandle&amp;lt;C&amp;gt; component;
-};
-
-/**
- * @class ComponentRemovedEvent
- * @brief Emitted just before the component is removed.
- */
-template&amp;lt;typename C&amp;gt;
-struct ComponentRemovedEvent {
-    Entity entity;
-    ComponentHandle&amp;lt;C&amp;gt; component;
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename R, typename... Args, R( &amp;amp;P )( Args... ) &amp;gt;
+struct ForeignMethodWrapper&amp;lt; R( Args... ), P &amp;gt; {
+  static void call() {
+    InvokeWithoutReturningIf&amp;lt; std::is_void&amp;lt;R&amp;gt;::value &amp;gt;::invoke( P );
+  }
 };
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;the-three-manager-classes&#34;&gt;The three manager classes&lt;/h2&gt;
-
-&lt;p&gt;Finally, here is how the three manager classes we&amp;rsquo;ve seen should be initialized:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;pg::ecs::EventManager eventManager{};
-pg::ecs::EntityManager entityManager { eventManager };
-pg::ecs::SystemManager systemManager { eventManager, systemManager };
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Other than having a heavily EntityX-inspired API, does my ECS module have any actual merit? Well, I implemented a small and silly system using both my module and EntityX. I logged the execution times of both for a very large number of entities so that I could see how fast the modules are at iterating over the entities and their components:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;gt; EntityX: iterating over 1000000 components took 0.18861 seconds
-&amp;gt; My ECS: iterating over 1000000 components took 0.0144685 seconds
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;My ECS is actually an order of magnitude faster than EntityX at the time of writing! This is something I am very happy about, as this was an area of functionality in which I diverged from EntityX. I hope to continue to improve on this base performance.&lt;/p&gt;
-
-&lt;p&gt;If you&amp;rsquo;re interested in seeing what the code looks like, feel free to check out this folder in my game engine github repo. I tried to keep the code tidy and very readable; the SLOC count is actually quite a bit smaller than that for EntityX.&lt;/p&gt;
+&lt;p&gt;which completes the solution for my toy problem.&lt;/p&gt;
 </description>
     </item>
     

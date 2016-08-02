@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <title>Placing an arbitrary number of function calls into a function argument list using templates &middot; My thought repository</title>
+    <meta name="author" content="Johann Muszynski">
+    <meta name="description" content="This is where I write about the cool stuff that I&#39;ve been working on.">
+    <meta name="generator" content="Hugo 0.16" />
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <!-- RSS autodiscovery -->
+    
+
+    <link rel="shortcut icon" href="http://nelari.us/img/favicon.ico">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/2.1.2/normalize.min.css">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="http://nelari.us/css/screen.css">
+    <link rel="stylesheet" href="http://nelari.us/css/github.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+
+    <!-- Stylesheet for theme color -->
+    <style type="text/css">
+    a, a:visited {color: #3498db;}
+    .pagination a {color: #3498db;}
+    .gist .gist-file .gist-meta a:visited {color: #3498db !important;}
+    a:focus, a:hover {color: #2079b4;}
+    h1.post-title a:focus, h1.post-title a:hover, h1.blog-title a:focus, h1.blog-title a:hover {color: #2079b4;}
+    .older-posts:hover, .newer-posts:hover {color: #2079b4;}
+</style>
+</head>
+
+<body class="post-template">
+
+    <header id="site-head">
+	
+	<h1 class="blog-title"><a href="http://nelari.us/">My thought repository</a></h1>
+	
+	
+</header>
+    
+<nav class="menu" role="nav">
+    <ul>
+        
+        	<li class="nav nav-current"><a href="/about/">About me</a></li>
+      	
+        	<li class="nav nav-current"><a href="/projects/">Software</a></li>
+      	
+    </ul>
+</nav>
+
+
+    <main class="content" role="main">
+	    <article class="post">
+	        <header>
+	        <h1 class="post-title">Placing an arbitrary number of function calls into a function argument list using templates</h1>
+	        <div class="post-meta"><time datetime="31 August 2015">31 August 2015</time></div>
+	        </header>
+
+	        <section class="post-content">
+	            
+
+<p>While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.</p>
+
+<p>First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.</p>
+
+<pre><code class="language-cpp">double convertToDegrees( double rad ) {
+    return rad * ( 180.0 / 3.14159265359 );
+}
+</code></pre>
+
+<p>Communication with the virtual machine is carried out with these template functions.</p>
+
+<pre><code class="language-cpp">// When called, returns the argument at position index within the argument list.
+template&lt; typename T&gt;
+T GetArgument( int index );
+
+// when called, returns the value to the function in the virtual machine.
+template&lt; typename T &gt;
+void Return( T val );
+</code></pre>
+
+<p>I could wrap <code>convertToDegrees</code> in the virtual machine glue code as follows, and give it to the virtual machine&rsquo;s C API.</p>
+
+<pre><code class="language-cpp">void wrapper() {
+    double res = convertToDegrees( GetArgument&lt;double&gt;( 1 ) );
+    Return( res );
+}
+</code></pre>
+
+<p>But writing this for every function will take time. Additionally, if I were to change the function definition, then I would have to alter the wrapper manually. I want to generate these bindings automatically.</p>
+
+<p>Given a free function, I want to generate the appropriate calls to GetArgument<T> and place them in the correct order in the function call. Thus, a way to index and get a function&rsquo;s argument types is needed.</p>
+
+<h2 id="function-traits">Function traits</h2>
+
+<p>Storing function traits can be done easily.</p>
+
+<pre><code class="language-cpp">template&lt; typename F &gt;
+struct function_traits;
+
+template&lt; typename R, typename... Args &gt;
+struct function_traits&lt; R( Args... ) &gt; {
+    using return_type = R;
+
+    constexpr static const std::size_t arity = sizeof...( Args );
+
+    template&lt; std::size_t N &gt;
+    struct argument {
+        static_assert( N &lt; arity, &quot;FunctionTraits error: invalid argument count parameter&quot; );
+        using type = std::tuple_element_t&lt; N, std::tuple&lt; Args... &gt; &gt;;
+    };
+
+    template&lt; std::size_t N &gt;
+    using argument_type = typename argument&lt;N&gt;::type;
+};
+</code></pre>
+
+<p>The class can be used like this:</p>
+
+<pre><code class="language-cpp">using traits = function_traits&lt; decltype(convertToDegrees) &gt;;
+cout &lt;&lt; is_same&lt;double, traits::argument_type&lt;0&gt;&gt;::value &lt;&lt; endl;
+cout &lt;&lt; is_same&lt;double, traits::return_type&gt;::value &lt;&lt; endl;
+</code></pre>
+
+<p>You can use the <code>decltype</code> specifier to get the function&rsquo;s type, or just enter it manually. For <code>convertToDegrees</code>, the type would be <code>double(double)</code>.</p>
+
+<h2 id="unpacking-a-tuple-into-a-function-argument-list">Unpacking a tuple into a function argument list</h2>
+
+<p>Tuples can be unpacked into a function call surprisingly easily. Use std::index_sequence to generate a non-type parameter pack of indices to index the tuple elements at compile time.</p>
+
+<pre><code class="language-cpp">template&lt; typename Function, typename Tuple, std::size_t... index&gt;
+decltype( auto ) invokeHelper( Function&amp;&amp; f, Tuple&amp;&amp; tup, std::index_sequence&lt;index...&gt; ) {
+    return f( std::get&lt;index&gt;( std::forward&lt;Tuple&gt;(tup) )... );
+}
+
+template&lt; typename Function, typename Tuple &gt;
+decltype( auto ) invokeWithTuple( Function&amp;&amp; f, Tuple&amp;&amp; tup ) {
+    constexpr auto Arity = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::arity;
+    return invoke_helper( 
+        std::forward&lt;Function&gt;( f ), 
+        std::forward&lt;Tuple&gt;( tup ), 
+        std::make_index_sequence&lt;Arity&gt;{} 
+    );
+}
+</code></pre>
+
+<p>How exactly does this work? When the ellipsis operator is placed after a pattern containing a variadic parameter, the pattern is instantiated for each instance of the variadic parameter. The instances are separated by commas. In <code>invokeHelper</code>, the (non-type) variadic parameter is <code>index</code>.</p>
+
+<p>Note the C++14-ism in the above code. In C++11, you would write <code>function_traits&lt; typename std::remove_reference&lt;decltype(f)&gt;::type &gt;</code>. C++14 introduced aliasing, which allows this: <code>template&lt;typename T&gt; using remove_reference_t = typename remove_reference&lt;T&gt;::type;</code>. All the type traits in <code>type_traits</code> have aliases of this form in C++14.</p>
+
+<p>Now this should work:</p>
+
+<pre><code class="language-cpp">void say( int val, double val2 ) {
+    std::cout &lt;&lt; &quot;called with &quot; &lt;&lt; val &lt;&lt; &quot;, &quot; &lt;&lt; val2 &lt;&lt; std::endl;
+}
+
+int main() {
+    auto tup = std::make_tuple( 5, 42.0 );
+    invokeWithTuple( say, tup );
+
+    return 0;
+}
+</code></pre>
+
+<h2 id="placing-getargument-t-into-a-function-argument-list">Placing <code>GetArgument&lt;T&gt;</code> into a function argument list</h2>
+
+<p>We can place the calls to <code>GetArgument&lt;T&gt;</code> in a very similar way.</p>
+
+<pre><code class="language-cpp">template&lt; typename Function, std::size_t... index&gt;
+decltype( auto ) invokeHelper( Function&amp;&amp; f, std::index_sequence&lt;index...&gt; ) {
+  using traits = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;;
+  return f( GetArgument&lt; typename traits::template argument_type&lt;index&gt; &gt;( index + 1 )... );
+}
+
+template&lt; typename Function &gt;
+decltype( auto ) invokeWithArguments( Function&amp;&amp; f ) {
+  constexpr auto Arity = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::arity;
+  return invoke_helper( 
+    std::forward&lt;Function&gt;( f ),
+    std::make_index_sequence&lt;Arity&gt;{} 
+  );
+}
+</code></pre>
+
+<h2 id="generate-a-unique-wrapper-class-for-a-function">Generate a unique wrapper class for a function</h2>
+
+<p>The last piece of my toy puzzle. I call <code>invokeWithArguments</code> from a static method, so that I can give the static method to the virtual machine&rsquo;s C API.</p>
+
+<pre><code class="language-cpp">template&lt; typename Signature, Signature&amp; &gt;
+struct ForeignMethodWrapper;
+
+template&lt; typename R, typename... Args, R( &amp;P )( Args... ) &gt;
+struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
+    static void call() {
+        invokeWithArguments( P );
+    }
+};
+</code></pre>
+
+<h2 id="invoking-code-conditionally">Invoking code conditionally</h2>
+
+<p>Actually, I&rsquo;m not done yet. I still haven&rsquo;t explained how I call <code>Return&lt;T&gt;( T val )</code> only when the function&rsquo;s return value is not <code>void</code>. A specialized struct can be used to store the different invocations.</p>
+
+<pre><code class="language-cpp">// to be used with std::is_void
+template&lt;bool predicate&gt;
+struct InvokeWithoutReturningIf {
+  template&lt; typename Function &gt;
+  static void invoke( Function&amp;&amp; f ) {
+    invokeWithArguments( std::forward&lt; Function &gt;( f ) );
+  }
+};
+
+template&lt;&gt;
+struct InvokeWithoutReturningIf&lt;false&gt; {
+  template&lt; typename Function &gt;
+  static void invoke( Function&amp;&amp; f ) {
+    using R = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::return_type;
+    Return&lt;R&gt;( invokeWithArguments( std::forward&lt;Function&gt;(f) ) );
+    }
+};
+</code></pre>
+
+<p>Finally, I modified <code>ForeignMethodWrapper</code> to</p>
+
+<pre><code class="language-cpp">template&lt; typename R, typename... Args, R( &amp;P )( Args... ) &gt;
+struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
+  static void call() {
+    InvokeWithoutReturningIf&lt; std::is_void&lt;R&gt;::value &gt;::invoke( P );
+  }
+};
+</code></pre>
+
+<p>which completes the solution for my toy problem.</p>
+
+	        </section>
+
+	        <section class="post-tags" style="padding-bottom:60px;">
+	            <div class="post-meta tags">
+	            <i class="fa fa-fw fa-tag"></i>
+	            
+	            <a href="http://nelari.us/tags/c&#43;&#43;">c&#43;&#43; </a>
+	            
+	            <a href="http://nelari.us/tags/metaprogramming">metaprogramming </a>
+	            
+	            </div>
+	        </section>
+			
+			
+	        	
+	        
+			
+			
+
+	        <section class="share">
+	            <p class="backtotop"><a data-scroll href="#site-head"><i class="fa fa-lg fa-fw fa-angle-double-up"></i></a><a data-scroll class="backtotoptext" href="#site-head"> Back to top</a></p>
+	            <p class="info prompt">Share</p>
+	            <a href="http://twitter.com/share?text=Placing%20an%20arbitrary%20number%20of%20function%20calls%20into%20a%20function%20argument%20list%20using%20templates&url=http%3a%2f%2fnelari.us%2fpost%2ftemplate-function-args%2f" title="Share on Twitter"
+	                onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+	                <i class="fa fa-2x fa-fw fa-twitter-square"></i> <span class="hidden">Twitter</span>
+	            </a>
+	            <a href="https://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2fnelari.us%2fpost%2ftemplate-function-args%2f" title="Share on Facebook"
+	                onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+	                <i class="fa fa-2x fa-fw fa-facebook-square" style="margin-left: -8px"></i> <span class="hidden">Facebook</span>
+	            </a>
+	            <a href="https://plus.google.com/share?url=http%3a%2f%2fnelari.us%2fpost%2ftemplate-function-args%2f" title="Share on Google+"
+	               onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+	                <i class="fa fa-2x fa-fw fa-google-plus-square" style="margin-left: -8px"></i> <span class="hidden">Google+</span>
+	            </a>
+	        </section>
+
+	        <footer class="post-footer">
+	            <section class="author">
+    <div class="authorimage" style="background: url(http://nelari.us/img/avatar.jpg)"></div>
+    <h4>Johann Muszynski</h4>
+    <p class="bio">I work as a junior programmer at <a href="http://umbra3d.com/">Umbra</a>. I&rsquo;m a programmer-scientist hybrid with a Master&rsquo;s degree in theoretical physics.</p>
+    <p class="meta">
+      <i class="fa fa-fw fa-map-marker"></i> Helsinki, Finland
+    </p>
+</section>
+	        </footer>
+	    </article>
+	</main>
+
+    <footer class="site-footer">
+	<div class="inner">
+		<section class="footer-social">
+			
+		    
+		    <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fa fa-2x fa-fw fa-github"></i> <span class="hidden">GitHub</span></a>&nbsp;
+		    
+		    <a href="" target="_blank" title="RSS"><i class="fa fa-2x fa-fw fa-rss"></i> <span class="hidden">RSS</span></a>
+		</section>
+
+		<section class="copyright">&copy; 2016 <a href="http://nelari.us/">Johann Muszynski</a>. 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="http://nelari.us/js/index.js"></script>
+<script src="http://nelari.us/js/smooth-scroll.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+
+<script>
+    smoothScroll.init({
+        speed: 800,
+        easing: 'easeInOutCubic',
+        updateURL: false,
+        offset: 125,
+    });
+</script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+</body>
+</html>

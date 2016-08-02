@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <title>Embedding Wren in C&#43;&#43;, part 2 &middot; My thought repository</title>
+    <meta name="author" content="Johann Muszynski">
+    <meta name="description" content="This is where I write about the cool stuff that I&#39;ve been working on.">
+    <meta name="generator" content="Hugo 0.16" />
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <!-- RSS autodiscovery -->
+    
+
+    <link rel="shortcut icon" href="http://nelari.us/img/favicon.ico">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/2.1.2/normalize.min.css">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="http://nelari.us/css/screen.css">
+    <link rel="stylesheet" href="http://nelari.us/css/github.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+
+    <!-- Stylesheet for theme color -->
+    <style type="text/css">
+    a, a:visited {color: #3498db;}
+    .pagination a {color: #3498db;}
+    .gist .gist-file .gist-meta a:visited {color: #3498db !important;}
+    a:focus, a:hover {color: #2079b4;}
+    h1.post-title a:focus, h1.post-title a:hover, h1.blog-title a:focus, h1.blog-title a:hover {color: #2079b4;}
+    .older-posts:hover, .newer-posts:hover {color: #2079b4;}
+</style>
+</head>
+
+<body class="post-template">
+
+    <header id="site-head">
+	
+	<h1 class="blog-title"><a href="http://nelari.us/">My thought repository</a></h1>
+	
+	
+</header>
+    
+<nav class="menu" role="nav">
+    <ul>
+        
+        	<li class="nav nav-current"><a href="/about/">About me</a></li>
+      	
+        	<li class="nav nav-current"><a href="/projects/">Software</a></li>
+      	
+    </ul>
+</nav>
+
+
+    <main class="content" role="main">
+	    <article class="post">
+	        <header>
+	        <h1 class="post-title">Embedding Wren in C&#43;&#43;, part 2</h1>
+	        <div class="post-meta"><time datetime="06 May 2016">06 May 2016</time></div>
+	        </header>
+
+	        <section class="post-content">
+	            
+
+<p>You can read part 1 <a href="http://nelari.us/post/wren-embedding-1/">here</a>.</p>
+
+<p>Writing you own Wren bindings gives you full control over how your code interfaces with Wren. However, manually implementing the binding code for a large C++-Wren interface can be somewhat time consuming, especially when changes are made to the interface over time. <a href="https://github.com/nelarius/wrenpp">Wren++</a> is a small C++ library that aims to automate most code binding tasks with a minimal runtime overhead. Like Wren itself, Wren++ aims to be simple and minimalistic to use. Here are the features currently supported.</p>
+
+<ul>
+<li>a RAII wrapper class for the virtual machine instance and refcounted methods</li>
+<li>automatic binding code generation for any C++ type and method</li>
+<li>a convenient way of calling methods from C++ and accessing return values</li>
+<li>template-based &ndash; no macros! If you feel like the binding code in Wren++ is too verbose, you can roll your own macros.</li>
+</ul>
+
+<p>The easiest way to get started with Wren++ is simply to include the source code in your project. Just remember to compile with C++14 features turned on! Alternatively, you can use the included premake script to generate a Makefile or project file for your preferred IDE to generate a static library to link to. In order to use Wren++, include <code>Wren++.h</code> in your code. You also need to link to the Wren static library.</p>
+
+<h3 id="creating-a-vm-instance">Creating a VM instance</h3>
+
+<p>Wren++ provides reasonable defaults for the virtual machine configuration. To get started, just write:</p>
+
+<pre><code class="language-cpp">#include &lt;Wren++.h&gt;
+
+int main() {
+  wrenpp::VM vm;
+  wrenpp::Result result = vm.executeString(&quot;System.print(\&quot;Hello, world\&quot;)&quot;);
+  return 0;
+}
+</code></pre>
+
+<p>Like the Wren C API itself, Wren++ provides the interpretation result as an enumeration class. The values are <code>Success</code>, <code>CompileError</code>, and <code>RuntimeError</code>.</p>
+
+<p>You can also execute code directly from a module:</p>
+
+<pre><code class="language-cpp">auto result = vm.executeModule(&quot;vector&quot;);
+</code></pre>
+
+<h3 id="module-class-contexts-and-binding-free-functions-to-wren">Module, class contexts and binding free functions to Wren</h3>
+
+<p>All method binding takes place in a module and class context. The binding methods return references back to the class context so that you can chain binding commands like in LuaBridge or Luabind. Let&rsquo;s look at binding functions to the <code>Math</code> class that we did earlier.</p>
+
+<pre><code class="language-cpp">wrenpp::beginModule(&quot;main&quot;)
+  .beginClass(&quot;Math&quot;)
+    .bindFunction&lt;decltype(&amp;cos), &amp;cos&gt;(true, &quot;cos(_)&quot;)
+    .bindFunction&lt;decltype(&amp;sin), &amp;sin&gt;(true, &quot;sin(_)&quot;)
+  .endClass()
+.endModule();
+</code></pre>
+
+<p><code>bindFunction</code> takes two template parameters and two function arguments. The template parameters are the declared type of the function, and then the function pointer value itself. Instead of writing <code>decltype(&amp;cos)</code>, we could have written <code>double(*)(double)</code>. As for the function arguments, the boolean indicates whether the method is static, and the string is the method&rsquo;s signature.</p>
+
+<p>It is entirely optional to include <code>endClass()</code> and <code>endModule()</code> at the end of the binding statement. <code>endClass()</code> returns a reference back to the enclosing module context, so that you can continue binding code to a new class without having to open the context again. Not all binding statements have to be in the same place. You can reopen the module and class contexts somewhere else and continue binding code. All that the module and class contexts do is store the module and class names for binding method to use.</p>
+
+<h3 id="binding-types-and-methods-to-wren">Binding types and methods to Wren</h3>
+
+<p>Binding types and their methods works very similarly. Let&rsquo;s look at rebinding the <code>Vec3f</code> example from earlier. When binding a type, we use a different class context. It&rsquo;s created using the template method <code>bindClass</code>:</p>
+
+<pre><code class="language-cpp">wrenpp::beginModule(&quot;Vec3&quot;)
+  .bindClass&lt;Vec3f, float, float, float&gt;(&quot;Vec3&quot;);
+</code></pre>
+
+<p><code>bindClass</code> tells Wren++ not only to store the name of the class for future reference, but also to generate the allocator and finalizer functions for the given type. The first template parameter is the type of bound class. The following template parameters are optional &ndash; they are the values that can be passed to the bound type&rsquo;s constructor from Wren. The three floats in this example mean that we can construct the type from Wren using three numbers:</p>
+
+<pre><code class="language-dart">foreign class Vec3 {
+  construct new(x, y, z) {}
+  // the rest of the methods as before
+}
+
+// now we can construct with values
+var v = Vec3.new(2.0, 1.0, -3.0)
+</code></pre>
+
+<p>Even though we can bind to overloaded methods in Wren, we can bind only one constructor to a class.</p>
+
+<p>Binding the rest of <code>Vec3f</code>&rsquo;s methods is done using <code>bindMethod</code>:</p>
+
+<pre><code class="language-cpp">wrenpp::beginModule(&quot;Vec3&quot;)
+  .bindClass&lt;Vec3f, float, float, float&gt;(&quot;Vec3&quot;)
+    .bindMethod&lt;decltype(&amp;Ve3f::norm),   &amp;Vec3f::norm&gt;(false, &quot;norm()&quot;)
+    .bindMethod&lt;decltype(&amp;Vec3f::dot),   &amp;Vec3f::dot&gt;(false, &quot;dot(_)&quot;)
+    .bindMethod&lt;decltype(&amp;Vec3f::cross), &amp;Vec3f::cross&gt;(false, &quot;cross(_)&quot;);
+</code></pre>
+
+<p>The function arguments have the same meaning as for <code>bindFunction</code>.</p>
+
+<p>Finally, let&rsquo;s bind the accessors for the fields themselves:</p>
+
+<pre><code class="language-cpp">  .bindGetter&lt;decltype(Vec3::x), &amp;Vec3::x&gt;(&quot;x&quot;)
+  .bindSetter&lt;decltype(Vec3::x), &amp;Vec3::x&gt;(&quot;x=(_)&quot;)
+  .bindGetter&lt;decltype(Vec3::y), &amp;Vec3::y&gt;(&quot;y&quot;)
+  .bindSetter&lt;decltype(Vec3::y), &amp;Vec3::y&gt;(&quot;y=(_)&quot;)
+  .bindGetter&lt;decltype(Vec3::z), &amp;Vec3::z&gt;(&quot;z&quot;)
+  .bindSetter&lt;decltype(Vec3::z), &amp;Vec3::z&gt;(&quot;z=(_)&quot;)
+</code></pre>
+
+<p>The getters and setters are always non-static.</p>
+
+<h3 id="c-and-wren-lifetimes-for-returned-objects">C++ and Wren lifetimes for returned objects</h3>
+
+<p>The rules for who owns the returned objects are simple. Objects which are returned from C++ by reference or by pointer have C++ lifetime, and will not be garbage collected by Wren. Objects which are returned from C++ by value have Wren lifetime and are thus garbage collected.</p>
+
+<h3 id="binding-your-own-implementations">Binding your own implementations</h3>
+
+<p>Sometimes the calling convention of a C++ API is just not very amenable for binding to Wren, and you want to write your own glue code. For instance, pointers to primitive types like <code>float</code> or <code>int</code> might be passed to a function. Wren++ simply won&rsquo;t handle function signatures like that, since Wren itself has no concept of out parameters. Instead, Wren++ allows you to bind functions of type <code>WrenForeignMethodFn</code> directly, so that you may manually implement the foreign function implementation.</p>
+
+<p>Let&rsquo;s look at binding the excellent <a href="https://github.com/ocornut/imgui">dear imgui</a> library to Wren. Looking at <code>imgui.h</code>, you can see lots of long function signatures with pointers to primitive types. We want to provide reasonable default arguments to most of the arguments, as well as return the new values, instead of passing in a reference to the number. Here&rsquo;s the bare-bones Wren-interface we want to implement:</p>
+
+<pre><code class="language-dart">in a file called imgui.wren
+
+class ImGui {
+  foreign static begin( name )
+  foreign static end()
+  
+  // unlike what C++ ImGui does, this RETURNS the new value
+  // arguments are all numbers passed by value
+  foreign static sliderFloat( label, value, min, max )
+  foreign static setWindowSize( size )
+}
+</code></pre>
+
+<p>Let&rsquo;s implement wrappers for <code>ImGui::Begin</code> and <code>ImGui::SliderFloat</code> with reasonable default values.</p>
+
+<pre><code class="language-cpp">void begin(WrenVM* vm) {
+  ImGui::Begin((const char*)wrenGetSlotString(vm, 1), NULL, 0);
+}
+
+void sliderFloat(WrenVM* vm) {
+  const char* label = wrenGetSlotString(vm, 1);
+  float value = float(wrenGetSlotDouble(vm, 2));
+  float min =   float(wrenGetSlotDouble(vm, 3));
+  float max =   float(wrenGetSlotDouble(vm, 4));
+  ImGui::SliderFloat(label, &amp;value, min, max);
+  wrenSetSlotDouble(vm, 0, value);
+}
+</code></pre>
+
+<p>The <code>begin</code> and <code>sliderFloat</code> functions satisfy the <code>WrenForeignMethodFn</code> typedef, so we will bind them using the <code>bindCFunction</code> method. The <code>bindCFunction</code> method stores the function pointer without generating any calls to the Wren slot API, so that you can do it yourself.</p>
+
+<pre><code class="language-cpp">wrenpp::beginModule(&quot;imgui&quot;)
+  .beginClass(&quot;ImGui&quot;)
+    .bindCFunction(true, &quot;begin(_)&quot;, begin)
+    .bindFunction&lt;decltype(&amp;ImGui::End), &amp;ImGui::End&gt;(true, &quot;end()&quot;)
+    .bindCFunction(true, &quot;sliderFloat(_,_,_,_)&quot;, sliderFloat)
+  .endClass();
+</code></pre>
+
+<p>Note that we just bound <code>ImGui::End</code> the usual way since it had a trivial function signature!</p>
+
+<h4 id="accessing-foreign-bytes-manually">Accessing foreign bytes manually</h4>
+
+<p>Next off, how do we deal with foreign types in our manual foreign method implementations? You can&rsquo;t get the pointer to your foreign type just by using <code>wrenGetSlotForeign</code>, since Wren++ contains a layer of indirection. The object may live in C++ (C++ lifetime), or within the foreign bytes (Wren lifetime) themselves. Wren++ provides a helper function: <code>wrenpp::getSlotForeign&lt;class T&gt;(WrenVM* vm, int slot)</code>. To see how it&rsquo;s used, let&rsquo;s wrap <code>ImGui::SetNextWindowSize(const ImVec2&amp;)</code> for our Wren interface to use. Let&rsquo;s assume that you&rsquo;ve bound <code>ImGui::ImVec2</code> to Wren &ndash; it&rsquo;s just a simple struct: <code>struct ImVec2 { float x, y; };</code>.</p>
+
+<pre><code class="language-cpp">void setWindowSize(WrenVM* vm) {
+  ImGui::SetNextWindowSize(*(wrenpp::getSlotForeign&lt;ImVec2&gt;(vm, 1)));
+}
+</code></pre>
+
+<h4 id="returning-foreign-types-manually">Returning foreign types manually</h4>
+
+<p>You can return values from your manual implementations as well. To see how, let&rsquo;s look at one final slightly contrived example.</p>
+
+<pre><code class="language-dart">class Mouse {
+  // returns a Vec2
+  foreign static coordinates
+}
+</code></pre>
+
+<p>We will implement it using our hypothetical <code>MouseDevice</code> class.</p>
+
+<pre><code class="language-cpp">// the mouse device
+class MouseDevice {
+public:
+  static MouseDevice* get();
+  const Vec2i&amp; coordinates() const;
+};
+
+// elsewhere, in the CFunction implementation...
+void getMouseCoordinates(WrenVM* vm) {
+  Vec2i coords = MouseDevice::get()-&gt;coordinates();
+  wrenpp::setSlotForeignValue&lt;Vec2i&gt;(vm, 0, coords);
+}
+
+// we will skip over the binding code itself, as you've now seen it a few times
+</code></pre>
+
+<p>Note that, as the function&rsquo;s name indices, <code>setSlotForeignValue</code> places <code>coords</code> by value into the foreign bytes of a new foreign object at a given slot. Any changes in the mouse coordinates within the C++ object will not be reflected in the wren object.</p>
+
+<p>You could also the pass the coordinates by pointer to Wren. An array of foreign bytes is created, but they only hold the pointer.</p>
+
+<pre><code class="language-cpp">void getMouseCoordinates(WrenVM* vm) {
+  // we need to throw away the const-ness of our object -- Wren++ doesn't
+  // respect constness in reference objects
+  Vec2i* coords = const_cast&lt;Vec2i*&gt;(&amp;MouseDevice-&gt;get()-&gt;coordinates());
+  wrenpp::setSlotForeignPtr&lt;Vec2i&gt;(vm, 0, coords);
+}
+</code></pre>
+
+<p>Now changes in the C++ class&rsquo; coordinates will be reflected in the Wren object, since it points directly to the coordinates in C++.</p>
+
+<h3 id="accessing-wren-code-from-c">Accessing Wren code from C++</h3>
+
+<p>Accessing Wren code from C++ is, at the time of writing, the most incomplete feature of Wren++, and it will be worked on in the feature. Here&rsquo;s what you can do currently. Wren++ allows you store a references to class methods that you can call from C++. First you need to get the method from the virtual machine instance.</p>
+
+<pre><code class="language-cpp">// call the Math.cos(_) method from the previous part of this post
+wrenpp::Method cosMethod = vm.method(&quot;main&quot;, &quot;Math&quot;, &quot;cos(_)&quot;);
+</code></pre>
+
+<p>The three string arguments to <code>wrenpp::VM::method</code> are the module name, the variable name that the method is attached to (note again that this would be the class name for a static method!), and finally the method signature itself.</p>
+
+<p>We call the method by using the parenthesis operator on it.</p>
+
+<pre><code class="language-cpp">wrenpp::Value val = cosMethod(-5.0);
+std::cout &lt;&lt; val.as&lt;double&gt;();
+</code></pre>
+
+<p>Invocations on the parenthesis operator returns an instance of <code>wrenpp::Value</code>, which is a convenience class that can hold any return value from Wren.</p>
+
+<h3 id="in-conclusion">In conclusion</h3>
+
+<p>There were some small details I glossed over &ndash; for instance, Wren++ allows you to customize the print, error, and module functions just like in Wren. To see how, take a look at the project&rsquo;s README. Also, Wren access from C++ is likely to develop somewhat as the Wren C API itself develops, but that will be documented in the README once I get around to working on it. Some things that I wish to include in the future is easy access to Wren data structures, such as maps and lists.</p>
+
+<p>Now it is time for you to go off and explore Wren yourself. You should have the tools to embed Wren in your application with confidence. Wren doesn&rsquo;t have a lot of libraries yet, so you are going to have to reinvent a lot of basic functionality yourself. But that&rsquo;s the best part, naturally! :)</p>
+
+	        </section>
+
+	        <section class="post-tags" style="padding-bottom:60px;">
+	            <div class="post-meta tags">
+	            <i class="fa fa-fw fa-tag"></i>
+	            
+	            <a href="http://nelari.us/tags/c&#43;&#43;">c&#43;&#43; </a>
+	            
+	            <a href="http://nelari.us/tags/wren">wren </a>
+	            
+	            <a href="http://nelari.us/tags/embedding">embedding </a>
+	            
+	            </div>
+	        </section>
+			
+			
+	        	
+	        
+			
+			
+
+	        <section class="share">
+	            <p class="backtotop"><a data-scroll href="#site-head"><i class="fa fa-lg fa-fw fa-angle-double-up"></i></a><a data-scroll class="backtotoptext" href="#site-head"> Back to top</a></p>
+	            <p class="info prompt">Share</p>
+	            <a href="http://twitter.com/share?text=Embedding%20Wren%20in%20C%2b%2b%2c%20part%202&url=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Twitter"
+	                onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+	                <i class="fa fa-2x fa-fw fa-twitter-square"></i> <span class="hidden">Twitter</span>
+	            </a>
+	            <a href="https://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Facebook"
+	                onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+	                <i class="fa fa-2x fa-fw fa-facebook-square" style="margin-left: -8px"></i> <span class="hidden">Facebook</span>
+	            </a>
+	            <a href="https://plus.google.com/share?url=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Google+"
+	               onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+	                <i class="fa fa-2x fa-fw fa-google-plus-square" style="margin-left: -8px"></i> <span class="hidden">Google+</span>
+	            </a>
+	        </section>
+
+	        <footer class="post-footer">
+	            <section class="author">
+    <div class="authorimage" style="background: url(http://nelari.us/img/avatar.jpg)"></div>
+    <h4>Johann Muszynski</h4>
+    <p class="bio">I work as a junior programmer at <a href="http://umbra3d.com/">Umbra</a>. I&rsquo;m a programmer-scientist hybrid with a Master&rsquo;s degree in theoretical physics.</p>
+    <p class="meta">
+      <i class="fa fa-fw fa-map-marker"></i> Helsinki, Finland
+    </p>
+</section>
+	        </footer>
+	    </article>
+	</main>
+
+    <footer class="site-footer">
+	<div class="inner">
+		<section class="footer-social">
+			
+		    
+		    <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fa fa-2x fa-fw fa-github"></i> <span class="hidden">GitHub</span></a>&nbsp;
+		    
+		    <a href="" target="_blank" title="RSS"><i class="fa fa-2x fa-fw fa-rss"></i> <span class="hidden">RSS</span></a>
+		</section>
+
+		<section class="copyright">&copy; 2016 <a href="http://nelari.us/">Johann Muszynski</a>. 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="http://nelari.us/js/index.js"></script>
+<script src="http://nelari.us/js/smooth-scroll.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+
+<script>
+    smoothScroll.init({
+        speed: 800,
+        easing: 'easeInOutCubic',
+        updateURL: false,
+        offset: 125,
+    });
+</script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+</body>
+</html>

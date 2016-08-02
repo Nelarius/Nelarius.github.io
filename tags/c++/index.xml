@@ -795,7 +795,7 @@ struct WrenMethod {
 
 &lt;p&gt;You&amp;rsquo;ve now seen some of the functionality that the Wren C API offers. Not everything was covered here; the Wren slot API contains functions for storing values directly in list elements, as well as storing null in a slot. More functions will probably be added in the future &amp;ndash; these will perhaps be visited upon in a future post once the API evolves sufficiently.&lt;/p&gt;
 
-&lt;p&gt;You can read about Wren++ in &lt;a href=&#34;nelari.us/post/wren-embedding-2/&#34;&gt;part 2&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;You can read about Wren++ in &lt;a href=&#34;http://nelari.us/post/wren-embedding-2/&#34;&gt;part 2&lt;/a&gt;.&lt;/p&gt;
 </description>
     </item>
     

@@ -6,8 +6,8 @@
 
     <title>Embedding Wren in C&#43;&#43;, part 1 &middot; My thought repository</title>
     <meta name="author" content="Johann Muszynski">
-    <meta name="description" content="This is where I write about the cool stuff that I&#39;ve been working on.">
-    <meta name="generator" content="Hugo 0.16" />
+    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
+    <meta name="generator" content="Hugo 0.18.1" />
     <meta name="HandheldFriendly" content="True">
     <meta name="MobileOptimized" content="320">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,12 +16,15 @@
     
 
     <link rel="shortcut icon" href="http://nelari.us/img/favicon.ico">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/2.1.2/normalize.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="http://nelari.us/css/screen.css">
     <link rel="stylesheet" href="http://nelari.us/css/github.css">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/styles/default.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/styles/default.min.css">
+    
+
+    
 
     <!-- Stylesheet for theme color -->
     <style type="text/css">
@@ -48,7 +51,7 @@
         
         	<li class="nav nav-current"><a href="/about/">About me</a></li>
       	
-        	<li class="nav nav-current"><a href="/projects/">Software</a></li>
+        	<li class="nav nav-current"><a href="/projects/">Projects</a></li>
       	
     </ul>
 </nav>
@@ -631,7 +634,21 @@ struct WrenMethod {
 	        </section>
 			
 			
-	        	
+	        	<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'nelarius';
+    var disqus_identifier = 'http:\/\/nelari.us\/post\/wren-embedding-1\/';
+    var disqus_title = 'Embedding Wren in C\x2b\x2b, part 1';
+    var disqus_url = 'http:\/\/nelari.us\/post\/wren-embedding-1\/';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
 	        
 			
 			
@@ -657,7 +674,7 @@ struct WrenMethod {
 	            <section class="author">
     <div class="authorimage" style="background: url(http://nelari.us/img/avatar.jpg)"></div>
     <h4>Johann Muszynski</h4>
-    <p class="bio">I work as a junior programmer at <a href="http://umbra3d.com/">Umbra</a>. I&rsquo;m a programmer-scientist hybrid with a Master&rsquo;s degree in theoretical physics.</p>
+    <p class="bio">I&rsquo;m a programmer-scientist hybrid with a master&rsquo;s degree in theoretical physics. I&rsquo;m currently employed as a junior graphics programmer at <a href="http://umbra3d.com/">Umbra</a>.</p>
     <p class="meta">
       <i class="fa fa-fw fa-map-marker"></i> Helsinki, Finland
     </p>
@@ -669,48 +686,25 @@ struct WrenMethod {
     <footer class="site-footer">
 	<div class="inner">
 		<section class="footer-social">
-			
-		    
-		    <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fa fa-2x fa-fw fa-github"></i> <span class="hidden">GitHub</span></a>&nbsp;
-		    
-		    <a href="" target="_blank" title="RSS"><i class="fa fa-2x fa-fw fa-rss"></i> <span class="hidden">RSS</span></a>
-		</section>
+      
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fa fa-2x fa-fw fa-github"></i> <span class="hidden">GitHub</span></a>&nbsp;
+      
+      
+      
+      
+  </section>
 
-		<section class="copyright">&copy; 2016 <a href="http://nelari.us/">Johann Muszynski</a>. 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<section class="copyright">&copy; 2017 <a href="http://nelari.us/">Johann Muszynski</a>. 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="http://nelari.us/js/index.js"></script>
 <script src="http://nelari.us/js/smooth-scroll.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script>
 
-<script type="text/javascript"
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  tex2jax: {
-    inlineMath: [['$','$'], ['\\(','\\)']],
-    displayMath: [['$$','$$'], ['\[','\]']],
-    processEscapes: true,
-    processEnvironments: true,
-    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-    TeX: { equationNumbers: { autoNumber: "AMS" },
-         extensions: ["AMSmath.js", "AMSsymbols.js"] }
-  }
-});
-</script>
-
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Queue(function() {
-    
-    
-    
-    var all = MathJax.Hub.getAllJax(), i;
-    for(i = 0; i < all.length; i += 1) {
-        all[i].SourceElement().parentNode.className += ' has-jax';
-    }
-});
-</script>
 
 <script>
     smoothScroll.init({

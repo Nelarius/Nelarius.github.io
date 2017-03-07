@@ -692,14 +692,14 @@ struct WrenStack&amp;lt;bool&amp;gt; {
 // and the variable name
 // finally, place it in slot zero
 wrenGetVariable(vm, &amp;quot;main&amp;quot;, &amp;quot;Math&amp;quot;, 0);
-WrenValue* receiver = wrenGetSlotValue(vm, 0);
-WrenValue* method = wrenMakeCallHandle(vm, &amp;quot;cos(_)&amp;quot;);
+WrenHandle* receiver = wrenGetSlotValue(vm, 0);
+WrenHandle* method = wrenMakeCallHandle(vm, &amp;quot;cos(_)&amp;quot;);
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Before we can call the method handle, we need to set up the stack via the slot API. The receiver (the object or class whose method we are calling) needs to be placed in slot zero. Any arguments need to be placed in the following slots.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// place the receiver in slot 0
-wrenSetSlotValue(vm, 0, receiver);
+wrenSetSlotHandle(vm, 0, receiver);
 wrenSetSlotDouble(vm, 1, M_PI / 2.0);
 // now the stack is set -- call the method!
 wrenCall(vm, method);
@@ -731,8 +731,8 @@ double res = wrenGetSlotDouble(vm, 0);
 &lt;p&gt;It&amp;rsquo;s also completely possible to wrap method calls in template magic. The technique for doing this was not something covered in the previous blog post. The basic problem is the following. We have a function which takes the method call arguments as a template parameter pack. Our receiver and method pointers are set up. We need to call the appropriate &lt;code&gt;wrenSetSlot*&lt;/code&gt; functions in order per function argument.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;struct WrenMethod {
-  WrenValue* receiver;
-  WrenValue* method;
+  WrenHandle* receiver;
+  WrenHandle* method;
   WrenVM*    vm;
   
   template&amp;lt;typename... Arg&amp;gt;
@@ -773,14 +773,14 @@ void passArgumentsToWren(WrenVM* vm,
 }
 
 struct WrenMethod {
-  WrenValue* receiver;
-  WrenValue* method;
+  WrenHandle* receiver;
+  WrenHandle* method;
   WrenVM*    vm;
   
   template&amp;lt;typename... Arg&amp;gt;
   void call(Arg&amp;amp;&amp;amp;... arg) {
     constexpr std::size_t arity = sizeof...(Arg);
-    wrenSetSlotValue(vm, 0, receiver);
+    wrenSetSlotHandle(vm, 0, receiver);
     std::tuple&amp;lt;Arg...&amp;gt; tuple = std::make_tuple(arg...);
     passArgumentsToWren(vm, tuple, std::make_index_sequence&amp;lt;arity&amp;gt;{});
     wrenCall(vm, method);

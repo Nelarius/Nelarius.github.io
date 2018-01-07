@@ -6,8 +6,208 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 26 Feb 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 23 Dec 2017 16:17:29 +0200</lastBuildDate>
     <atom:link href="http://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Implementing simple translation and rotation gizmos</title>
+      <link>http://nelari.us/post/gizmos/</link>
+      <pubDate>Sat, 23 Dec 2017 16:17:29 +0200</pubDate>
+      
+      <guid>http://nelari.us/post/gizmos/</guid>
+      <description>
+
+&lt;p&gt;Fed up with entering numbers manually via the UI for each game object transform in my home-made game engine, I wanted to integrate a gizmo tool. Gizmos, at least in the context of game engine editors, are little 3d tools that you can use to manipulate objects in 3d space. While there are a few easy-ish-to-integrate transform gizmo libraries on github, I was not completely happy with them. The interface of &lt;a href=&#34;https://github.com/ddiakopoulos/tinygizmo&#34;&gt;&lt;code&gt;tinygizmo&lt;/code&gt;&lt;/a&gt; is nice, but it intersects camera rays with the triangle meshes of the primitive. This means that the graphical representation of the gizmo is tied to the geometric representation which is used to test for mouse positions. &lt;a href=&#34;https://github.com/CedricGuillemet/ImGuizmo&#34;&gt;&lt;code&gt;ImGuizmo&lt;/code&gt;&lt;/a&gt; takes an easy-to-integrate approach by integrating via &lt;code&gt;ImGui&lt;/code&gt;, but exposes the transform construct as a matrix.&lt;/p&gt;
+
+&lt;p&gt;In this post, I&amp;rsquo;ll detail the approach that I took in writing my own gizmo tool. The code uses my own IO and math abstractions, but they should be self-explanatory.&lt;/p&gt;
+
+&lt;h2 id=&#34;the-approach&#34;&gt;The approach&lt;/h2&gt;
+
+&lt;p&gt;The C++ interface to the gizmo tool is very simple.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;enum class gizmo_mode
+{
+    none,
+    translate,
+    rotate,
+    scale
+};
+
+// The gizmo tool is active if the tool is selected (the mouse is pressed and near the tool).
+// Use this to prevent e.g. the camera from moving when dragging the gizmo.
+bool gizmo_is_active();
+
+void gizmo_manipulate(gizmo_mode mode, transform&amp;amp; transform, const mat4f&amp;amp; camera_matrix);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You pass &lt;code&gt;gizmo_manipulate&lt;/code&gt; the mode, the &lt;code&gt;transform&lt;/code&gt; struct, and your camera matrix (the combined view and projection matrix) every frame. My transform struct looks like &lt;code&gt;struct transform { vec3f position; quatf rotation; vec3f scale; };&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The gizmo is an immediate-mode tool, so if &lt;code&gt;gizmo_manipulate&lt;/code&gt; doesn&amp;rsquo;t get called, then nothing happens and nothing gets rendered.&lt;/p&gt;
+
+&lt;p&gt;Every frame, we need to generate a camera ray from the current cursor position. To construct the camera ray from the camera matrix, the pixel coordinates are first converted to the $[-1, 1]$ range in both x and y. Then ray is taken from normalized device coordinates to world-space using the inverse of the camera matrix:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// gives mouse pixel coordinates in the [-1, 1] range
+vec2f n = platform().mouse.normalized_coordinates();
+
+vec4f ray_start, ray_end;
+mat4f view_proj_inverse = inverse(camera_matrix);
+
+ray_start = view_proj_inverse * vec4f(n.x, n.y, 0.f, 1.f);
+ray_start *= 1.f / ray_start.w;
+
+ray_end = view_proj_inverse * vec4f(n.x, n.y, 1.f, 1.f);
+ray_end *= 1.f / ray_end.w;
+
+context.camera_ray.origin = (vec3f&amp;amp;)ray_start;
+context.camera_ray.direction = (vec3f&amp;amp;)normalize(ray_end - ray_start);
+
+context.camera_ray.t = FLT_MAX;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;context&lt;/code&gt; struct is just a global containing stuff used accross functions. Icky I know, but it gets the job done for small collection of variables.&lt;/p&gt;
+
+&lt;p&gt;Now that the camera ray has been obtained, the distance from the mouse to the gizmo can be computed. The update function proceeds as follows.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Compute the nearest distance to the gizmo, as well as the nearest point on the gizmo to the camera ray. The current and previous nearest points on the gizmo are stored in the &lt;code&gt;context&lt;/code&gt; variable.&lt;/li&gt;
+&lt;li&gt;If distance to gizmo is below some threshold value, and the mouse button was pressed, then that gizmo becomes active.&lt;/li&gt;
+&lt;li&gt;If a gizmo is active, use the gizmo&amp;rsquo;s nearest point to the camera ray to update the transform.&lt;/li&gt;
+&lt;li&gt;If the mouse is released, then the gizmo is deactivated.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In this way, a gizmo becomes active even when the mouse is not directly over it, making the tool a bit easier to work with.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s take a look at how to concretely compute the distance to a translation or rotation gizmo.&lt;/p&gt;
+
+&lt;h3 id=&#34;translation&#34;&gt;Translation&lt;/h3&gt;
+
+&lt;p&gt;The translation gizmo is visually a set of three coordinate axes. The following functions is used to test how far away the camera ray is from each individual axis.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;float closest_distance_between_lines(rayf&amp;amp; l1, rayf&amp;amp; l2)
+{
+    const vec3f dp = l2.origin - l1.origin;
+    const float v12 = dot(l1.direction, l1.direction);
+    const float v22 = dot(l2.direction, l2.direction);
+    const float v1v2 = dot(l1.direction, l2.direction);
+
+    const float det = v1v2 * v1v2 - v12 * v22;
+
+    if (std::abs(det) &amp;gt; FLT_MIN)
+    {
+        const float inv_det = 1.f / det;
+
+        const float dpv1 = dot(dp, l1.direction);
+        const float dpv2 = dot(dp, l2.direction);
+
+        l1.t = inv_det * (v22 * dpv1 - v1v2 * dpv2);
+        l2.t = inv_det * (v1v2 * dpv1 - v12 * dpv2);
+
+        return norm(dp + l2.direction * l2.t - l1.direction * l1.t);
+    }
+    else
+    {
+        const vec3f a = cross(dp, l1.direction);
+        return std::sqrt(dot(a, a) / v12);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you want to know where the math came from, scroll further down to &lt;code&gt;Shortest distance between two lines&lt;/code&gt; section.&lt;/p&gt;
+
+&lt;p&gt;The function returns the distance, and computes the ray&amp;rsquo;s scaling factors so that the points on the ray corresponding to the distance can be recovered.&lt;/p&gt;
+
+&lt;p&gt;So, given the translation gizmo, how is the &lt;code&gt;position&lt;/code&gt; component of the user&amp;rsquo;s transform manipulated? Easy, the translation gizmo gives us this frame&amp;rsquo;s and last frame&amp;rsquo;s 3d point on the gizmo axis in world space coordinates! All we have to do is&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;vec3f delta = context.current_intersect - context.previous_intersect;
+user_transform.position += delta;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;[TODO: insert diagram]&lt;/p&gt;
+
+&lt;h3 id=&#34;rotation&#34;&gt;Rotation&lt;/h3&gt;
+
+&lt;p&gt;The rotation gizmo is visually a set of three circles, each one centered around an axis of rotation. The following function can be used to get the point on the circle nearest to the camera ray.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;float closest_distance_line_circle(const ray&amp;amp; line, const circle&amp;amp; c, vec3f&amp;amp; point)
+{
+    plane f = make_plane(c.orientation, c.center);
+    ray r = line;
+
+    if (intersect_ray_plane(f, r))
+    {
+        // project the point on to the circle
+        const vec3f on_plane = r.origin + r.t * r.direction;
+        point = c.center + c.radius * normalize(on_plane - c.center);
+        return norm(on_plane - point);
+    }
+    else
+    {
+        // the required point on the circle is the one closest to the camera origin
+        point = c.radius * normalize(reject(context.camera_ray.origin - c.center, c.orientation));
+
+        return distance_between_point_ray(point, context.camera_ray);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In order to compute the rotation during the frame, the current and previous points on the circle are again used. By subtracting the circle&amp;rsquo;s center from them, two direction vectors are obtained. The angle between the direction vectors represents the rotation made during the frame.&lt;/p&gt;
+
+&lt;p&gt;[TODO: insert diagram]&lt;/p&gt;
+
+&lt;p&gt;The angle between the two direction vectors is always positive when computing via the dot product. The sign should change if the previous and current points were to change position, or the gizmo would rotate in the same direction no matter which direction the user is dragging the mouse. The sign can be obtained by calculating
+&lt;div&gt;$$
+sign = \frac{\left(\mathbf{p}_p \times \mathbf{p}_c\right) \cdot \hat{\mathbf{n}}}{||\left(\mathbf{p}_p \times \mathbf{p}_c\right) \cdot \hat{\mathbf{n}}||}\,,
+$$&lt;/div&gt;&lt;/p&gt;
+
+&lt;p&gt;using the vectors identified in the above diagram.&lt;/p&gt;
+
+&lt;h3 id=&#34;shortest-distance-between-two-lines&#34;&gt;Shortest distance between two lines&lt;/h3&gt;
+
+&lt;p&gt;A line can be defines as $\mathcal{L}=\mathbf{p}+t\mathbf{v}$, where $\mathbf{p}$ is a point on the line, $\mathbf{v}$ is the direction of the line, and &lt;em&gt;t&lt;/em&gt; is the scaling factor. The squared distance function between line 1 and line 2 is given by&lt;/p&gt;
+
+&lt;div&gt;$$
+d^2=(\mathcal{L}_2-\mathcal{L}_1)^2=(\mathbf{p}_2+t_2\mathbf{v}_2-\mathbf{p}_1-t_1\mathbf{v}_1)^2
+$$&lt;/div&gt;
+
+&lt;p&gt;The function will have a minimum at the shortest distance; in other words, the derivative of this function w.r.t. &lt;em&gt;t&lt;/em&gt; will be zero at the minimum. We can use this to solve for $t_1$ and $t_2$.&lt;/p&gt;
+
+&lt;p&gt;Computing the derivates of the squared distance function w.r.t. both $t_1$ and $t_2$ gives us a system of equations.&lt;/p&gt;
+
+&lt;div&gt;$$
+\begin{cases}
+\frac{\partial d^2}{\partial t_1}=2\left(\mathbf{v}_1 \cdot (\mathbf{p}_1 - \mathbf{p}_2) - t_2 \mathbf{v}_1 \cdot \mathbf{v}_2 + t_1 v_1^2 \right) \\
+\frac{\partial d^2}{\partial t_1}=2\left(\mathbf{v}_2 \cdot (\mathbf{p}_2 - \mathbf{p}_1) - t_1 \mathbf{v}_1 \cdot \mathbf{v}_2 + t_2 v_2^2\right)
+\end{cases}
+$$&lt;/div&gt;
+
+&lt;p&gt;The system of equations can be expressed in matrix form.&lt;/p&gt;
+
+&lt;div&gt;$$
+\begin{bmatrix} v_1^2 &amp; - \mathbf{v}_1 \cdot \mathbf{v}_2 \\ - \mathbf{v}_1 \cdot \mathbf{v}_2 &amp; v_2^2 \end{bmatrix}
+\begin{bmatrix} t_1 \\ t_2 \end{bmatrix}
+=
+\begin{bmatrix} \mathbf{v}_1 \cdot (\mathbf{p}_2 - \mathbf{p}_1) \\ \mathbf{v}_2 \cdot (\mathbf{p}_1 - \mathbf{p}_2) \end{bmatrix}
+$$&lt;/div&gt;
+
+&lt;p&gt;Solving the matrix equation is easy, because the inverse of 2x2 matrix can be &lt;a href=&#34;https://en.wikipedia.org/wiki/Invertible_matrix#Inversion_of_2_%C3%97_2_matrices&#34;&gt;looked up&lt;/a&gt; and yields us the following equation.&lt;/p&gt;
+
+&lt;div&gt;$$
+\begin{bmatrix} t_1 \\ t_2 \end{bmatrix}
+=
+\frac{1}{v_1^2 v_2^2 - (\mathbf{v}_1 \cdot \mathbf{v}_2)^2}
+\begin{bmatrix} v_2^2 &amp; \mathbf{v}_1 \cdot \mathbf{v}_2 \\ \mathbf{v}_1 \cdot \mathbf{v}_2 &amp; v_1^2 \end{bmatrix}
+\begin{bmatrix} \mathbf{v}_1 \cdot (\mathbf{p}_2 - \mathbf{p}_1) \\ \mathbf{v}_2 \cdot (\mathbf{p}_1 - \mathbf{p}_2) \end{bmatrix}
+$$&lt;/div&gt;
+
+&lt;p&gt;This equation is the one used in the function &lt;code&gt;closest_distance_between_lines&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;When the two lines are parallel, the determinant $v_1^2 v_2^2 - (\mathbf{v}_1 \cdot \mathbf{v}_2)^2$ is zero. In that case, we just compute the perpendicular distance between points $\mathbf{p}_1$ and $\mathbf{p}_2$.&lt;/p&gt;
+
+&lt;h3 id=&#34;rendering-the-gizmos&#34;&gt;Rendering the gizmos&lt;/h3&gt;
+
+&lt;p&gt;Currently, the gizmos are rendered simpy by drawing lines via OpenGL.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>About me</title>

@@ -2,6 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://nelari.us/post/gizmos/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+  </url>
+  
+  <url>
     <loc>http://nelari.us/about/</loc>
     <lastmod>2017-02-26T00:00:00+00:00</lastmod>
   </url>
@@ -28,7 +33,7 @@
   
   <url>
     <loc>http://nelari.us/tags/c&#43;&#43;/</loc>
-    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -40,21 +45,20 @@
   
   <url>
     <loc>http://nelari.us/tags/engine/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>http://nelari.us/tags/game/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>http://nelari.us/tags/gizmo/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>http://nelari.us/post/gizmos/</loc>
   </url>
   
   <url>
@@ -65,13 +69,13 @@
   
   <url>
     <loc>http://nelari.us/</loc>
-    <lastmod>2017-02-26T00:00:00+00:00</lastmod>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>http://nelari.us/post/</loc>
-    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -82,6 +86,7 @@
   
   <url>
     <loc>http://nelari.us/tags/tools/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   

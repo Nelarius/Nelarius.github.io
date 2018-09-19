@@ -6,8 +6,20 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 06 Apr 2018 16:17:29 +0200</lastBuildDate>
+    <lastBuildDate>Tue, 18 Sep 2018 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>About me</title>
+      <link>http://nelari.us/about/</link>
+      <pubDate>Tue, 18 Sep 2018 00:00:00 +0000</pubDate>
+      
+      <guid>http://nelari.us/about/</guid>
+      <description>&lt;p&gt;Hi there! I&amp;rsquo;m a software engineer living in Helsinki, Finland. I&amp;rsquo;m currently working on the courier routing algorithms at &lt;a href=&#34;https://wolt.com/&#34;&gt;Wolt&lt;/a&gt;. I&amp;rsquo;ve previously worked on computer graphics middleware, as well as AR &amp;amp; VR app development, at &lt;a href=&#34;https://umbra3d.com&#34;&gt;Umbra&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;I enjoy writing all kinds of software, but I usually gravitate towards writing graphics and system stuff in C++.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Implementing simple translation and rotation gizmos</title>
@@ -242,26 +254,6 @@ $$&lt;/div&gt;&lt;/p&gt;
 &lt;p&gt;The scale gizmo hasn&amp;rsquo;t been covered in this post. The main reason being that I haven&amp;rsquo;t needed to scale game objects so far. As a result, I simply duplicated the functionality for the translation tool for the scale tool so that you can scale an object by clicking and dragging the axes.&lt;/p&gt;
 
 &lt;p&gt;And there you have it!&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>About me</title>
-      <link>http://nelari.us/about/</link>
-      <pubDate>Sun, 26 Feb 2017 00:00:00 +0000</pubDate>
-      
-      <guid>http://nelari.us/about/</guid>
-      <description>&lt;p&gt;Hi there! My name is Johann.&lt;/p&gt;
-
-&lt;p&gt;I&amp;rsquo;m a programmer at &lt;a href=&#34;http://umbra3d.com&#34;&gt;Umbra&lt;/a&gt;. I originally studied theoretical physics with an emphasis on scientific computing and obtained my Master&amp;rsquo;s degree in 2015.&lt;/p&gt;
-
-&lt;p&gt;I enjoy writing all kinds of software, but I usually gravitate towards writing graphics/system stuff in C++.&lt;/p&gt;
-
-&lt;p&gt;When I&amp;rsquo;m not in front of the computer, I&amp;rsquo;m outside, riding this:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;http://i.imgur.com/3uCtC8l.jpg&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;My biggest cycling achievement so far is completing the 217 km Pirkan Pyöräily Gran Fondo, 2015 edition. I didn&amp;rsquo;t place very well, but I finished the longest bike ride of my life so far.&lt;/p&gt;
 </description>
     </item>
     

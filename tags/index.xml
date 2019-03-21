@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on My thought repository</title>
+    <link>https://nelari.us/tags/</link>
+    <description>Recent content in Tags on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 06 Apr 2018 16:17:29 +0200</lastBuildDate>
+    
+	<atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>C&#43;&#43;</title>
+      <link>https://nelari.us/tags/c&#43;&#43;/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/c&#43;&#43;/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Embedding</title>
+      <link>https://nelari.us/tags/embedding/</link>
+      <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://nelari.us/tags/embedding/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Engine</title>
+      <link>https://nelari.us/tags/engine/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/engine/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Game</title>
+      <link>https://nelari.us/tags/game/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/game/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Gizmo</title>
+      <link>https://nelari.us/tags/gizmo/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/gizmo/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Metaprogramming</title>
+      <link>https://nelari.us/tags/metaprogramming/</link>
+      <pubDate>Mon, 31 Aug 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://nelari.us/tags/metaprogramming/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Tools</title>
+      <link>https://nelari.us/tags/tools/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/tools/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Wren</title>
+      <link>https://nelari.us/tags/wren/</link>
+      <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://nelari.us/tags/wren/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

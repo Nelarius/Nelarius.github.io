@@ -1,81 +1,75 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html>
 <head>
-    
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65809105-2"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    <title>Embedding Wren in C&#43;&#43;, part 2 // My thought repository</title>
 
-    gtag('config', 'UA-65809105-2');
-    </script>
-
-    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-
-    <title>Embedding Wren in C&#43;&#43;, part 2 &middot; My thought repository</title>
-    <meta name="author" content="Johann Muszynski">
+        <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="generator" content="Hugo 0.18.1" />
-    <meta name="HandheldFriendly" content="True">
-    <meta name="MobileOptimized" content="320">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
-    <!-- RSS autodiscovery -->
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+        <meta property="og:title" content="Embedding Wren in C&#43;&#43;, part 2" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://nelari.us/post/wren-embedding-2/" />
     
 
-    <link rel="shortcut icon" href="http://nelari.us/img/favicon.ico">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
+    <link rel="shortcut icon" href="/favicon.png">
 
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="http://nelari.us/css/screen.css">
-    <link rel="stylesheet" href="http://nelari.us/css/github.css">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/styles/default.min.css">
-    
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <!-- Stylesheet for theme color -->
-    <style type="text/css">
-    a, a:visited {color: #3498db;}
-    .pagination a {color: #3498db;}
-    .gist .gist-file .gist-meta a:visited {color: #3498db !important;}
-    a:focus, a:hover {color: #2079b4;}
-    h1.post-title a:focus, h1.post-title a:hover, h1.blog-title a:focus, h1.blog-title a:hover {color: #2079b4;}
-    .older-posts:hover, .newer-posts:hover {color: #2079b4;}
-</style>
+    <meta name="generator" content="Hugo 0.54.0" />
 </head>
 
-<body class="post-template">
 
-    <header id="site-head">
-	
-	<h1 class="blog-title"><a href="http://nelari.us/">My thought repository</a></h1>
-	
-	
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
 </header>
-    
-<nav class="menu" role="nav">
-    <ul>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
         
-        	<li class="nav nav-current"><a href="/about/">About me</a></li>
-      	
-        	<li class="nav nav-current"><a href="/projects/">Projects</a></li>
-      	
-    </ul>
-</nav>
-
-
-    <main class="content" role="main">
-	    <article class="post">
-	        <header>
-	        <h1 class="post-title">Embedding Wren in C&#43;&#43;, part 2</h1>
-	        <div class="post-meta"><time datetime="06 May 2016">06 May 2016</time></div>
-	        </header>
-
-	        <section class="post-content">
-	            
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Embedding Wren in C&#43;&#43;, part 2</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/wren-embedding-2/" class="article-date">
+                <time datetime='2016-05-06T00:00:00.000&#43;00:00' itemprop="datePublished">2016-05-06</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            
 
 <p>You can read part 1 <a href="http://nelari.us/post/wren-embedding-1/">here</a>.</p>
 
@@ -296,137 +290,130 @@ std::cout &lt;&lt; val.as&lt;double&gt;();
 
 <p>Now it is time for you to go off and explore Wren yourself. You should have the tools to embed Wren in your application with confidence. Wren doesn&rsquo;t have a lot of libraries yet, so you are going to have to reinvent a lot of basic functionality yourself. But that&rsquo;s the best part, naturally! :)</p>
 
-	        </section>
+        </div>
 
-	        <section class="post-tags" style="padding-bottom:60px;">
-	            <div class="post-meta tags">
-	            <i class="fa fa-fw fa-tag"></i>
-	            
-	            <a href="http://nelari.us/tags/c&#43;&#43;">c&#43;&#43; </a>
-	            
-	            <a href="http://nelari.us/tags/wren">wren </a>
-	            
-	            <a href="http://nelari.us/tags/embedding">embedding </a>
-	            
-	            </div>
-	        </section>
-			
-			
-	        	<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'nelarius';
-    var disqus_identifier = 'http:\/\/nelari.us\/post\/wren-embedding-2\/';
-    var disqus_title = 'Embedding Wren in C\x2b\x2b, part 2';
-    var disqus_url = 'http:\/\/nelari.us\/post\/wren-embedding-2\/';
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#creating-a-vm-instance">Creating a VM instance</a></li>
+<li><a href="#module-class-contexts-and-binding-free-functions-to-wren">Module, class contexts and binding free functions to Wren</a></li>
+<li><a href="#binding-types-and-methods-to-wren">Binding types and methods to Wren</a></li>
+<li><a href="#c-and-wren-lifetimes-for-returned-objects">C++ and Wren lifetimes for returned objects</a></li>
+<li><a href="#binding-your-own-implementations">Binding your own implementations</a>
+<ul>
+<li><a href="#accessing-foreign-bytes-manually">Accessing foreign bytes manually</a></li>
+<li><a href="#returning-foreign-types-manually">Returning foreign types manually</a></li>
+</ul></li>
+<li><a href="#accessing-wren-code-from-c">Accessing Wren code from C++</a></li>
+<li><a href="#in-conclusion">In conclusion</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+        
+        
 
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-	        
-			
-			
+        
 
-	        <section class="share">
-	            <p class="backtotop"><a data-scroll href="#site-head"><i class="fa fa-lg fa-fw fa-angle-double-up"></i></a><a data-scroll class="backtotoptext" href="#site-head"> Back to top</a></p>
-	            <p class="info prompt">Share</p>
-	            <a href="http://twitter.com/share?text=Embedding%20Wren%20in%20C%2b%2b%2c%20part%202&url=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Twitter"
-	                onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
-	                <i class="fa fa-2x fa-fw fa-twitter-square"></i> <span class="hidden">Twitter</span>
-	            </a>
-	            <a href="https://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Facebook"
-	                onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
-	                <i class="fa fa-2x fa-fw fa-facebook-square" style="margin-left: -8px"></i> <span class="hidden">Facebook</span>
-	            </a>
-	            <a href="https://plus.google.com/share?url=http%3a%2f%2fnelari.us%2fpost%2fwren-embedding-2%2f" title="Share on Google+"
-	               onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
-	                <i class="fa fa-2x fa-fw fa-google-plus-square" style="margin-left: -8px"></i> <span class="hidden">Google+</span>
-	            </a>
-	        </section>
 
-	        <footer class="post-footer">
-	            <section class="author">
-    <div class="authorimage" style="background: url(http://nelari.us/img/avatar.jpg)"></div>
-    <h4>Johann Muszynski</h4>
-    <p class="bio">I&rsquo;m a programmer-scientist hybrid with a master&rsquo;s degree in theoretical physics. I&rsquo;m currently employed as a junior graphics programmer at <a href="http://umbra3d.com/">Umbra</a>.</p>
-    <p class="meta">
-      <i class="fa fa-fw fa-map-marker"></i> Helsinki, Finland
-    </p>
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/c&#43;&#43;">c&#43;&#43;
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/wren">wren
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/embedding">embedding
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    <nav id="article-nav">
+    
+    <a href="/projects/" id="article-nav-newer" class="article-nav-link-wrap">
+        <div class="article-nav-title"><span>&lt;</span>&nbsp;
+            Projects
+        </div>
+    </a>
+    
+    
+    <a href="/post/wren-embedding-1/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Embedding Wren in C&#43;&#43;, part 1&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
 </section>
-	        </footer>
-	    </article>
-	</main>
 
-    <footer class="site-footer">
-	<script type="text/javascript"
-	src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-	</script>
-	<script type="text/x-mathjax-config">
-		MathJax.Hub.Config({
-		tex2jax: {
-			inlineMath: [['$','$'], ['\\(','\\)']],
-			displayMath: [['$$','$$'], ['\[','\]']],
-			processEscapes: true,
-			processEnvironments: true,
-			skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-			TeX: { equationNumbers: { autoNumber: "AMS" },
-				extensions: ["AMSmath.js", "AMSsymbols.js"] }
-		}
-		});
-	</script>
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2019 Johann Muszynski
+        </div>
+    </div>
+    
 
-	<script type="text/x-mathjax-config">
-		MathJax.Hub.Queue(function() {
-			
-			
-			
-			var all = MathJax.Hub.getAllJax(), i;
-			for(i = 0; i < all.length; i += 1) {
-				all[i].SourceElement().parentNode.className += ' has-jax';
-			}
-		});
-	</script>
-	<div class="inner">
-		<section class="footer-social">
-      
-      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fa fa-2x fa-fw fa-twitter"></i> <span class="hidden">Twitter</span></a>&nbsp;
-      
-      
-      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fa fa-2x fa-fw fa-linkedin"></i> <span class="hidden">LinkedIn</span></a>&nbsp;
-      
-      
-      
-      
-      
-      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fa fa-2x fa-fw fa-github"></i> <span class="hidden">GitHub</span></a>&nbsp;
-      
-      
-      
-      
-  </section>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
 
-		<section class="copyright">&copy; 2019 <a href="http://nelari.us/">Johann Muszynski</a>. 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-<script src="http://nelari.us/js/index.js"></script>
-<script src="http://nelari.us/js/smooth-scroll.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script>
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
 
-
-<script>
-    smoothScroll.init({
-        speed: 800,
-        easing: 'easeInOutCubic',
-        updateURL: false,
-        offset: 125,
-    });
-</script>
-<script>hljs.initHighlightingOnLoad();</script>
-
-
-
+</div>
 </body>
 </html>

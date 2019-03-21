@@ -1,97 +1,104 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://nelari.us/about/</loc>
+    <loc>https://nelari.us/about/</loc>
     <lastmod>2018-09-18T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/post/gizmos/</loc>
+    <loc>https://nelari.us/post/gizmos/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/projects/</loc>
+    <loc>https://nelari.us/projects/</loc>
     <lastmod>2016-08-01T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/post/wren-embedding-2/</loc>
+    <loc>https://nelari.us/post/wren-embedding-2/</loc>
     <lastmod>2016-05-06T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/post/wren-embedding-1/</loc>
+    <loc>https://nelari.us/post/wren-embedding-1/</loc>
     <lastmod>2016-05-05T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/post/template-function-args/</loc>
+    <loc>https://nelari.us/post/template-function-args/</loc>
     <lastmod>2015-08-31T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/c&#43;&#43;/</loc>
+    <loc>https://nelari.us/tags/c&#43;&#43;/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/embedding/</loc>
+    <loc>https://nelari.us/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://nelari.us/tags/embedding/</loc>
     <lastmod>2016-05-06T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/engine/</loc>
+    <loc>https://nelari.us/tags/engine/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/game/</loc>
+    <loc>https://nelari.us/tags/game/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/gizmo/</loc>
+    <loc>https://nelari.us/tags/gizmo/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/metaprogramming/</loc>
+    <loc>https://nelari.us/tags/metaprogramming/</loc>
     <lastmod>2015-08-31T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/</loc>
+    <loc>https://nelari.us/</loc>
     <lastmod>2018-09-18T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/post/</loc>
+    <loc>https://nelari.us/post/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/</loc>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>http://nelari.us/tags/tools/</loc>
+    <loc>https://nelari.us/tags/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://nelari.us/tags/wren/</loc>
+    <loc>https://nelari.us/tags/tools/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://nelari.us/tags/wren/</loc>
     <lastmod>2016-05-06T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>

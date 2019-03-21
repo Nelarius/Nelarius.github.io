@@ -2,193 +2,23 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Metaprogramming on My thought repository</title>
-    <link>http://nelari.us/tags/metaprogramming/index.xml</link>
+    <link>https://nelari.us/tags/metaprogramming/</link>
     <description>Recent content in Metaprogramming on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <atom:link href="http://nelari.us/tags/metaprogramming/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 31 Aug 2015 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://nelari.us/tags/metaprogramming/index.xml" rel="self" type="application/rss+xml" />
+    
     
     <item>
       <title>Placing an arbitrary number of function calls into a function argument list using templates</title>
-      <link>http://nelari.us/post/template-function-args/</link>
+      <link>https://nelari.us/post/template-function-args/</link>
       <pubDate>Mon, 31 Aug 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://nelari.us/post/template-function-args/</guid>
-      <description>
-
-&lt;p&gt;While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.&lt;/p&gt;
-
-&lt;p&gt;First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;double convertToDegrees( double rad ) {
-    return rad * ( 180.0 / 3.14159265359 );
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Communication with the virtual machine is carried out with these template functions.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// When called, returns the argument at position index within the argument list.
-template&amp;lt; typename T&amp;gt;
-T GetArgument( int index );
-
-// when called, returns the value to the function in the virtual machine.
-template&amp;lt; typename T &amp;gt;
-void Return( T val );
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I could wrap &lt;code&gt;convertToDegrees&lt;/code&gt; in the virtual machine glue code as follows, and give it to the virtual machine&amp;rsquo;s C API.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void wrapper() {
-    double res = convertToDegrees( GetArgument&amp;lt;double&amp;gt;( 1 ) );
-    Return( res );
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;But writing this for every function will take time. Additionally, if I were to change the function definition, then I would have to alter the wrapper manually. I want to generate these bindings automatically.&lt;/p&gt;
-
-&lt;p&gt;Given a free function, I want to generate the appropriate calls to GetArgument&lt;T&gt; and place them in the correct order in the function call. Thus, a way to index and get a function&amp;rsquo;s argument types is needed.&lt;/p&gt;
-
-&lt;h2 id=&#34;function-traits&#34;&gt;Function traits&lt;/h2&gt;
-
-&lt;p&gt;Storing function traits can be done easily.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename F &amp;gt;
-struct function_traits;
-
-template&amp;lt; typename R, typename... Args &amp;gt;
-struct function_traits&amp;lt; R( Args... ) &amp;gt; {
-    using return_type = R;
-
-    constexpr static const std::size_t arity = sizeof...( Args );
-
-    template&amp;lt; std::size_t N &amp;gt;
-    struct argument {
-        static_assert( N &amp;lt; arity, &amp;quot;FunctionTraits error: invalid argument count parameter&amp;quot; );
-        using type = std::tuple_element_t&amp;lt; N, std::tuple&amp;lt; Args... &amp;gt; &amp;gt;;
-    };
-
-    template&amp;lt; std::size_t N &amp;gt;
-    using argument_type = typename argument&amp;lt;N&amp;gt;::type;
-};
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The class can be used like this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;using traits = function_traits&amp;lt; decltype(convertToDegrees) &amp;gt;;
-cout &amp;lt;&amp;lt; is_same&amp;lt;double, traits::argument_type&amp;lt;0&amp;gt;&amp;gt;::value &amp;lt;&amp;lt; endl;
-cout &amp;lt;&amp;lt; is_same&amp;lt;double, traits::return_type&amp;gt;::value &amp;lt;&amp;lt; endl;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;You can use the &lt;code&gt;decltype&lt;/code&gt; specifier to get the function&amp;rsquo;s type, or just enter it manually. For &lt;code&gt;convertToDegrees&lt;/code&gt;, the type would be &lt;code&gt;double(double)&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&#34;unpacking-a-tuple-into-a-function-argument-list&#34;&gt;Unpacking a tuple into a function argument list&lt;/h2&gt;
-
-&lt;p&gt;Tuples can be unpacked into a function call surprisingly easily. Use std::index_sequence to generate a non-type parameter pack of indices to index the tuple elements at compile time.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Function, typename Tuple, std::size_t... index&amp;gt;
-decltype( auto ) invokeHelper( Function&amp;amp;&amp;amp; f, Tuple&amp;amp;&amp;amp; tup, std::index_sequence&amp;lt;index...&amp;gt; ) {
-    return f( std::get&amp;lt;index&amp;gt;( std::forward&amp;lt;Tuple&amp;gt;(tup) )... );
-}
-
-template&amp;lt; typename Function, typename Tuple &amp;gt;
-decltype( auto ) invokeWithTuple( Function&amp;amp;&amp;amp; f, Tuple&amp;amp;&amp;amp; tup ) {
-    constexpr auto Arity = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::arity;
-    return invoke_helper( 
-        std::forward&amp;lt;Function&amp;gt;( f ), 
-        std::forward&amp;lt;Tuple&amp;gt;( tup ), 
-        std::make_index_sequence&amp;lt;Arity&amp;gt;{} 
-    );
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;How exactly does this work? When the ellipsis operator is placed after a pattern containing a variadic parameter, the pattern is instantiated for each instance of the variadic parameter. The instances are separated by commas. In &lt;code&gt;invokeHelper&lt;/code&gt;, the (non-type) variadic parameter is &lt;code&gt;index&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Note the C++14-ism in the above code. In C++11, you would write &lt;code&gt;function_traits&amp;lt; typename std::remove_reference&amp;lt;decltype(f)&amp;gt;::type &amp;gt;&lt;/code&gt;. C++14 introduced aliasing, which allows this: &lt;code&gt;template&amp;lt;typename T&amp;gt; using remove_reference_t = typename remove_reference&amp;lt;T&amp;gt;::type;&lt;/code&gt;. All the type traits in &lt;code&gt;type_traits&lt;/code&gt; have aliases of this form in C++14.&lt;/p&gt;
-
-&lt;p&gt;Now this should work:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;void say( int val, double val2 ) {
-    std::cout &amp;lt;&amp;lt; &amp;quot;called with &amp;quot; &amp;lt;&amp;lt; val &amp;lt;&amp;lt; &amp;quot;, &amp;quot; &amp;lt;&amp;lt; val2 &amp;lt;&amp;lt; std::endl;
-}
-
-int main() {
-    auto tup = std::make_tuple( 5, 42.0 );
-    invokeWithTuple( say, tup );
-
-    return 0;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;placing-getargument-t-into-a-function-argument-list&#34;&gt;Placing &lt;code&gt;GetArgument&amp;lt;T&amp;gt;&lt;/code&gt; into a function argument list&lt;/h2&gt;
-
-&lt;p&gt;We can place the calls to &lt;code&gt;GetArgument&amp;lt;T&amp;gt;&lt;/code&gt; in a very similar way.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Function, std::size_t... index&amp;gt;
-decltype( auto ) invokeHelper( Function&amp;amp;&amp;amp; f, std::index_sequence&amp;lt;index...&amp;gt; ) {
-  using traits = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;;
-  return f( GetArgument&amp;lt; typename traits::template argument_type&amp;lt;index&amp;gt; &amp;gt;( index + 1 )... );
-}
-
-template&amp;lt; typename Function &amp;gt;
-decltype( auto ) invokeWithArguments( Function&amp;amp;&amp;amp; f ) {
-  constexpr auto Arity = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::arity;
-  return invoke_helper( 
-    std::forward&amp;lt;Function&amp;gt;( f ),
-    std::make_index_sequence&amp;lt;Arity&amp;gt;{} 
-  );
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;generate-a-unique-wrapper-class-for-a-function&#34;&gt;Generate a unique wrapper class for a function&lt;/h2&gt;
-
-&lt;p&gt;The last piece of my toy puzzle. I call &lt;code&gt;invokeWithArguments&lt;/code&gt; from a static method, so that I can give the static method to the virtual machine&amp;rsquo;s C API.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename Signature, Signature&amp;amp; &amp;gt;
-struct ForeignMethodWrapper;
-
-template&amp;lt; typename R, typename... Args, R( &amp;amp;P )( Args... ) &amp;gt;
-struct ForeignMethodWrapper&amp;lt; R( Args... ), P &amp;gt; {
-    static void call() {
-        invokeWithArguments( P );
-    }
-};
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;invoking-code-conditionally&#34;&gt;Invoking code conditionally&lt;/h2&gt;
-
-&lt;p&gt;Actually, I&amp;rsquo;m not done yet. I still haven&amp;rsquo;t explained how I call &lt;code&gt;Return&amp;lt;T&amp;gt;( T val )&lt;/code&gt; only when the function&amp;rsquo;s return value is not &lt;code&gt;void&lt;/code&gt;. A specialized struct can be used to store the different invocations.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;// to be used with std::is_void
-template&amp;lt;bool predicate&amp;gt;
-struct InvokeWithoutReturningIf {
-  template&amp;lt; typename Function &amp;gt;
-  static void invoke( Function&amp;amp;&amp;amp; f ) {
-    invokeWithArguments( std::forward&amp;lt; Function &amp;gt;( f ) );
-  }
-};
-
-template&amp;lt;&amp;gt;
-struct InvokeWithoutReturningIf&amp;lt;false&amp;gt; {
-  template&amp;lt; typename Function &amp;gt;
-  static void invoke( Function&amp;amp;&amp;amp; f ) {
-    using R = function_traits&amp;lt; std::remove_reference_t&amp;lt;decltype(f)&amp;gt; &amp;gt;::return_type;
-    Return&amp;lt;R&amp;gt;( invokeWithArguments( std::forward&amp;lt;Function&amp;gt;(f) ) );
-    }
-};
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finally, I modified &lt;code&gt;ForeignMethodWrapper&lt;/code&gt; to&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;template&amp;lt; typename R, typename... Args, R( &amp;amp;P )( Args... ) &amp;gt;
-struct ForeignMethodWrapper&amp;lt; R( Args... ), P &amp;gt; {
-  static void call() {
-    InvokeWithoutReturningIf&amp;lt; std::is_void&amp;lt;R&amp;gt;::value &amp;gt;::invoke( P );
-  }
-};
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;which completes the solution for my toy problem.&lt;/p&gt;
-</description>
+      <guid>https://nelari.us/post/template-function-args/</guid>
+      <description>While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.
+First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.</description>
     </item>
     
   </channel>

@@ -98,7 +98,7 @@ void gizmo_manipulate(GizmoMode mode, Transform&amp; transform, const Mat4f&amp;
 
 <p>The gizmo is an immediate-mode tool, so if <code>gizmo_manipulate</code> doesn&rsquo;t get called, then no manipulation happens and no tool is rendered.</p>
 
-<p>Every frame, we first need to generate a camera ray from the current cursor position. The ray can be constructed using the camera matrix. The pixel coordinates are first converted to the $[-1, 1]$ range in both x and y, and then the ray is taken from normalized device coordinates to world-space using the inverse of the camera matrix:</p>
+<p>Every frame, we first need to generate a camera ray from the current cursor position. The ray can be constructed using the camera matrix. The pixel coordinates are first converted to the \([-1, 1]\) range in both x and y, and then the ray is taken from normalized device coordinates to world-space using the inverse of the camera matrix:</p>
 
 <pre><code class="language-cpp">// gives mouse pixel coordinates in the [-1, 1] range
 Vec2f n = platform().mouse.normalized_coordinates();
@@ -184,15 +184,15 @@ user_transform.position += delta;
 
 <h3 id="shortest-distance-between-two-lines">Shortest distance between two lines</h3>
 
-<p>Given a line $\mathcal{L}=\mathbf{p}+t\mathbf{v}$, where $\mathbf{p}$ is a point on the line, $\mathbf{v}$ is the direction of the line, and <em>t</em> is the scaling factor, the squared distance function between line 1 and line 2 is given by</p>
+<p>Given a line \(\mathcal{L}=\mathbf{p}+t\mathbf{v}\), where \(\mathbf{p}\) is a point on the line, \(\mathbf{v}\) is the direction of the line, and <em>t</em> is the scaling factor, the squared distance function between line 1 and line 2 is given by</p>
 
 <div>$$
 d^2=(\mathcal{L}_2-\mathcal{L}_1)^2=(\mathbf{p}_2+t_2\mathbf{v}_2-\mathbf{p}_1-t_1\mathbf{v}_1)^2
 $$</div>
 
-<p>The function will have a minimum at the shortest distance; in other words, the derivative of this function w.r.t. <em>t</em> will be zero at the minimum. We can use this to solve for $t_1$ and $t_2$.</p>
+<p>The function will have a minimum at the shortest distance; in other words, the derivative of this function w.r.t. <em>t</em> will be zero at the minimum. We can use this to solve for \(t_1\) and \(t_2\).</p>
 
-<p>Computing the derivates of the squared distance function w.r.t. both $t_1$ and $t_2$ gives us a system of equations.</p>
+<p>Computing the derivates of the squared distance function w.r.t. both \(t_1\) and \(t_2\) gives us a system of equations.</p>
 
 <div>$$
 \begin{cases}
@@ -222,7 +222,7 @@ $$</div>
 
 <p>This equation is the one used in the function <code>closest_distance_between_lines</code>.</p>
 
-<p>When the two lines are parallel, the determinant $v_1^2 v_2^2 - (\mathbf{v}_1 \cdot \mathbf{v}_2)^2$ is zero. In that case, we just compute the perpendicular distance between points $\mathbf{p}_1$ and $\mathbf{p}_2$.</p>
+<p>When the two lines are parallel, the determinant \(v_1^2 v_2^2 - (\mathbf{v}_1 \cdot \mathbf{v}_2)^2\) is zero. In that case, we just compute the perpendicular distance between points \(\mathbf{p}_1\) and \(\mathbf{p}_2\).</p>
 
 <h3 id="rotation">Rotation</h3>
 
@@ -260,10 +260,11 @@ $$</div>
 
 <p><img src="https://drive.google.com/uc?export=view&amp;id=1HqImj_sm2A8fhPyZ0scDfL1VPSEOAXR0" alt="rotate_diagram" /></p>
 
-<p>The angle between the two direction vectors is always positive when computing via the dot product. The sign should change if the previous and current points were to change position, or the gizmo would rotate in the same direction no matter which direction the user is dragging the mouse. The sign can be obtained by calculating
+<p>The angle between the two direction vectors is always positive when computing via the dot product. The sign should change if the previous and current points were to change position, or the gizmo would rotate in the same direction no matter which direction the user is dragging the mouse. The sign can be obtained by calculating</p>
+
 <div>$$
 sign = \frac{\left(\mathbf{p}_p \times \mathbf{p}_c\right) \cdot \hat{\mathbf{n}}}{||\left(\mathbf{p}_p \times \mathbf{p}_c\right) \cdot \hat{\mathbf{n}}||}\,,
-$$</div></p>
+$$</div>
 
 <p>using the vectors identified in the above diagram.</p>
 

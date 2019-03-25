@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>imnodes: writing an immediate mode node editor library // My thought repository</title>
+
+        <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+        <meta property="og:title" content="imnodes: writing an immediate mode node editor library" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://nelari.us/post/imnodes/" />
+    
+
+    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
+    <link rel="shortcut icon" href="/favicon.png">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <meta name="generator" content="Hugo 0.54.0" />
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">imnodes: writing an immediate mode node editor library</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/imnodes/" class="article-date">
+                <time datetime='2019-03-24T08:22:27.000&#43;02:00' itemprop="datePublished">2019-03-24</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            
+
+<p>Node editors are one of the more discussed <a href="https://github.com/ocornut/imgui/issues/306">use cases</a> for the <a href="https://github.com/ocornut/imgui">dear imgui</a> UI library, and there are lots of gists as well as <a href="https://github.com/thedmd/imgui-node-editor">fully-fledged implementations</a> for them on Github. If you want to implement your own node editor, you can get cracking! However, my pet peeve with the available samples and implementations is that they often aren&rsquo;t immediate mode and don&rsquo;t obey <code>dear imgui</code>&rsquo;s philosophy of being lightweight and dependency free.</p>
+
+<p><a href="https://github.com/Nelarius/imnodes">imnodes</a> is my attempt at writing a small node editor extension for <code>dear imgui</code>. It provides a very <code>dear imgui</code>-like API for the node editor, and is written in the same style of C++ as <code>dear imgui</code> itself. My goals for <code>imnodes</code> are</p>
+
+<ul>
+<li>to be able to create nodes and links with an immediate mode API</li>
+<li>and to line up node pins with the embdedded <code>dear imgui</code> UI elements automatically</li>
+</ul>
+
+<h2 id="the-api-at-a-glance">The API at a glance</h2>
+
+<p>Below is a small taste of what using the extension looks like. You can easily mix the nodes with <code>dear imgui</code> UI code.</p>
+
+<pre><code class="language-cpp">ImGui::Begin(&quot;simple node editor&quot;);
+
+// calling this function creates an empty workspace for the nodes
+imnodes::BeginNodeEditor();
+imnodes::BeginNode(1);
+imnodes::Name(&quot;simple node&quot;); // give the node a name in the title bar
+
+imnodes::BeginInputAttribute(2);
+ImGui::Text(&quot;input&quot;);
+imnodes::EndAttribute();
+
+imnodes::BeginOutputAttribute(3);
+ImGui::Indent(40);  // Push the text label to the right side.
+                    // At the moment UI elements dont't get
+                    // aligned automatically within the nodes.
+ImGui::Text(&quot;output&quot;);
+imnodes::EndAttribute();
+
+imnodes::EndNode();
+imnodes::EndNodeEditor();
+
+ImGui::End();
+</code></pre>
+
+<p>The code creates an editor workspace along with a simple node, with only an input and output attribute.</p>
+
+<!-- see this post on where to put static content: https://github.com/kakawait/hugo-tranquilpeak-theme/issues/268 -->
+
+<p><img src="/img/imnodes/api-at-a-glance-2.png" alt="simple" /></p>
+
+<p>In the sample code above, it is apparent that the <code>BeginNode</code> and <code>BeginInputAttribute</code> / <code>BeginOutputAttribute</code> calls require an integral id. Unlike <code>dear imgui</code>, where UI elements are identified by names (which are then internally converted to integer ids), <code>imnodes</code> uses integer ids directly. For a node UI, we want to have multiple nodes with the same name, so it makes more sense to just have a user-provided id to differentiate between nodes.</p>
+
+<p>The immediate benefit of an immediate mode API is how easy it is to change the UI layout. A collection of nodes will require a collection of node ids, and it&rsquo;s only natural to store them in a container of some kind. Nodes can then be rendered by looping over the container.</p>
+
+<pre><code class="language-cpp">std::vector&lt;int&gt; node_ids;
+
+// elsewhere in your code...
+
+for (int node_id : node_ids)
+{
+  imnodes::BeginNode(node_id);
+  // node UI ommitted...
+  imnodes::EndNode();
+}
+</code></pre>
+
+<p>With this scheme, adding and removing a node is as easy as adding and removing ids to and from the container!</p>
+
+<p>If you want to see a more complete step-by-step tutorial and usage examples, feel free to check out the <code>imnodes</code> README on github.</p>
+
+<h2 id="under-the-hood">Under the hood</h2>
+
+<p>Rendering the nodes, pins, and links in an immediate mode API is a fun exercise, since they can only be drawn after the node UI content itself is rendered. Only then will the actual size of the node and placement of the pins (and links) be known.</p>
+
+<p>While the immediate mode API is mostly stateless, the position of every node in the workspace is stored behind the scenes. When <code>BeginNode</code> is called, the extension places the rendering cursor at the node&rsquo;s stored origin. Internally, <code>imnodes</code> calls <code>ImGui::BeginGroup</code> in order to capture the node&rsquo;s UI bounding box. Likewise, the <code>BeginInputAttribute</code> / <code>BeginOutputAttribute</code> functions merely start a group to capture the attribute&rsquo;s bounding box. As a result of the following chunk of code,</p>
+
+<pre><code class="language-cpp">imnodes::BeginNodeEditor();
+imnodes::BeginNode(1);
+imnodes::BeginInputAttribute(2);
+ImGui::Text(&quot;number&quot;);
+ImGui::SameLine();
+ImGui::PushItemWidth(50.0f);
+ImGui::DragFloat(&quot;##hidelabel&quot;, &amp;number);
+ImGui::PopItemWidth();
+imnodes::EndAttribute();
+</code></pre>
+
+<p>the drawing state will look like:</p>
+
+<p><img src="/img/imnodes/node_step_1_small.png" alt="step one" /></p>
+
+<p>The first attribute starts at the node origin and the attribute bounds (shown in grey) are captured after calling <code>EndAttribute()</code>. Likewise, a call to <code>EndNode()</code> stores the entire node&rsquo;s bounding box.</p>
+
+<p><img src="/img/imnodes/node_step_2_small.png" alt="step two" /></p>
+
+<p>When <code>EndNodeEditor</code> is called, the positions of all the UI elements are known, and we can finally render them. In order to render our node elements <em>behind</em> the <code>dear imgui</code> UI elements, the elements are drawn in different layers using <code>dear imgui</code>&rsquo;s draw list channels:</p>
+
+<pre><code class="language-cpp">enum Channels
+{
+    Channel_Background = 0,
+    Channel_Ui,
+    Channel_Count
+};
+
+// In BeginNodeEditor:
+ImDrawList* draw_list = ImGui::GetWindowDrawList();
+draw_list-&gt;ChannelsSplit(Channel_Count);
+draw_list-&gt;ChannelsSetCurrent(Channel_Ui);
+
+// now all ImGui:: UI calls are captured in the Ui channel
+// between calls to Begin/EndNode
+
+// finally, in EndNodeEditor
+draw_list-&gt;ChannelsSetCurrent(Channel_Background);
+</code></pre>
+
+<p>Nodes are rendered by starting out at the origin, rendering the bounding box, then adding the title bar on top. Pins are simply rendered at hte y-midpoint of each attribute bounding box, either on the left or right of the resulting node boundary.</p>
+
+<p><img src="/img/imnodes/node_step_3_small.png" alt="step three" /></p>
+
+<p>Since the node, link, and pin positions are known as they are rendered, they are all tested against the mouse position to figure out whether the mouse is hovering or selecting a UI element.</p>
+
+<p>Nodes and pins are easy to test against: the node is an invisible button, and we just use <code>dear imgui</code>&rsquo;s built-in functions for testing whether the mouse is hovering or selecting the button. Pins are circles, which are easy to test as well: if the mouse is just sufficiently near the pin center, it gets highlighted.</p>
+
+<p>The links are cubic bezier curves, which makes computing the smallest mouse-link distance a bit tricky. A simple hierarchical algorithm is used. The curve is divided into <em>n</em> discrete segments. Then we can use the bezier function to compute the position of the midpoint of each segment and find the position closest to the mouse. Then we repeat the process for the closest segment recursively a few times.</p>
+
+<p><img src="/img/imnodes/hierarchical-bezier-test.gif" alt="hierarchical bezier test" /></p>
+
+<p>Thanks for reading!</p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#the-api-at-a-glance">The API at a glance</a></li>
+<li><a href="#under-the-hood">Under the hood</a></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/tools">tools
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/c&#43;&#43;">c&#43;&#43;
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us//tags/imgui">imgui
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    <nav id="article-nav">
+    
+    <a href="/projects/" id="article-nav-newer" class="article-nav-link-wrap">
+        <div class="article-nav-title"><span>&lt;</span>&nbsp;
+            Projects
+        </div>
+    </a>
+    
+    
+    <a href="/about/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">About me&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2019 Johann Muszynski
+        </div>
+    </div>
+    
+
+    <link rel="stylesheet" href="/css/grayscale.css">
+    <script src="/js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

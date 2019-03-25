@@ -3,6 +3,16 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://nelari.us/projects/</loc>
+    <lastmod>2019-03-25T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://nelari.us/post/imnodes/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/about/</loc>
     <lastmod>2018-09-18T00:00:00+00:00</lastmod>
   </url>
@@ -10,11 +20,6 @@
   <url>
     <loc>https://nelari.us/post/gizmos/</loc>
     <lastmod>2018-04-06T16:17:29+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/projects/</loc>
-    <lastmod>2016-08-01T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -34,7 +39,7 @@
   
   <url>
     <loc>https://nelari.us/tags/c&#43;&#43;/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -68,6 +73,12 @@
   </url>
   
   <url>
+    <loc>https://nelari.us/tags/imgui/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/tags/metaprogramming/</loc>
     <lastmod>2015-08-31T00:00:00+00:00</lastmod>
     <priority>0</priority>
@@ -75,25 +86,25 @@
   
   <url>
     <loc>https://nelari.us/</loc>
-    <lastmod>2018-09-18T00:00:00+00:00</lastmod>
+    <lastmod>2019-03-25T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://nelari.us/post/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://nelari.us/tags/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://nelari.us/tags/tools/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
     <priority>0</priority>
   </url>
   

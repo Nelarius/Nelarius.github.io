@@ -62,7 +62,7 @@
         
         <div class="article-meta">
             <a href="/projects/" class="article-date">
-                <time datetime='2016-08-01T00:00:00.000&#43;00:00' itemprop="datePublished">2016-08-01</time>
+                <time datetime='2019-03-25T00:00:00.000&#43;00:00' itemprop="datePublished">2019-03-25</time>
             </a>
             
             
@@ -73,27 +73,42 @@
 
 <p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
 
+<h2 id="imnodes">imnodes</h2>
+
+<p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes" /></p>
+
+<p>A small, dependency-free node editor extension for <a href="https://github.com/ocornut/imgui">dear imgui</a>. It features a small immediate-mode API similar to <code>dear imgui</code> itself.</p>
+
+<p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
+
 <h2 id="wren">Wren++</h2>
+
+<pre><code class="language-cpp">wrenpp::VM vm;
+vm.beginModule( &quot;math&quot; )
+.beginClass( &quot;Math&quot; )
+  .bindFunction&lt; decltype(&amp;cos), &amp;cos &gt;( true, &quot;cos(_)&quot; )
+  .bindFunction&lt; decltype(&amp;sin), &amp;sin &gt;( true, &quot;sin(_)&quot; )
+  .bindFunction&lt; decltype(&amp;tan), &amp;tan &gt;( true, &quot;tan(_)&quot; )
+  .bindFunction&lt; decltype(&amp;exp), &amp;exp &gt;( true, &quot;exp(_)&quot; )
+.endClass()
+.endModule();
+
+vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.cos(0.12345) )&quot; );
+</code></pre>
 
 <p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
 
-<p>I wrote a small tutorial on its usage on my <a href="http://nelari.us/post/wren-embedding-2/">blog</a>.</p>
+<p>I wrote a small tutorial on its usage <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
 
 <p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
 
 <h2 id="vscode-wren">vscode-wren</h2>
 
+<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting" /></p>
+
 <p>A Visual Studio Code extension for the Wren programming language. Currently the extension provides snippets and syntax highlighting for most language features.</p>
 
 <p>Find it on <a href="https://github.com/Nelarius/vscode-wren">github</a> and the vscode <a href="https://marketplace.visualstudio.com/items?itemName=nelarius.vscode-wren">marketplace</a>.</p>
-
-<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting" /></p>
-
-<h2 id="secon">secon</h2>
-
-<p>An agent-based economy simulation that I wrote in Lua, based on the work of <a href="http://www.cs.princeton.edu/~ken/scott.pdf">Steiglitz, Honig, and Cohen</a> and <a href="http://larc.unt.edu/techreports/LARC-2010-03.pdf">Doran and Parberry</a>. The goal was to simulate the law of supply and demand for a variety of commodities and see if I could create price hikes via artificial shortages.</p>
-
-<p>Find it on <a href="https://github.com/Nelarius/secon">github</a>.</p>
 
         </div>
 
@@ -105,9 +120,9 @@
 <ul>
 <li>
 <ul>
+<li><a href="#imnodes">imnodes</a></li>
 <li><a href="#wren">Wren++</a></li>
 <li><a href="#vscode-wren">vscode-wren</a></li>
-<li><a href="#secon">secon</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -122,15 +137,9 @@
     </div>
     <nav id="article-nav">
     
-    <a href="/post/gizmos/" id="article-nav-newer" class="article-nav-link-wrap">
-        <div class="article-nav-title"><span>&lt;</span>&nbsp;
-            Implementing simple translation and rotation gizmos
-        </div>
-    </a>
     
-    
-    <a href="/post/wren-embedding-2/" id="article-nav-older" class="article-nav-link-wrap">
-        <div class="article-nav-title">Embedding Wren in C&#43;&#43;, part 2&nbsp;<span>&gt;</span></div>
+    <a href="/post/imnodes/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">imnodes: writing an immediate mode node editor library&nbsp;<span>&gt;</span></div>
     </a>
     
 </nav>
@@ -165,8 +174,8 @@
     </div>
     
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/grayscale.css">
+    <script src="/js/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
     

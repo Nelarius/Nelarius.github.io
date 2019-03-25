@@ -130,7 +130,7 @@ int main() {
 
 <p><code>bindClass</code> tells Wren++ not only to store the name of the class for future reference, but also to generate the allocator and finalizer functions for the given type. The first template parameter is the type of bound class. The following template parameters are optional &ndash; they are the values that can be passed to the bound type&rsquo;s constructor from Wren. The three floats in this example mean that we can construct the type from Wren using three numbers:</p>
 
-<pre><code class="language-dart">foreign class Vec3 {
+<pre><code class="language-js">foreign class Vec3 {
   construct new(x, y, z) {}
   // the rest of the methods as before
 }
@@ -174,7 +174,7 @@ var v = Vec3.new(2.0, 1.0, -3.0)
 
 <p>Let&rsquo;s look at binding the excellent <a href="https://github.com/ocornut/imgui">dear imgui</a> library to Wren. Looking at <code>imgui.h</code>, you can see lots of long function signatures with pointers to primitive types. We want to provide reasonable default arguments to most of the arguments, as well as return the new values, instead of passing in a reference to the number. Here&rsquo;s the bare-bones Wren-interface we want to implement:</p>
 
-<pre><code class="language-dart">in a file called imgui.wren
+<pre><code class="language-js">in a file called imgui.wren
 
 class ImGui {
   foreign static begin( name )
@@ -228,7 +228,7 @@ void sliderFloat(WrenVM* vm) {
 
 <p>You can return values from your manual implementations as well. To see how, let&rsquo;s look at one final slightly contrived example.</p>
 
-<pre><code class="language-dart">class Mouse {
+<pre><code class="language-js">class Mouse {
   // returns a Vec2
   foreign static coordinates
 }
@@ -349,9 +349,9 @@ std::cout &lt;&lt; val.as&lt;double&gt;();
     </div>
     <nav id="article-nav">
     
-    <a href="/projects/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/post/gizmos/" id="article-nav-newer" class="article-nav-link-wrap">
         <div class="article-nav-title"><span>&lt;</span>&nbsp;
-            Projects
+            Implementing simple translation and rotation gizmos
         </div>
     </a>
     
@@ -392,8 +392,8 @@ std::cout &lt;&lt; val.as&lt;double&gt;();
     </div>
     
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/tomorrow-night.min.css" integrity="sha256-2wL88NKUqvJi/ExflDzkzUumjUM73mcK2gBvBBeLvTk=" crossorigin="anonymous" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js" integrity="sha256-KbfTjB0WZ8vvXngdpJGY3Yp3xKk+tttbqClO11anCIU=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/grayscale.css">
+    <script src="/js/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
     

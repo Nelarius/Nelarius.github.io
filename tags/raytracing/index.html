@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Projects // My thought repository</title>
+    <title>Raytracing // My thought repository</title>
 
         <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -9,14 +9,14 @@
     <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
     <meta name="keywords" content="">
     <meta name="author" content="">
-        <meta property="og:title" content="Projects" />
+        <meta property="og:title" content="Raytracing" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://nelari.us/projects/" />
+    <meta property="og:url" content="https://nelari.us/tags/raytracing/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
+    <link href="https://nelari.us/tags/raytracing/index.xml" rel="alternate" type="application/rss+xml" title="My thought repository" />
     <link rel="shortcut icon" href="/favicon.png">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
@@ -28,7 +28,6 @@
 
     <meta name="generator" content="Hugo 0.54.0" />
 </head>
-
 
 <body>
 <div id="container">
@@ -53,106 +52,28 @@
 </header>
 
     <section id="main" class="outer">
-        <article class="article article-type-post" itemscope itemprop="blogPost">
-    <div class="article-inner">
-        
-        <header class="article-header">
-            <h1 class="article-title" itemprop="name">Projects</h1>
-        </header>
-        
-        <div class="article-meta">
-            <a href="/projects/" class="article-date">
-                <time datetime='2019-03-25T00:00:00.000&#43;00:00' itemprop="datePublished">2019-03-25</time>
+        <section class="archives-wrap">
+            <div class="archive-tag-wrap">
+                <span class="archive-tag">#raytracing</span>
+            </div>
+            <div class="archives">
+                
+                <article class="archive-article archive-type-post">
+    <div class="archive-article-inner">
+        <header class="archive-article-header">
+            <a href="/post/raytracer_with_rust_and_zig/" class="archive-article-date">
+                <time datetime='2019-06-27T20:00:00.000&#43;02:00' itemprop="datePublished">2019 Jun 27</time>
             </a>
-            
-            
-            
-        </div>
-        <div class="article-entry" itemprop="articleBody">
-            
-
-<p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
-
-<h2 id="imnodes">imnodes</h2>
-
-<p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes" /></p>
-
-<p>A small, dependency-free node editor extension for <a href="https://github.com/ocornut/imgui">dear imgui</a>. It features a small immediate-mode API similar to <code>dear imgui</code> itself.</p>
-
-<p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
-
-<h2 id="wren">Wren++</h2>
-
-<pre><code class="language-cpp">wrenpp::VM vm;
-vm.beginModule( &quot;math&quot; )
-.beginClass( &quot;Math&quot; )
-  .bindFunction&lt; decltype(&amp;cos), &amp;cos &gt;( true, &quot;cos(_)&quot; )
-  .bindFunction&lt; decltype(&amp;sin), &amp;sin &gt;( true, &quot;sin(_)&quot; )
-  .bindFunction&lt; decltype(&amp;tan), &amp;tan &gt;( true, &quot;tan(_)&quot; )
-  .bindFunction&lt; decltype(&amp;exp), &amp;exp &gt;( true, &quot;exp(_)&quot; )
-.endClass()
-.endModule();
-
-vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.cos(0.12345) )&quot; );
-</code></pre>
-
-<p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
-
-<p>I wrote a small tutorial on its usage <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
-
-<p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
-
-<h2 id="vscode-wren">vscode-wren</h2>
-
-<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting" /></p>
-
-<p>A Visual Studio Code extension for the Wren programming language. Currently the extension provides snippets and syntax highlighting for most language features.</p>
-
-<p>Find it on <a href="https://github.com/Nelarius/vscode-wren">github</a> and the vscode <a href="https://marketplace.visualstudio.com/items?itemName=nelarius.vscode-wren">marketplace</a>.</p>
-
-        </div>
-
-        
-        
-        <div class="article-toc" >
-            <h3>Contents</h3>
-            <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#imnodes">imnodes</a></li>
-<li><a href="#wren">Wren++</a></li>
-<li><a href="#vscode-wren">vscode-wren</a></li>
-</ul></li>
-</ul>
-</nav>
-        </div>
-        
-        
-
-        
-
-
-        
+            <h1 itemprop="name">
+                <a class="archive-article-title" href="/post/raytracer_with_rust_and_zig/">Writing a small ray tracer in Rust and Zig</a>
+            </h1>
+        </header>
     </div>
-    <nav id="article-nav">
-    
-    <a href="/post/raytracer_with_rust_and_zig/" id="article-nav-newer" class="article-nav-link-wrap">
-        <div class="article-nav-title"><span>&lt;</span>&nbsp;
-            Writing a small ray tracer in Rust and Zig
-        </div>
-    </a>
-    
-    
-    <a href="/post/imnodes/" id="article-nav-older" class="article-nav-link-wrap">
-        <div class="article-nav-title">imnodes: writing an immediate mode node editor library&nbsp;<span>&gt;</span></div>
-    </a>
-    
-</nav>
-
 </article>
-
+                
+            </div></section>
         
+
     </section>
     <footer id="footer">
     <div class="outer">

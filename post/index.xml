@@ -6,10 +6,20 @@
     <description>Recent content in Posts on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 24 Mar 2019 08:22:27 +0200</lastBuildDate>
+    <lastBuildDate>Thu, 27 Jun 2019 20:00:00 +0200</lastBuildDate>
     
 	<atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Writing a small ray tracer in Rust and Zig</title>
+      <link>https://nelari.us/post/raytracer_with_rust_and_zig/</link>
+      <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/raytracer_with_rust_and_zig/</guid>
+      <description>I spend most of my programming time writing C++. And like many other C++ programmers, I&amp;rsquo;ve shot myself in the foot countless times with a feature I didn&amp;rsquo;t fully grok. And I&amp;rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.
+The two languages that I spent most of my time daydreaming about writing code in are Rust and Zig.</description>
+    </item>
     
     <item>
       <title>imnodes: writing an immediate mode node editor library</title>

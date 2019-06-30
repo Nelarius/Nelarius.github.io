@@ -219,7 +219,7 @@ impl Material {
 
 <p>But I thought it was an easy tradeoff to make.</p>
 
-<p>Finally, one last missing bit from the ray tracer. Here&rsquo;s the snippet which calculates whether a given ray intersects a sphere. You can see I created a <code>Hitable</code> trait for my sphere and world structs to implement. In the end, I did not need the trait, because I just called the <code>hit</code> functions directly on the objects. A little but of premature design on my part.</p>
+<p>Finally, one last missing bit from the ray tracer. Here&rsquo;s the snippet which calculates whether a given ray intersects a sphere. You can see I created a <code>Hitable</code> trait for my sphere and world structs to implement. In the end, I did not need the trait, because I just called the <code>hit</code> functions directly on the objects. A little bit of premature &ldquo;architecture&rdquo; on my part.</p>
 
 <pre><code class="language-rust">impl Hitable for Sphere {
     fn hit(&amp;self, ray: &amp;Ray, t_min: f32, t_max: f32) -&gt; Option&lt;HitRecord&gt; {

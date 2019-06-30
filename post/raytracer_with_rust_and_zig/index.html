@@ -219,7 +219,7 @@ impl Material {
 
 <p>But I thought it was an easy tradeoff to make.</p>
 
-<p>Finally, one last missing bit from the ray tracer. Here&rsquo;s the snippet which calculates whether a given ray intersects a sphere. You can see I created a <code>Hitable</code> trait for my sphere and world structs to implement. In the end, I did not need the trait, because I just called the <code>hit</code> functions directly on the objects. And this is sometimes the problem with features. You end up using them prematurely, even when you would not have needed to.</p>
+<p>Finally, one last missing bit from the ray tracer. Here&rsquo;s the snippet which calculates whether a given ray intersects a sphere. You can see I created a <code>Hitable</code> trait for my sphere and world structs to implement. In the end, I did not need the trait, because I just called the <code>hit</code> functions directly on the objects. A little but of premature design on my part.</p>
 
 <pre><code class="language-rust">impl Hitable for Sphere {
     fn hit(&amp;self, ray: &amp;Ray, t_min: f32, t_max: f32) -&gt; Option&lt;HitRecord&gt; {
@@ -706,9 +706,9 @@ try spheres.append(
 
 <p>I actually liked both languages, but for different reasons.</p>
 
-<p>I was surprised by how frictionless Rust felt, despite what some say &ndash; even at this very small scope, I found its functional features to be super useful. The availability of the <code>minifb</code> crate made it actually easier to get started with writing the ray tracer than in Zig. For the most part, there were no major stumbling blocks while writing code. I think that if I were to tackle a larger project, especially one with complex resource management, the added safety guarantees of Rust would make programming more smooth and thus more fun as well.</p>
+<p>I was surprised by how frictionless Rust felt, despite what some say &ndash; even at this very small scope, I found its functional features to be super useful. The availability of the <code>minifb</code> crate made it actually easier to get started with writing the ray tracer than in Zig. For the most part, there were no stumbling blocks while writing code. I think that if I were to tackle a larger project, especially one with complex resource management, the added safety guarantees of Rust would make programming more smooth and thus more fun as well.</p>
 
-<p>But I also liked Zig&rsquo;s simplicity. In total, I spent <em>way</em> more time on the Rust part of this post, if you count the time spent reading documentation as well. I read a good chunk of the <em>Programming in Rust</em> book and followed along with a code editor before starting this project. As for Zig, I downloaded the available documentation for offline viewing, and read it through during a 1.5 hour bus ride (and wrote a small vector math library in the process). I feel like mucking around with Zig in smaller scale projects might be more fun in the long run. While I had some issues with the language, it isn&rsquo;t done yet and it&rsquo;s a project I will definitely be keeping in my radar.</p>
+<p>But I also liked Zig&rsquo;s simplicity. In total, I spent <em>way</em> more time on the Rust part of this post, if you count the time spent reading documentation as well. I read a good chunk of the <em>Programming in Rust</em> book and followed along with a code editor before starting this project. As for Zig, I downloaded the available documentation for offline viewing, and read it through during a 1.5 hour bus ride (and wrote a small vector math library in the process). I feel like mucking around with Zig in smaller scale projects might be more fun in the long run. While I had some issues with the language, it isn&rsquo;t done yet and it is a project I will definitely be keeping in my radar.</p>
 
 <p>The full Rust and Zig code can be found on Github in case you want to take a look: <a href="https://github.com/Nelarius/weekend-raytracer-rust">weekend-raytracer-rust</a>, <a href="https://github.com/Nelarius/weekend-raytracer-zig">weekend-raytracer-zig</a>.</p>
 

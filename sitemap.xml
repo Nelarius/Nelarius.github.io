@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://nelari.us/post/shape_grammar_intro/</loc>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/post/raytracer_with_rust_and_zig/</loc>
     <lastmod>2019-06-27T20:00:00+02:00</lastmod>
   </url>
@@ -40,6 +45,12 @@
   <url>
     <loc>https://nelari.us/post/template-function-args/</loc>
     <lastmod>2015-08-31T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://nelari.us/tags/3d/</loc>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+    <priority>0</priority>
   </url>
   
   <url>
@@ -90,14 +101,20 @@
   </url>
   
   <url>
+    <loc>https://nelari.us/tags/modeling/</loc>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/</loc>
-    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://nelari.us/post/</loc>
-    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -115,7 +132,7 @@
   
   <url>
     <loc>https://nelari.us/tags/</loc>
-    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
     <priority>0</priority>
   </url>
   

@@ -6,10 +6,20 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 27 Jun 2019 20:00:00 +0200</lastBuildDate>
+    <lastBuildDate>Fri, 01 May 2020 08:00:00 +0300</lastBuildDate>
     
 	<atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Generating 3d buildings using node graphs</title>
+      <link>https://nelari.us/post/shape_grammar_intro/</link>
+      <pubDate>Fri, 01 May 2020 08:00:00 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/shape_grammar_intro/</guid>
+      <description>There are many different ways to generate 3d models. Software like Blender gives you a pile of tools and modifiers with which you can model almost any object. Then you have your sculpting editors with which you can model complex organic shapes, as if you were modeling with clay. Finally, you have procedural modeling tools with which you can generative repetitive 3d geometry using simple rules.
+I have done my fair share of playing around with Blender, but I wanted to play around with a 3d editor which works a bit more immediately, like Photoshop or Affinity Photo.</description>
+    </item>
     
     <item>
       <title>Writing a small ray tracer in Rust and Zig</title>

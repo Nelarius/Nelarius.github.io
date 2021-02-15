@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Imnodes on My thought repository</title>
+    <link>https://nelari.us/tags/imnodes/</link>
+    <description>Recent content in Imnodes on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 24 Mar 2019 08:22:27 +0200</lastBuildDate>
+    
+	<atom:link href="https://nelari.us/tags/imnodes/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>imnodes: writing an immediate mode node editor library</title>
+      <link>https://nelari.us/post/imnodes/</link>
+      <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/imnodes/</guid>
+      <description>Node editors are one of the more discussed use cases for the dear imgui UI library, and there are lots of gists as well as fully-fledged implementations for them on Github. If you want to implement your own node editor, you can get cracking! However, my pet peeve with the available samples and implementations is that they often aren&amp;rsquo;t immediate mode and don&amp;rsquo;t obey dear imgui&amp;rsquo;s philosophy of being lightweight and dependency free.</description>
+    </item>
+    
+  </channel>
+</rss>

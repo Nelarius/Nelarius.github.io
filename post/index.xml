@@ -6,10 +6,21 @@
     <description>Recent content in Posts on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 01 May 2020 08:00:00 +0300</lastBuildDate>
+    <lastBuildDate>Sun, 06 Mar 2022 10:58:00 +0200</lastBuildDate>
     
 	<atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Quick and dirty image dithering</title>
+      <link>https://nelari.us/post/quick_and_dirty_dithering/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/quick_and_dirty_dithering/</guid>
+      <description>Introduction Dithering is a fascinating and seemingly counter-intuitive technique. In order to demonstrate the technique, take a look at the following image. How many different shades of gray do you see in the picture?
+How many did you guess? The answer is 2. Taking a closer look, we begin to see the pixels.
+The original image is quantized to just two colors, fully black and white. How can an image with just black and white pixels look so good?</description>
+    </item>
     
     <item>
       <title>Generating 3d buildings using node graphs</title>

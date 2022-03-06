@@ -30,6 +30,15 @@
     </item>
     
     <item>
+      <title>Dithering</title>
+      <link>https://nelari.us/tags/dithering/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/dithering/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>Embedding</title>
       <link>https://nelari.us/tags/embedding/</link>
       <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
@@ -62,6 +71,15 @@
       <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
       
       <guid>https://nelari.us/tags/gizmo/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Image</title>
+      <link>https://nelari.us/tags/image/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/image/</guid>
       <description></description>
     </item>
     
@@ -104,7 +122,7 @@
     <item>
       <title>Rust</title>
       <link>https://nelari.us/tags/rust/</link>
-      <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
       
       <guid>https://nelari.us/tags/rust/</guid>
       <description></description>

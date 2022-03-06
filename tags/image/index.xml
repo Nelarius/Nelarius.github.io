@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Image on My thought repository</title>
+    <link>https://nelari.us/tags/image/</link>
+    <description>Recent content in Image on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 06 Mar 2022 10:58:00 +0200</lastBuildDate>
+    
+	<atom:link href="https://nelari.us/tags/image/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Quick and dirty image dithering</title>
+      <link>https://nelari.us/post/quick_and_dirty_dithering/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/quick_and_dirty_dithering/</guid>
+      <description>Introduction Dithering is a fascinating and seemingly counter-intuitive technique. In order to demonstrate the technique, take a look at the following image. How many different shades of gray do you see in the picture?
+How many did you guess? The answer is 2. Taking a closer look, we begin to see the pixels.
+The original image is quantized to just two colors, fully black and white. How can an image with just black and white pixels look so good?</description>
+    </item>
+    
+  </channel>
+</rss>

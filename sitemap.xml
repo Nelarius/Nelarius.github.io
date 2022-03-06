@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://nelari.us/post/quick_and_dirty_dithering/</loc>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/post/shape_grammar_intro/</loc>
     <lastmod>2020-05-01T08:00:00+03:00</lastmod>
   </url>
@@ -65,6 +70,12 @@
   </url>
   
   <url>
+    <loc>https://nelari.us/tags/dithering/</loc>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/tags/embedding/</loc>
     <lastmod>2016-05-06T00:00:00+00:00</lastmod>
     <priority>0</priority>
@@ -89,6 +100,12 @@
   </url>
   
   <url>
+    <loc>https://nelari.us/tags/image/</loc>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://nelari.us/tags/imgui/</loc>
     <lastmod>2019-03-24T08:22:27+02:00</lastmod>
     <priority>0</priority>
@@ -108,13 +125,13 @@
   
   <url>
     <loc>https://nelari.us/</loc>
-    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://nelari.us/post/</loc>
-    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -126,7 +143,7 @@
   
   <url>
     <loc>https://nelari.us/tags/rust/</loc>
-    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
     <priority>0</priority>
   </url>
   

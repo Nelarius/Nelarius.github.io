@@ -72,9 +72,7 @@
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         <img src="/img/quick_and_dirty_dithering/sky_m2_m8_m16.jpeg"><br>
-                    Introduction Dithering is a fascinating and seemingly counter-intuitive technique. In order to demonstrate the technique, take a look at the following image. How many different shades of gray do you see in the picture?
-How many did you guess? The answer is 2. Taking a closer look, we begin to see the pixels.
-The original image is quantized to just two colors, fully black and white. How can an image with just black and white pixels look so good?
+                    Dithering is a fascinating and seemingly counter-intuitive technique, the effects of which are easily demonstrated using images. This post develops a simple way to dither images using just a few lines of Rust code.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/quick_and_dirty_dithering/">Read More</a>
@@ -126,7 +124,6 @@ The original image is quantized to just two colors, fully black and white. How c
                     <p>
                         <img src="/img/shape_grammar_intro/featured_image.png"><br>
                     There are many different ways to generate 3d models. Software like Blender gives you a pile of tools and modifiers with which you can model almost any object. Then you have your sculpting editors with which you can model complex organic shapes, as if you were modeling with clay. Finally, you have procedural modeling tools with which you can generative repetitive 3d geometry using simple rules.
-I have done my fair share of playing around with Blender, but I wanted to play around with a 3d editor which works a bit more immediately, like Photoshop or Affinity Photo.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/shape_grammar_intro/">Read More</a>
@@ -172,8 +169,7 @@ I have done my fair share of playing around with Blender, but I wanted to play a
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         <img src="/img/rust_and_zig/final_image.png"><br>
-                    I spend most of my programming time writing C++. And like many other C++ programmers, I&rsquo;ve shot myself in the foot countless times with a feature I didn&rsquo;t fully grok. And I&rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.
-The two languages that I spent most of my time daydreaming about writing code in are Rust and Zig.
+                    I spend most of my programming time writing C&#43;&#43;. And like many other C&#43;&#43; programmers, I&#39;ve shot myself in the foot countless times with a feature I didn&#39;t fully grok. And I&#39;ve spent enormous amounts of time trying to understand the language. Like many other C&#43;&#43; developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/raytracer_with_rust_and_zig/">Read More</a>
@@ -224,7 +220,7 @@ The two languages that I spent most of my time daydreaming about writing code in
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         <img src="/img/imnodes/imnodes-example.gif"><br>
-                    Node editors are one of the more discussed use cases for the dear imgui UI library, and there are lots of gists as well as fully-fledged implementations for them on Github. If you want to implement your own node editor, you can get cracking! However, my pet peeve with the available samples and implementations is that they often aren&rsquo;t immediate mode and don&rsquo;t obey dear imgui&rsquo;s philosophy of being lightweight and dependency free.
+                    Node editors are one of the more discussed use-cases for the ImGui UI library, and there are lots of gists as well as fully-fledged implementations for them on Github. If you want to implement your own node editor, you can get cracking! However, my pet peeve with the available samples and implementations is that they often aren&#39;t immediate mode and don&#39;t obey ImGui&#39;s philosophy of being lightweight and dependency free.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/imnodes/">Read More</a>
@@ -275,7 +271,7 @@ The two languages that I spent most of my time daydreaming about writing code in
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         
-                    Fed up with entering numbers manually via the UI for each game object transform in my home-made game engine, I wanted to integrate a gizmo tool. Gizmos, at least in the context of game engine editors, are little 3d tools that you can use to manipulate objects in 3d space. While there are a few easy-ish-to-integrate transform gizmo libraries on github, I was not completely happy with them. The interface of tinygizmo is nice, but it intersects camera rays with the triangle meshes of the primitive.
+                    An elegant and minimal approach to a gizmo tool suite
                     </p>
                     <p class="article-more-link">
                         <a href="/post/gizmos/">Read More</a>
@@ -336,8 +332,7 @@ The two languages that I spent most of my time daydreaming about writing code in
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         
-                    You can read part 1 here.
-Writing you own Wren bindings gives you full control over how your code interfaces with Wren. However, manually implementing the binding code for a large C++-Wren interface can be somewhat time consuming, especially when changes are made to the interface over time. Wren++ is a small C++ library that aims to automate most code binding tasks with a minimal runtime overhead. Like Wren itself, Wren++ aims to be simple and minimalistic to use.
+                    The second part of the series implements a full C&#43;&#43; wrapper for C&#43;&#43; functions and classes for Wren&#39;s C API.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/wren-embedding-2/">Read More</a>
@@ -388,7 +383,7 @@ Writing you own Wren bindings gives you full control over how your code interfac
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         
-                    Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. As such, it fills very much the same niche as Lua. Why would you choose Wren over Lua in your application? It boils mostly down to stylistic preferences. Wren is very class oriented, and adheres to the curly-brace style tradition, in contrast to Lua&rsquo;s begin...end blocks. If one of the first things you always did in your Lua projects was design a class model, then Wren might be worth checking out.
+                    Wren is a small, fast, class-based scripting language designed to be easily embeddable in a host application. The language has a slot-based C API very similar to the one found in Lua. In this first post of a two-post series, we take a look at calling the slot API automatically base on the types of a list of arguments to a function.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/wren-embedding-1/">Read More</a>
@@ -439,8 +434,7 @@ Writing you own Wren bindings gives you full control over how your code interfac
                 <div class="article-entry" itemprop="articleBody">
                     <p>
                         
-                    While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.
-First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.
+                    A small look at some useful template techniques, in the context of trying to bind functions to a virtual machine. I wrote this post mostly for myself so that these techniques would be listed all in one place.
                     </p>
                     <p class="article-more-link">
                         <a href="/post/template-function-args/">Read More</a>

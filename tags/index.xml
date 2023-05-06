@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on My thought repository</title>
@@ -6,10 +6,33 @@
     <description>Recent content in Tags on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 01 May 2020 08:00:00 +0300</lastBuildDate>
+    <lastBuildDate>Sun, 06 Mar 2022 10:58:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>dithering</title>
+      <link>https://nelari.us/tags/dithering/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/dithering/</guid>
+      <description></description>
+    </item>
     
-	<atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>image</title>
+      <link>https://nelari.us/tags/image/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/image/</guid>
+      <description></description>
+    </item>
     
+    <item>
+      <title>rust</title>
+      <link>https://nelari.us/tags/rust/</link>
+      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/rust/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>3d</title>
@@ -21,88 +44,7 @@
     </item>
     
     <item>
-      <title>C&#43;&#43;</title>
-      <link>https://nelari.us/tags/c&#43;&#43;/</link>
-      <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/c&#43;&#43;/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Dithering</title>
-      <link>https://nelari.us/tags/dithering/</link>
-      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/dithering/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Embedding</title>
-      <link>https://nelari.us/tags/embedding/</link>
-      <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
-      
-      <guid>https://nelari.us/tags/embedding/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Engine</title>
-      <link>https://nelari.us/tags/engine/</link>
-      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/engine/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Game</title>
-      <link>https://nelari.us/tags/game/</link>
-      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/game/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Gizmo</title>
-      <link>https://nelari.us/tags/gizmo/</link>
-      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/gizmo/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Image</title>
-      <link>https://nelari.us/tags/image/</link>
-      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/image/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Imgui</title>
-      <link>https://nelari.us/tags/imgui/</link>
-      <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
-      
-      <guid>https://nelari.us/tags/imgui/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Metaprogramming</title>
-      <link>https://nelari.us/tags/metaprogramming/</link>
-      <pubDate>Mon, 31 Aug 2015 00:00:00 +0000</pubDate>
-      
-      <guid>https://nelari.us/tags/metaprogramming/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Modeling</title>
+      <title>modeling</title>
       <link>https://nelari.us/tags/modeling/</link>
       <pubDate>Fri, 01 May 2020 08:00:00 +0300</pubDate>
       
@@ -111,7 +53,7 @@
     </item>
     
     <item>
-      <title>Raytracing</title>
+      <title>raytracing</title>
       <link>https://nelari.us/tags/raytracing/</link>
       <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
       
@@ -120,16 +62,34 @@
     </item>
     
     <item>
-      <title>Rust</title>
-      <link>https://nelari.us/tags/rust/</link>
-      <pubDate>Sun, 06 Mar 2022 10:58:00 +0200</pubDate>
+      <title>zig</title>
+      <link>https://nelari.us/tags/zig/</link>
+      <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
       
-      <guid>https://nelari.us/tags/rust/</guid>
+      <guid>https://nelari.us/tags/zig/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Tools</title>
+      <title>c&#43;&#43;</title>
+      <link>https://nelari.us/tags/c&#43;&#43;/</link>
+      <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/c&#43;&#43;/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>imgui</title>
+      <link>https://nelari.us/tags/imgui/</link>
+      <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/imgui/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>tools</title>
       <link>https://nelari.us/tags/tools/</link>
       <pubDate>Sun, 24 Mar 2019 08:22:27 +0200</pubDate>
       
@@ -138,7 +98,43 @@
     </item>
     
     <item>
-      <title>Wren</title>
+      <title>engine</title>
+      <link>https://nelari.us/tags/engine/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/engine/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>game</title>
+      <link>https://nelari.us/tags/game/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/game/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gizmo</title>
+      <link>https://nelari.us/tags/gizmo/</link>
+      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/gizmo/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>embedding</title>
+      <link>https://nelari.us/tags/embedding/</link>
+      <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://nelari.us/tags/embedding/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>wren</title>
       <link>https://nelari.us/tags/wren/</link>
       <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>
       
@@ -147,11 +143,11 @@
     </item>
     
     <item>
-      <title>Zig</title>
-      <link>https://nelari.us/tags/zig/</link>
-      <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
+      <title>metaprogramming</title>
+      <link>https://nelari.us/tags/metaprogramming/</link>
+      <pubDate>Mon, 31 Aug 2015 00:00:00 +0000</pubDate>
       
-      <guid>https://nelari.us/tags/zig/</guid>
+      <guid>https://nelari.us/tags/metaprogramming/</guid>
       <description></description>
     </item>
     

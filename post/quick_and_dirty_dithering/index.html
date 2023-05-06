@@ -3,30 +3,32 @@
 <head>
     <title>Quick and dirty image dithering // My thought repository</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    <meta name="description" content="Dithering is a fascinating and seemingly counter-intuitive technique, the effects of which are easily demonstrated using images. This post develops a simple way to dither images using just a few lines of Rust code.">
+    
+
         <meta property="og:title" content="Quick and dirty image dithering" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://nelari.us/post/quick_and_dirty_dithering/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    <link rel="stylesheet" href="https://nelari.us/css/style.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <meta name="generator" content="Hugo 0.54.0" />
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
 </head>
 
 
@@ -69,313 +71,360 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            
-
-<h1 id="introduction">Introduction</h1>
-
+            <h1 id="introduction">Introduction</h1>
 <p>Dithering is a fascinating and seemingly counter-intuitive technique. In order to demonstrate the technique, take a look at the following image. How many different shades of gray do you see in the picture?</p>
-
-<p><img src="/img/quick_and_dirty_dithering/landscape-blue256.png" alt="landscape dithered with blue noise" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/landscape-blue256.png" alt="landscape dithered with blue noise"></p>
 <p>How many did you guess? The answer is 2. Taking a closer look, we begin to see the pixels.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/blue_close_up.png" alt="close up of the pixels" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/blue_close_up.png" alt="close up of the pixels"></p>
 <p>The original image is quantized to just two colors, fully black and white. How can an image with just black and white pixels look so good? The pixels are distributed just right, in such a way that, when you squint your eyes, you don’t really notice that the image actually consists of very few colors. The pixel distribution approximates the gray value of the original image. We have counter-intuitively improved an image with just two colors by <em>intentionally introducing noise to it</em>. It’s both an intellectually interesting effect, as well as a cool visual gimmick.</p>
-
 <p>This is an old technique with which images used to be rendered on display devices which were severely limited in the number of different colors they could reproduce. Some early displays had only binary pixels, and printers to this day have to approximate different shades of colors using only a very small number of colored inks.</p>
-
 <p>In order to learn the dithering process, we need to start from the beginning &ndash; by quantizing an image to just black and white, without any additional processing. Then we will make incremental improvements to the image using three different dithering methods: Bayer matrices, white noise, and blue noise.</p>
-
 <p>While this post isn&rsquo;t intended to be a programming language tutorial, the algorithm was implemented in a tiny Rust program. In order to keep the post general, the Rust implementation notes are included in the final section.</p>
-
 <h1 id="quantizing-the-image">Quantizing the image</h1>
-
 <p>We would like to quantize an image to just black and white. The quantization algorithm is simple. We will convert each pixel value to black or white by comparing the original pixel to a threshold value. The threshold value is what determines whether the pixel will be black or white.</p>
-
 <p>To start, we need the original image.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/landscape.jpg" alt="source image" />
-<p align="center"><i>
-    A picture of freezing Helsinki, taken from the ice covered sea.
-</i></p></p>
-
+<p><img src="/img/quick_and_dirty_dithering/landscape.jpg" alt="source image"></p>
+<!-- raw HTML omitted -->
 <p>Next, we need a signal which we will quantize. We can use the image’s <em>luma</em>, \(l\), which is a weighed sum of the image’s \(R\), \(G\), \(B\) components. This signal is typically associated with the “black and whiteness” of an image. Even though the original image is already black and white, the pixels still contain all three RGB values. Using luma in our code enables us to also use color images as input for our dithering algorithm, and still produce sensible output images.</p>
-
 <p>Finally, we need a threshold value, a number which chooses whether a luma value is converted into black (0.0) or white (1.0). Choosing 0.5, we obtain the following step function for each pixel \(p_{x,y}\).</p>
-
-<div>$$
-p_{x,y} = \begin{cases}
-   0.0 &\text{if}\ l_{x,y} \leq 0.5 \\
-   1.0 &\text{if}\ l_{x,y} > 0.5
-\end{cases}
-$$</div>
-
+<!-- raw HTML omitted -->
 <p>Running our image through this function with using gives us the following result.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/notebook_quantized.png" alt="naive quantization" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/notebook_quantized.png" alt="naive quantization"></p>
 <p>Not a very good looking result. Luckily, we already know that we can do better than this!</p>
-
 <h1 id="dithering">Dithering</h1>
-
 <p>The dithering algorithm is based on the quantization algorithm above and requires just one modification to it: it <em>adds noise</em> to the threshold values. This has the effect of distributing the harsh boundaries between black and white in the quantized image. The classical way of distributing noise is by using Bayer matrices.</p>
-
 <h2 id="bayer-matrices">Bayer matrices</h2>
-
 <p>A Bayer matrix, \(M\), looks like this.</p>
-
-<div>$$
-\mathbf{M}_{4}=\frac{1}{16}\times\begin{bmatrix}0 & 8 & 2 & 10 \\ 12 & 4 & 14 & 6 \\ 3 & 11 & 1 & 9 \\ 15 & 7 & 13 & 5\end{bmatrix}
-$$</div>
-
-<p>The matrix is square and is characterized by its side length \(N\) which in this case is 4. The matrix consists of elements \((0,\;1,\;\ldots,\;N^2-1/N^2)\)  which are distributed in such a way that the distance between elements of the sequence is as large and as even as possible across the matrix. We can generate a Bayer matrix for side length 2, 8, or 16 as well. The last section of this post contains notes on how you can generate your own Bayer matrix.</p>
-
-<p>For any given pixel coordinate \((x,\,y)\) in our image, we can map the pixel coordinate to the Bayer matrix element \((i\,,j)\) using the modulo operator: \((i,\,j)=(y\,\text{mod}\,N,\;x\,\text{mod}\,N)\). The idea is to use the matching Bayer matrix element as the threshold value while doing quantization, instead of just a single number like 0.5. Inserting the Bayer matrix element into the previous step function, we obtain</p>
-
-<div>$$
-p_{x,y} = \begin{cases}
-   0.0 &\text{if}\ l_{x,y} \leq \mathbf{M}_{i,j} \\
-   1.0 &\text{if}\ l_{x,y} > \mathbf{M}_{i,j}
-\end{cases}
-$$</div>
-
+<!-- raw HTML omitted -->
+<p>The matrix is square and is characterized by its side length \(N\) which in this case is 4. The matrix consists of elements \((0,;1,;\ldots,;N^2-1/N^2)\)  which are distributed in such a way that the distance between elements of the sequence is as large and as even as possible across the matrix. We can generate a Bayer matrix for side length 2, 8, or 16 as well. The last section of this post contains notes on how you can generate your own Bayer matrix.</p>
+<p>For any given pixel coordinate \((x,,y)\) in our image, we can map the pixel coordinate to the Bayer matrix element \((i,,j)\) using the modulo operator: \((i,,j)=(y,\text{mod},N,;x,\text{mod},N)\). The idea is to use the matching Bayer matrix element as the threshold value while doing quantization, instead of just a single number like 0.5. Inserting the Bayer matrix element into the previous step function, we obtain</p>
+<!-- raw HTML omitted -->
 <p>Running our image through this function using \(N=4\), we obtain the following result.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/landscape-bayer4.png" alt="m4_landscape" />
-<p align="center"><i>The landscape dithered with a \(\mathbf{M}_4\) matrix.</i></p></p>
-
+<p><img src="/img/quick_and_dirty_dithering/landscape-bayer4.png" alt="m4_landscape"></p>
+<!-- raw HTML omitted -->
 <p>The details of the original image are now clearly visible, although we do have a visible grid-like pattern. We can dither with Bayer matrices using \(N=2,8,16\) as well.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/snow_m2_m8_m16.jpeg" alt="Snow detail with M2, M8, M16" />
-<p align="center"><i>Snow detail with \(N=2,8,16\) respectively.</i></p></p>
-
-<p><img src="/img/quick_and_dirty_dithering/sky_m2_m8_m16.jpeg" alt="Sky detail with M2, M8, M16" />
-<p align="center"><i>Sky detail with \(N=2,8,16\), respectively.</i></p></p>
-
+<p><img src="/img/quick_and_dirty_dithering/snow_m2_m8_m16.jpeg" alt="Snow detail with M2, M8, M16"></p>
+<!-- raw HTML omitted -->
+<p><img src="/img/quick_and_dirty_dithering/sky_m2_m8_m16.jpeg" alt="Sky detail with M2, M8, M16"></p>
+<!-- raw HTML omitted -->
 <p>Looking at the image dithered using \(N=2\), we can still see detail resembling the original images in places of finer detail, such as the snow banks. But in places where finer gradients exist, such as the sky, the result is closer to the original naive quantization. There is almost no perceptible difference between the images dithered using  \(N=8\) and \(N=16\). Comparing the sky using \(N=4\) and \(N=8\), you can see that there is clearly more detail using \(N=8\). That is where the sweet-spot between detail and matrix size seems to lie.</p>
-
 <p>Although the results using larger Bayer matrices look good, there is just no way of getting rid of the slight crosshatch artifact, arising from the deterministic way the values are distributed. Our next two dithering methods will attempt to get rid of the pattern, by introducing randomness.</p>
-
 <h2 id="random-noise">Random noise</h2>
-
 <p>The simplest way to add some randomness to the threshold value is to replace the Bayer matrix lookup with a call to a uniform random number generator.</p>
-
-<div>$$
-p_{x,y} = \begin{cases}
-   0.0 &\text{if}\ l_{x,y} \leq \texttt{rand(0,1)} \\
-   1.0 &\text{if}\ l_{x,y} > \texttt{rand(0,1)}
-\end{cases}
-$$</div>
-
-<p><img src="/img/quick_and_dirty_dithering/landscape-random.png" alt="Random noise dithered landscape" /></p>
-
+<!-- raw HTML omitted -->
+<p><img src="/img/quick_and_dirty_dithering/landscape-random.png" alt="Random noise dithered landscape"></p>
 <p>While we no longer have any visible crosshatch artifacts, the image has even less detail than in the previous section. Unlike the Bayer matrix, where neighboring values are guaranteed to be distributed evenly about the matrix, we can obtain multiple similarly valued uniform random numbers in sequence. As a result, our image loses detail due to the clustering of black and white. Nowhere is this more visible than when comparing the white plume from the smokestack with the images dithered with a Bayer matrix.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/random_bayer_building.png" alt="Random noise and Bayer comparison" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/random_bayer_building.png" alt="Random noise and Bayer comparison"></p>
 <h2 id="blue-noise">Blue noise</h2>
-
 <p>Blue noise is going to come to the rescue and restore the detail that we lost with the random noise. Blue noise values, like the random numbers used in the previous section, are distributed uniformly. But the <em>frequency</em> distribution of blue noise is different. Blue noise has less low-frequency components than the random numbers used in the previous section. Subsequent random numbers are more evenly distributed from each other.</p>
-
 <p>This is what blue noise values look like in an image.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/256x256_blue.png" alt="blue noise mask" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/256x256_blue.png" alt="blue noise mask"></p>
 <p>If we were to blur this image, it would look uniformly gray. This is the reason images look better when dithered with blue noise. We can verify that the pixel value distribution in blue noise is uniform by comparing it against uniform random numbers in a histogram.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/random_noise_distributions.png" alt="noise uniform distributions" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/random_noise_distributions.png" alt="noise uniform distributions"></p>
 <p>Blue noise image masks, like the one above, are very expensive to compute. I used a free texture obtained from <a href="http://momentsingraphics.de/BlueNoise.html">http://momentsingraphics.de/BlueNoise.html</a>. These textures can be tiled, meaning that patterns due to repetition should be impercetable.</p>
-
 <p>You can use the blue noise image mask exactly like a Bayer matrix. Load the pixels into a large matrix, and map pixel coordinates \(x\), \(y\) to image coordinates \(i\), \(j\) using the modulo operator. The resulting dithering function is exactly the same as the Bayer dithering function. Doing so, we obtain the final image, which was also the first image shown in this post.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/landscape-blue256.png" alt="blue noise dithering" /></p>
-
+<p><img src="/img/quick_and_dirty_dithering/landscape-blue256.png" alt="blue noise dithering"></p>
 <p>Looking at the sky and snow detail, we are able to resolve far more detail than before, by simply adjusting the spatial distribution of our black and white pixels.</p>
-
-<p><img src="/img/quick_and_dirty_dithering/blue_random_snow.png" alt="blue noise vs. random noise snow detail" /></p>
-
-<p><img src="/img/quick_and_dirty_dithering/blue_random_horizon.png" alt="blue noise vs. random noise horizon detail" /></p>
-
-<p align="center"><i>Blue noise on the left, random noise on the right.</i></p>
-
+<p><img src="/img/quick_and_dirty_dithering/blue_random_snow.png" alt="blue noise vs. random noise snow detail"></p>
+<p><img src="/img/quick_and_dirty_dithering/blue_random_horizon.png" alt="blue noise vs. random noise horizon detail"></p>
+<!-- raw HTML omitted -->
 <h1 id="implementation-notes">Implementation notes</h1>
-
 <p>Using the  <a href="https://crates.io/crates/image">https://crates.io/crates/image</a> crate, it’s remarkably easy to load, transform and output images. You can obtain a black and white image with two lines of code.</p>
-
-<pre><code class="language-rust">let user_img = image::open(opts.input_image).unwrap();
-let user_img = user_img.grayscale();
-</code></pre>
-
-<p>With just a few more lines of code, it&rsquo;s possible to transform, and output a result. This is a really fun way to get familiar with Rust.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> user_img = image::open(opts.input_image).unwrap();
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> user_img = user_img.grayscale();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>With just a few more lines of code, it&rsquo;s possible to transform, and output a result. This is a really fun way to get familiar with Rust.</p>
 <h2 id="dithering-function">Dithering function</h2>
-
 <p>Having loaded an image, it’s time to run its pixels through a dithering function. The dithering function uses a <code>ThresholdMatrix</code> struct and applies it to each pixel using the step function for Bayer dithering seen earlier. All dithering methods in this post are implemented using matrix look ups.</p>
-
-<pre><code class="language-rust">fn dithered_rgb_image(
-    threshold_matrix: &amp;ThresholdMatrix,
-    img: &amp;image::DynamicImage,
-) -&gt; image::RgbImage {
-    let (width, height) = img.dimensions();
-    let img_luma = img.as_luma8().unwrap();
-    let mut img_dithered = image::RgbImage::new(width, height);
-
-    for (x, y) in (0..width).cartesian_product(0..height) {
-        let luma = img_luma.get_pixel(x, y)[0];
-
-        let dithered_pxl = if luma &gt; threshold_matrix.look_up(x, y) {
-            image::Rgb([255, 255, 255])
-        } else {
-            image::Rgb([0, 0, 0])
-        };
-        img_dithered.put_pixel(x, y, dithered_pxl);
-    }
-
-    img_dithered
-}
-</code></pre>
-
-<p>The <code>ThresholdMatrix</code> is a matrix containing luma offset values, with dimensions <code>nx</code> and <code>ny</code>.</p>
-
-<pre><code class="language-rust">struct ThresholdMatrix {
-    nx: u32,
-    ny: u32,
-    matrix: Vec&lt;u8&gt;,
-}
-
-impl ThresholdMatrix {
-       fn look_up(&amp;self, x: u32, y: u32) -&gt; u8 {
-        let j = x % self.nx;
-        let i = y % self.ny;
-        let idx: usize = (i * self.nx + j)
-            .try_into()
-            .expect(&quot;i * side_length + j does not fit into usize&quot;);
-
-        self.matrix[idx]
-    }
- }
-</code></pre>
-
-<p>In order to implement the different dithering methods, all we need to do is to initialize the matrix with values in three different ways. The next sections adds associated functions to <code>ThresholdMatrix</code> to do just that.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> dithered_rgb_image(
+</span></span><span style="display:flex;"><span>    threshold_matrix: <span style="color:#00f">&amp;</span><span style="color:#2b91af">ThresholdMatrix</span>,
+</span></span><span style="display:flex;"><span>    img: <span style="color:#00f">&amp;</span><span style="color:#2b91af">image</span>::DynamicImage,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#2b91af">image</span>::RgbImage {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> (width, height) = img.dimensions();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> img_luma = img.as_luma8().unwrap();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> <span style="color:#00f">mut</span> img_dithered = image::RgbImage::new(width, height);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (x, y) <span style="color:#00f">in</span> (0..width).cartesian_product(0..height) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> luma = img_luma.get_pixel(x, y)[0];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> dithered_pxl = <span style="color:#00f">if</span> luma &gt; threshold_matrix.look_up(x, y) {
+</span></span><span style="display:flex;"><span>            image::Rgb([255, 255, 255])
+</span></span><span style="display:flex;"><span>        } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>            image::Rgb([0, 0, 0])
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>        img_dithered.put_pixel(x, y, dithered_pxl);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    img_dithered
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The <code>ThresholdMatrix</code> is a matrix containing luma offset values, with dimensions <code>nx</code> and <code>ny</code>.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">ThresholdMatrix</span> {
+</span></span><span style="display:flex;"><span>    nx: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    ny: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    matrix: Vec&lt;<span style="color:#2b91af">u8</span>&gt;,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">impl</span> ThresholdMatrix {
+</span></span><span style="display:flex;"><span>       <span style="color:#00f">fn</span> look_up(&amp;self, x: <span style="color:#2b91af">u32</span>, y: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">u8</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> j = x % self.nx;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> i = y % self.ny;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> idx: <span style="color:#2b91af">usize</span> = (i * self.nx + j)
+</span></span><span style="display:flex;"><span>            .try_into()
+</span></span><span style="display:flex;"><span>            .expect(<span style="color:#a31515">&#34;i * side_length + j does not fit into usize&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        self.matrix[idx]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span> }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>In order to implement the different dithering methods, all we need to do is to initialize the matrix with values in three different ways. The next sections adds associated functions to <code>ThresholdMatrix</code> to do just that.</p>
 <h2 id="bayer-matrix">Bayer matrix</h2>
-
 <p>Generating Bayer matrices is perhaps the most interesting part of the implementation. Starting from <a href="https://en.wikipedia.org/wiki/Ordered_dithering#Threshold_map">Wikipedia</a>, we could just hard code the matrices presented in the article. But what if we want larger matrices than \(N=8\)? In that case, we need to generate our own matrices of arbitrary size.</p>
-
 <p>Wikipedia mentions two ways of generating your own Bayer matrix: a recursive algorithm, and a matrix elementwise bit manipulation algorithm.</p>
-
 <p>On the surface, the elementwise algorithm seems simpler to implement in Rust. However, the Wikipedia article seems to have misunderstood the meaning of the source. It says that you can bit reverse the bit interleaved values <code>x ^ y</code> and <code>y</code>. However, in the original source, <a href="https://bisqwit.iki.fi/story/howto/dither/jy/#Appendix%202ThresholdMatrix">Joel Yliluoma&rsquo;s arbitrary-palette positional dithering algorithm</a>, the bits are interleaved in reverse:</p>
-
-<pre><code class="language-c">// The original C algorithm
-
-const unsigned dim = 1 &lt;&lt; M;
-for (unsigned y = 0; y &lt; dim; ++y) {
-    for (unsigned x = 0; x &lt; dim; ++x) {
-        unsigned v = 0, mask = M - 1, xc = x ^ y, yc = y;
-        for (unsigned bit = 0; bit &lt; 2 * M; --mask) {
-            v |= ((yc &gt;&gt; mask) &amp; 1) &lt;&lt; bit++;
-            v |= ((xc &gt;&gt; mask) &amp; 1) &lt;&lt; bit++;
-        }
-        printf(&quot;%4d\n&quot;, v);
-    }
-}
-</code></pre>
-
-<p>This is not quite the same as bit-interleaving <code>xc</code>, <code>y</code>, and reversing the bits of that. Doing so would give you really large integer values, closer to the maximum value of the integer than to \(N\).</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// The original C algorithm
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">unsigned</span> dim = 1 &lt;&lt; M;
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> (<span style="color:#2b91af">unsigned</span> y = 0; y &lt; dim; ++y) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">unsigned</span> x = 0; x &lt; dim; ++x) {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">unsigned</span> v = 0, mask = M - 1, xc = x ^ y, yc = y;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">unsigned</span> bit = 0; bit &lt; 2 * M; --mask) {
+</span></span><span style="display:flex;"><span>            v |= ((yc &gt;&gt; mask) &amp; 1) &lt;&lt; bit++;
+</span></span><span style="display:flex;"><span>            v |= ((xc &gt;&gt; mask) &amp; 1) &lt;&lt; bit++;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        printf(<span style="color:#a31515">&#34;%4d</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, v);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This is not quite the same as bit-interleaving <code>xc</code>, <code>y</code>, and reversing the bits of that. Doing so would give you really large integer values, closer to the maximum value of the integer than to \(N\).</p>
 <p>The Rust version of this algorithm isn’t totally straightforward, since there are a few C things which can’t just be copy-pasted over.</p>
-
-<pre><code class="language-rust">// Rust version of the algorithm
-
-impl ThresholdMatrix {
-    fn bayer_matrix(power_of_two: u32) -&gt; Self {
-        let side = 2_u32.pow(power_of_two);
-        let num_elements = side * side;
-        let norm_factor = 255_f32 / (num_elements as f32);
-        let matrix = (0..side)
-            .cartesian_product(0..side)
-            .map(|(x, y)| {
-                let xc = x ^ y;
-                let yc = y;
-
-                let mut v = 0;
-                for p in (0..power_of_two).rev() {
-                    let bit_idx = 2 * (power_of_two - p - 1);
-                    v |= ((yc &gt;&gt; p) &amp; 1) &lt;&lt; bit_idx;
-                    v |= ((xc &gt;&gt; p) &amp; 1) &lt;&lt; (bit_idx + 1);
-                }
-                (v as f32 * norm_factor) as u8
-            })
-            .collect();
-
-        Self {
-            nx: side,
-            ny: side,
-            matrix,
-        }
-    }
-
-// ...
-</code></pre>
-
-<h2 id="random-noise-1">Random noise</h2>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Rust version of the algorithm
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">impl</span> ThresholdMatrix {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">fn</span> bayer_matrix(power_of_two: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">Self</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> side = 2_<span style="color:#00f">u32</span>.pow(power_of_two);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> num_elements = side * side;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> norm_factor = 255_<span style="color:#00f">f32</span> / (num_elements <span style="color:#00f">as</span> <span style="color:#2b91af">f32</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> matrix = (0..side)
+</span></span><span style="display:flex;"><span>            .cartesian_product(0..side)
+</span></span><span style="display:flex;"><span>            .map(|(x, y)| {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">let</span> xc = x ^ y;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">let</span> yc = y;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">let</span> <span style="color:#00f">mut</span> v = 0;
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">for</span> p <span style="color:#00f">in</span> (0..power_of_two).rev() {
+</span></span><span style="display:flex;"><span>                    <span style="color:#00f">let</span> bit_idx = 2 * (power_of_two - p - 1);
+</span></span><span style="display:flex;"><span>                    v |= ((yc &gt;&gt; p) &amp; 1) &lt;&lt; bit_idx;
+</span></span><span style="display:flex;"><span>                    v |= ((xc &gt;&gt; p) &amp; 1) &lt;&lt; (bit_idx + 1);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                (v <span style="color:#00f">as</span> <span style="color:#2b91af">f32</span> * norm_factor) <span style="color:#00f">as</span> <span style="color:#2b91af">u8</span>
+</span></span><span style="display:flex;"><span>            })
+</span></span><span style="display:flex;"><span>            .collect();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Self {
+</span></span><span style="display:flex;"><span>            nx: <span style="color:#2b91af">side</span>,
+</span></span><span style="display:flex;"><span>            ny: <span style="color:#2b91af">side</span>,
+</span></span><span style="display:flex;"><span>            matrix,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// ...
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="random-noise-1">Random noise</h2>
 <p>Random noise is implemented by generating \(x\times y\) random numbers and storing them in the matrix. \(x\) and \(y\) need to be the image dimension in order for this to work.</p>
-
-<pre><code class="language-rust">    fn white_noise(xdim: u32, ydim: u32) -&gt; Self {
-        let mut matrix = Vec::new();
-        for _ in 0..(xdim * ydim) {
-            matrix.push(rand::thread_rng().gen::&lt;u8&gt;());
-        }
-
-        Self {
-            nx: xdim,
-            ny: ydim,
-            matrix,
-        }
-    }
-</code></pre>
-
-<h2 id="blue-noise-1">Blue noise</h2>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> white_noise(xdim: <span style="color:#2b91af">u32</span>, ydim: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">Self</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> <span style="color:#00f">mut</span> matrix = Vec::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> _ <span style="color:#00f">in</span> 0..(xdim * ydim) {
+</span></span><span style="display:flex;"><span>        matrix.push(rand::thread_rng().gen::&lt;<span style="color:#2b91af">u8</span>&gt;());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Self {
+</span></span><span style="display:flex;"><span>        nx: <span style="color:#2b91af">xdim</span>,
+</span></span><span style="display:flex;"><span>        ny: <span style="color:#2b91af">ydim</span>,
+</span></span><span style="display:flex;"><span>        matrix,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="blue-noise-1">Blue noise</h2>
 <p>Finally, blue noise is &ldquo;generated&rdquo; by loading the blue noise image into the matrix.</p>
-
-<pre><code class="language-rust">    fn blue_noise() -&gt; Self {
-        let texture = image::load(
-            std::io::Cursor::new(include_bytes!(&quot;128x128_blue.png&quot;)),
-            image::ImageFormat::Png,
-        )
-        .unwrap()
-        .grayscale();
-        let dim = texture.dimensions();
-
-        let matrix = (0..dim.0)
-            .cartesian_product(0..dim.1)
-            .map(|(x, y)| texture.get_pixel(x, y)[0])
-            .collect();
-
-        Self {
-            nx: dim.0,
-            ny: dim.1,
-            matrix,
-        }
-    }
-</code></pre>
-
-<h1 id="references">References</h1>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> blue_noise() -&gt; <span style="color:#2b91af">Self</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> texture = image::load(
+</span></span><span style="display:flex;"><span>        std::io::Cursor::new(include_bytes!(<span style="color:#a31515">&#34;128x128_blue.png&#34;</span>)),
+</span></span><span style="display:flex;"><span>        image::ImageFormat::Png,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    .unwrap()
+</span></span><span style="display:flex;"><span>    .grayscale();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> dim = texture.dimensions();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> matrix = (0..dim.0)
+</span></span><span style="display:flex;"><span>        .cartesian_product(0..dim.1)
+</span></span><span style="display:flex;"><span>        .map(|(x, y)| texture.get_pixel(x, y)[0])
+</span></span><span style="display:flex;"><span>        .collect();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Self {
+</span></span><span style="display:flex;"><span>        nx: <span style="color:#2b91af">dim</span>.0,
+</span></span><span style="display:flex;"><span>        ny: <span style="color:#2b91af">dim</span>.1,
+</span></span><span style="display:flex;"><span>        matrix,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="references">References</h1>
 <p><a href="https://en.wikipedia.org/wiki/Ordered_dithering">https://en.wikipedia.org/wiki/Ordered_dithering</a></p>
-
 <p><a href="https://bisqwit.iki.fi/story/howto/dither/jy/">Joel Yliluoma&rsquo;s arbitrary-palette positional dithering algorithm</a></p>
-
 <p><a href="http://momentsingraphics.de/BlueNoise.html">Free blue noise textures</a></p>
-
 <p>Image quantization and plots were done using Python.</p>
-
 <p><a href="https://github.com/Nelarius/notebooks/blob/master/quick-and-dirty-dithering-post/quantization.ipynb">Image quantization notebook</a></p>
-
 <p><a href="https://github.com/Nelarius/notebooks/blob/master/quick-and-dirty-dithering-post/noise_distributions.ipynb">Noise distribution plot notebook</a></p>
 
         </div>
@@ -385,24 +434,18 @@ impl ThresholdMatrix {
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li><a href="#introduction">Introduction</a></li>
-<li><a href="#quantizing-the-image">Quantizing the image</a></li>
-<li><a href="#dithering">Dithering</a>
-<ul>
-<li><a href="#bayer-matrices">Bayer matrices</a></li>
-<li><a href="#random-noise">Random noise</a></li>
-<li><a href="#blue-noise">Blue noise</a></li>
-</ul></li>
-<li><a href="#implementation-notes">Implementation notes</a>
-<ul>
-<li><a href="#dithering-function">Dithering function</a></li>
-<li><a href="#bayer-matrix">Bayer matrix</a></li>
-<li><a href="#random-noise-1">Random noise</a></li>
-<li><a href="#blue-noise-1">Blue noise</a></li>
-</ul></li>
-<li><a href="#references">References</a></li>
-</ul>
+  <ul>
+    <li><a href="#bayer-matrices">Bayer matrices</a></li>
+    <li><a href="#random-noise">Random noise</a></li>
+    <li><a href="#blue-noise">Blue noise</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#dithering-function">Dithering function</a></li>
+    <li><a href="#bayer-matrix">Bayer matrix</a></li>
+    <li><a href="#random-noise-1">Random noise</a></li>
+    <li><a href="#blue-noise-1">Blue noise</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -416,17 +459,17 @@ impl ThresholdMatrix {
             <ul class="article-tag-list">
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/rust">rust
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/rust">rust
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/image">image
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/image">image
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/dithering">dithering
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/dithering">dithering
                     </a>
                 </li>
                 
@@ -434,7 +477,8 @@ impl ThresholdMatrix {
         </footer>
         
     </div>
-    <nav id="article-nav">
+    
+<nav id="article-nav">
     
     
     <a href="/post/shape_grammar_intro/" id="article-nav-older" class="article-nav-link-wrap">
@@ -442,6 +486,7 @@ impl ThresholdMatrix {
     </a>
     
 </nav>
+
 
 </article>
 
@@ -468,14 +513,10 @@ impl ThresholdMatrix {
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2022 Johann Muszynski
+            &copy; 2023 Johann Muszynski
         </div>
     </div>
     
-
-    <link rel="stylesheet" href="/css/grayscale.css">
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 
     
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">

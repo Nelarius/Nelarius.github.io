@@ -3,30 +3,32 @@
 <head>
     <title>Generating 3d buildings using node graphs // My thought repository</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    <meta name="description" content="There are many different ways to generate 3d models. Software like Blender gives you a pile of tools and modifiers with which you can model almost any object. Then you have your sculpting editors with which you can model complex organic shapes, as if you were modeling with clay. Finally, you have procedural modeling tools with which you can generative repetitive 3d geometry using simple rules.">
+    
+
         <meta property="og:title" content="Generating 3d buildings using node graphs" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://nelari.us/post/shape_grammar_intro/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    <link rel="stylesheet" href="https://nelari.us/css/style.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <meta name="generator" content="Hugo 0.54.0" />
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
 </head>
 
 
@@ -69,133 +71,72 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            
-
-<p>There are many different ways to generate 3d models. Software like Blender gives you a pile of tools and modifiers with which you can model almost any object. Then you have your sculpting editors with which you can model complex organic shapes, as if you were modeling with clay. Finally, you have procedural modeling tools with which you can generative repetitive 3d geometry using simple rules.</p>
-
+            <p>There are many different ways to generate 3d models. Software like Blender gives you a pile of tools and modifiers with which you can model almost any object. Then you have your sculpting editors with which you can model complex organic shapes, as if you were modeling with clay. Finally, you have procedural modeling tools with which you can generative repetitive 3d geometry using simple rules.</p>
 <p>I have done my fair share of playing around with Blender, but I wanted to play around with a 3d editor which works a bit more immediately, like Photoshop or Affinity Photo. In those programs, any changes you make are non-destructive &ndash; you don&rsquo;t need hit <code>Ctrl + Z</code> multiple times to rewind back through the edits you made. Instead, all edits are retained in a stack, and any changes you make to the edit stack rerenders the resulting picture in full.</p>
-
 <p>This kind of workflow is particularly suitable for procedural modeling methods, as the current set of rules can be re-evaluated from scratch to regenerate the model for the user. In this post, I will focus on implementing this sort of workflow using shape grammars, which are a procedural modeling method suitable for constructing 3d models of buildings. There are lots of existing papers and work around text-based shape grammars available. One of my goals in this post, however, was to take one of the existing text-based systems and build a node graph editor around the grammar.</p>
-
-<p><img src="/img/shape_grammar_intro/overview.png" alt="editor_overview" />
-<p align="center"><i>The node graph editor for manipulating shape grammars. The tool looks admittedly quite &ldquo;homemade&rdquo;, but it works!</i></p></p>
-
+<p><img src="/img/shape_grammar_intro/overview.png" alt="editor_overview"></p>
+<!-- raw HTML omitted -->
 <p>Let&rsquo;s start by diving in to shape grammars.</p>
-
 <h1 id="shape-grammars">Shape grammars</h1>
-
 <p>A shape grammar is a hierarchy of named 3d shapes, known as <em>symbols</em>, and the operations that produce them, known as <em>production rules</em>. In a shape grammar, 3d shapes, referred to by symbols such as <em>floor</em> and <em>window</em>, are created by applying production rules, such as <em>repeat split</em>, on a symbol, replacing that symbol with a new one, known as a successor. A shape grammar is a hierarchy, because it starts with a coarse, high-level shape, such as a cube, and refines it, by applying successive production rules on the successor shapes to produce the final model.</p>
-
 <p>3d grammars are a hierarchy just like grammars in linguistics. For instance, the following grammar for a simple sentence,</p>
-
-<pre><code>sentence    -&gt; subject | verb-phrase | object
-subject     -&gt; &quot;I&quot; | &quot;Visual Studio&quot;
+<pre tabindex="0"><code>sentence    -&gt; subject | verb-phrase | object
+subject     -&gt; &#34;I&#34; | &#34;Visual Studio&#34;
 verb-phrase -&gt; adverb verb | verb
-adverb      -&gt; &quot;uneasily&quot;
-verb        -&gt; &quot;like&quot; | &quot;compiles&quot;
-object      -&gt; noun | &quot;the&quot; noun | &quot;a&quot; noun
-noun        -&gt; &quot;C++&quot; | &quot;code&quot;
-</code></pre>
-
-<p>will generate sentences such as &ldquo;I uneasily like C++&rdquo; and &ldquo;Visual Studio compiles the code&rdquo;. This grammar starts with the high-level structure of a sentence, containing the symbols <em>subject</em>, <em>verb-phrase</em>, and <em>object</em>, and refines it by specifying what the structure of the verb-phrase and object are, and then specifies the concrete words a noun, verb and subject contain. It is a hierarchy of symbols, much like a shape grammar.</p>
-
+adverb      -&gt; &#34;uneasily&#34;
+verb        -&gt; &#34;like&#34; | &#34;compiles&#34;
+object      -&gt; noun | &#34;the&#34; noun | &#34;a&#34; noun
+noun        -&gt; &#34;C++&#34; | &#34;code&#34;
+</code></pre><p>will generate sentences such as &ldquo;I uneasily like C++&rdquo; and &ldquo;Visual Studio compiles the code&rdquo;. This grammar starts with the high-level structure of a sentence, containing the symbols <em>subject</em>, <em>verb-phrase</em>, and <em>object</em>, and refines it by specifying what the structure of the verb-phrase and object are, and then specifies the concrete words a noun, verb and subject contain. It is a hierarchy of symbols, much like a shape grammar.</p>
 <p>One particular shape grammar system is well-described in the paper <em>Procedural Modeling of Buildings</em> (2006) by Müller et al. They develop a text-based language for describing buildings, and their system is used in the Esri CityEngine software. The paper is worth taking a look at, since the authors give you a good overview of the complete textual system they developed by showing its use in many different examples.</p>
-
 <p>Let&rsquo;s take a closer look at how a production rule in a shape grammar works, using examples in the spirit of the work by Müller et al. The following details will be important later on, when the immediate mode editing features are developed.</p>
-
 <p>A production rule takes as input a 3d shape, known as a predecessor, and replaces it with any number of output (successor) shapes. In text, this can be represented as</p>
-
-<pre><code>predecessor_name -&gt; production_rule { successor_name }
-</code></pre>
-
-<p>Using this notation, we can generate a set of tiles from a quad. Let&rsquo;s use the so-called <em>repeat split</em> operation. It takes a predecessor shape, splits it along the given axis a given number of times:</p>
-
-<pre><code>quad -&gt; repeat_split(Y, 4) { rectangles }
+<pre tabindex="0"><code>predecessor_name -&gt; production_rule { successor_name }
+</code></pre><p>Using this notation, we can generate a set of tiles from a quad. Let&rsquo;s use the so-called <em>repeat split</em> operation. It takes a predecessor shape, splits it along the given axis a given number of times:</p>
+<pre tabindex="0"><code>quad -&gt; repeat_split(Y, 4) { rectangles }
 rectangles -&gt; repeat_split(X, 4) { tiles }
-</code></pre>
-
-<p><img src="/img/shape_grammar_intro/tiling_result.png" alt="tiling result" />
-<p align="center"><i>Before and after tiling a quad along the vertical and horizontal axes.</i></p></p>
-
+</code></pre><p><img src="/img/shape_grammar_intro/tiling_result.png" alt="tiling result"></p>
+<!-- raw HTML omitted -->
 <p>As the shape grammar is evaluated, a <em>shape grammar configuration</em> is used to retain the current state of the grammar. For instance, when a predecessor shape is replaced by successor shape, the predecessor is marked as inactive in the configuration, rather than being outright deleted. Likewise, each new successor shape is marked as active in the configuration. Thus, the full construction history of the final 3d shape is available in the configuration. The configuration can be used later on for contextual queries during the editing process.</p>
-
 <h1 id="non-destructive-node-graph-editor">Non-destructive node graph editor</h1>
-
 <p>Now that we have an overview of how shape grammars work, let&rsquo;s build a UI and a responsive editor on top of them.</p>
-
 <h2 id="node-graphs">Node graphs</h2>
-
 <p>It is quite common in most 3d editors to use node graphs for editing the scene and material configuration. Node graphs are used since they have some advantages over textual configuration. Not only are visual tools easier to play around with, they can also prevent some classes of errors which happen in a textual configuration language, for programmers and non-programmers alike.</p>
-
 <p>Let&rsquo;s take a look at one possible graphical representation of a shape grammar, using the already mentioned <em>repeat split</em> production rule. It takes a predecessor shape, splits it <em>n</em> times along the user-specified axis, and produces <em>n + 1</em> successor shapes. We can express this operation as a simple graph:</p>
-
-<p><img src="/img/shape_grammar_intro/graph_repeat_split.png" alt="repeat split graph representation" />
-<p align="center"><i>Hooray for beautifully hand-drawn graph diagrams.</i></p></p>
-
+<p><img src="/img/shape_grammar_intro/graph_repeat_split.png" alt="repeat split graph representation"></p>
+<!-- raw HTML omitted -->
 <p>Converting our earlier tiling grammar example into a graph consists of chaining our repeat split graph nodes:</p>
-
-<p><img src="/img/shape_grammar_intro/graph_tiling.png" alt="tiling graph representation" /></p>
-
+<p><img src="/img/shape_grammar_intro/graph_tiling.png" alt="tiling graph representation"></p>
 <p>In the graph-based representation, we can actually leave the named symbol nodes completely out, and let the shapes &ldquo;flow&rdquo; along the edges between the predecessor and successor nodes. This node-based UI is a representation of the tiling example shape flow.</p>
-
-<p><img src="/img/shape_grammar_intro/node_tiling_example.png" alt="node_tiling_example" /></p>
-
+<p><img src="/img/shape_grammar_intro/node_tiling_example.png" alt="node_tiling_example"></p>
 <p>By manipulating the UI, you manipulate the underlying shape flow graph, which controls how shapes flow between production rules. When you change a node&rsquo;s state, the entire shape flow is re-evaluated, and as a result you can see how the final model changes every time you make a change in the node graph.</p>
-
 <p>The paper <em>Procedural Modeling of Buildings</em> defines a number of sophisticated production rules. The production rules they define can be broadly categorized as follows: axioms, refinement, divergent, and filter rules. My node-based editor only has a few of the paper&rsquo;s production rules implemented, but we can take a look at the ones that are implemented in their categories.</p>
-
 <h3 id="axioms">Axioms</h3>
-
 <p>The axiom node is a unique production rule in this framework, because it doesn&rsquo;t take a predecessor. All shape grammars have to start with some sort of shape, and the axiom node is the rule which defines which shape to start with. The shape can be a simple hard-coded shape, such as a quad, or it can come from an external 3d model. Currently, the axiom just produces a configurable cube.</p>
-
-<p><img src="/img/shape_grammar_intro/axiom_node.png" alt="the axiom node" /></p>
-
+<p><img src="/img/shape_grammar_intro/axiom_node.png" alt="the axiom node"></p>
 <h3 id="refinement-rules">Refinement rules</h3>
-
 <p>Refinement rules take a single predecessor shape, and replace it with multiple successor shapes at once. The refinement rules present in the editor are <em>extrude</em>, <em>roof</em>, and <em>repeat split</em>.</p>
-
-<p><img src="/img/shape_grammar_intro/refinement_nodes.png" alt="the refinement nodes" /></p>
-
+<p><img src="/img/shape_grammar_intro/refinement_nodes.png" alt="the refinement nodes"></p>
 <p>The extrude and roof nodes are examples of production rules which take the input shape, and essentially replace it with an entirely new 3d model. In the case of the extrude node, the input is replaced with a 3d extrusion of the input. And the roof node essentially places a hip roof over the input shape. The repeat split node replaces the input shape with successors that resembles the input, but split into multiple subpolygons.</p>
-
 <h3 id="diverging-rules">Diverging rules</h3>
-
 <p>Only one <em>diverging</em> rule exists in the editor: the <em>split</em> node. Like the <em>repeat split</em> refinement rule, it takes an input shape, splits along a user-specified axis and produces multiple (two) successors: one successor for the left-hand side, and one successor for the right-hand side result.</p>
-
-<p><img src="/img/shape_grammar_intro/split_node.png" alt="the split node" /></p>
-
+<p><img src="/img/shape_grammar_intro/split_node.png" alt="the split node"></p>
 <p>The key difference is that this rule lets you discriminate based on the successors &ndash; you can refine the left and right-hand side according to different rules, unlike the other refinement rules.</p>
-
 <h3 id="filters">Filters</h3>
-
 <p>The filter node is a rule which lets you select shapes. Given a range of input shapes (such as the output of a refinement rule), it discriminates between shapes which were selected and those that remained unselected. The rule doesn&rsquo;t do anything to the shapes themselves. The editor currently only has a <em>face selection</em> filter implemented, which let&rsquo;s you choose faces based on their spatial orientation.</p>
-
-<p><img src="/img/shape_grammar_intro/filter_node.png" alt="the face selection node" /></p>
-
+<p><img src="/img/shape_grammar_intro/filter_node.png" alt="the face selection node"></p>
 <h2 id="editor-view">Editor view</h2>
-
 <p>The goal of the editor is to show the final model described by the grammar, as well as preview any changes being made to it as quickly as possible.</p>
-
 <p>Showing the final model isn&rsquo;t a particularly difficult feat &ndash; the full evaluation of the shape grammar can be performed from scratch in a few milliseconds, which means that we can regenerate the entire model during a single frame.</p>
-
 <p>In order to preview changes being made to the node graph editor, let&rsquo;s return very briefly to the already mentioned <em>shape grammar configuration</em>, which was the data structure where all active and inactive shapes produced by our shape grammar were stored. It is now very easy to selectively hide all successor shapes of a specific node in the editor view, since we have all the shapes produced by each step in our grammar. We can also preview what the resulting successors of a single node would look like.</p>
-
-<p><img src="/img/shape_grammar_intro/preview_animation.gif" alt="preview animation" /></p>
-
+<p><img src="/img/shape_grammar_intro/preview_animation.gif" alt="preview animation"></p>
 <p>The node-based workflow retains the full &ldquo;edit state&rdquo; of the final model, and let&rsquo;s us tweak any values of an existing node. Just like the edit state of the photo editors mentioned in the beginning!</p>
-
 <h1 id="what-else">What else?</h1>
-
 <p>There&rsquo;s almost an infinite amount of exploration and work which can be done with this topic.</p>
-
 <p>Starting with the basics, the editor is somewhat limited at the moment with respect to the types of polygons, and types of buildings it can handle. All of the examples show models consisting entirely of quads, which are nice convex polygons. And that is all the  editor can handle. The moment you introduce support for concave polygons, triangulation becomes much harder. Polygons with holes in them, and thus buildings with holes in them, are also not supported. Implementing those features would be prerequisites for generating cool structures but they are surprisingly hard to implement, at least with the time available for hobby projects.</p>
-
 <p>If you have a working shape grammar system, it can be applied for city generation. The PhD thesis by Tom Kelly is especialy cool in this regard, as some of the same algorithms used for generating roofs (the straight skeleton algorithm) can be reused for generating very realistic layouts for building lots. For more, see the list of papers below!</p>
-
 <h1 id="list-of-papers">List of papers</h1>
-
 <p>If some or all of the things mentioned so far seemed interesting, then you may want to check out the following papers and thesis:</p>
-
 <ul>
 <li><em>Procedural Modeling of Buildings</em>, 2006, Müller et al.</li>
 <li><em>Advanced Procedural Modeling of Architecture</em>, 2015, Schwarz et el.</li>
@@ -211,22 +152,17 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li><a href="#shape-grammars">Shape grammars</a></li>
-<li><a href="#non-destructive-node-graph-editor">Non-destructive node graph editor</a>
-<ul>
-<li><a href="#node-graphs">Node graphs</a>
-<ul>
-<li><a href="#axioms">Axioms</a></li>
-<li><a href="#refinement-rules">Refinement rules</a></li>
-<li><a href="#diverging-rules">Diverging rules</a></li>
-<li><a href="#filters">Filters</a></li>
-</ul></li>
-<li><a href="#editor-view">Editor view</a></li>
-</ul></li>
-<li><a href="#what-else">What else?</a></li>
-<li><a href="#list-of-papers">List of papers</a></li>
-</ul>
+  <ul>
+    <li><a href="#node-graphs">Node graphs</a>
+      <ul>
+        <li><a href="#axioms">Axioms</a></li>
+        <li><a href="#refinement-rules">Refinement rules</a></li>
+        <li><a href="#diverging-rules">Diverging rules</a></li>
+        <li><a href="#filters">Filters</a></li>
+      </ul>
+    </li>
+    <li><a href="#editor-view">Editor view</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -240,12 +176,12 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
             <ul class="article-tag-list">
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/3d">3d
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/3d">3d
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/modeling">modeling
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/modeling">modeling
                     </a>
                 </li>
                 
@@ -253,7 +189,8 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
         </footer>
         
     </div>
-    <nav id="article-nav">
+    
+<nav id="article-nav">
     
     <a href="/post/quick_and_dirty_dithering/" id="article-nav-newer" class="article-nav-link-wrap">
         <div class="article-nav-title"><span>&lt;</span>&nbsp;
@@ -267,6 +204,7 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
     </a>
     
 </nav>
+
 
 </article>
 
@@ -293,14 +231,10 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2022 Johann Muszynski
+            &copy; 2023 Johann Muszynski
         </div>
     </div>
     
-
-    <link rel="stylesheet" href="/css/grayscale.css">
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 
     
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">

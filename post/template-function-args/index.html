@@ -3,30 +3,32 @@
 <head>
     <title>Placing an arbitrary number of function calls into a function argument list using templates // My thought repository</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    <meta name="description" content="A small look at some useful template techniques, in the context of trying to bind functions to a virtual machine. I wrote this post mostly for myself so that these techniques would be listed all in one place.">
+    
+
         <meta property="og:title" content="Placing an arbitrary number of function calls into a function argument list using templates" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://nelari.us/post/template-function-args/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    <link rel="stylesheet" href="https://nelari.us/css/style.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <meta name="generator" content="Hugo 0.54.0" />
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
 </head>
 
 
@@ -69,180 +71,305 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            
-
-<p>While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.</p>
-
+            <p>While I was trying to generate code to bind C++ to a scripting language, I discovered that C++ templates, in their current modern form, are not as scary as I used to think they were. Here are a few useful things that I discovered.</p>
 <p>First, in toy form, the problem that I was trying to solve. Suppose I have a free function that I want to bind to a virtual machine.</p>
-
-<pre><code class="language-cpp">double convertToDegrees( double rad ) {
-    return rad * ( 180.0 / 3.14159265359 );
-}
-</code></pre>
-
-<p>Communication with the virtual machine is carried out with these template functions.</p>
-
-<pre><code class="language-cpp">// When called, returns the argument at position index within the argument list.
-template&lt; typename T&gt;
-T GetArgument( int index );
-
-// when called, returns the value to the function in the virtual machine.
-template&lt; typename T &gt;
-void Return( T val );
-</code></pre>
-
-<p>I could wrap <code>convertToDegrees</code> in the virtual machine glue code as follows, and give it to the virtual machine&rsquo;s C API.</p>
-
-<pre><code class="language-cpp">void wrapper() {
-    double res = convertToDegrees( GetArgument&lt;double&gt;( 1 ) );
-    Return( res );
-}
-</code></pre>
-
-<p>But writing this for every function will take time. Additionally, if I were to change the function definition, then I would have to alter the wrapper manually. I want to generate these bindings automatically.</p>
-
-<p>Given a free function, I want to generate the appropriate calls to GetArgument<T> and place them in the correct order in the function call. Thus, a way to index and get a function&rsquo;s argument types is needed.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">double</span> convertToDegrees( <span style="color:#2b91af">double</span> rad ) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> rad * ( 180.0 / 3.14159265359 );
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Communication with the virtual machine is carried out with these template functions.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// When called, returns the argument at position index within the argument list.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> T&gt;
+</span></span><span style="display:flex;"><span>T GetArgument( <span style="color:#2b91af">int</span> index );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// when called, returns the value to the function in the virtual machine.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> T &gt;
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">void</span> Return( T val );
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>I could wrap <code>convertToDegrees</code> in the virtual machine glue code as follows, and give it to the virtual machine&rsquo;s C API.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> wrapper() {
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">double</span> res = convertToDegrees( GetArgument&lt;<span style="color:#2b91af">double</span>&gt;( 1 ) );
+</span></span><span style="display:flex;"><span>    Return( res );
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>But writing this for every function will take time. Additionally, if I were to change the function definition, then I would have to alter the wrapper manually. I want to generate these bindings automatically.</p>
+<p>Given a free function, I want to generate the appropriate calls to GetArgument<!-- raw HTML omitted --> and place them in the correct order in the function call. Thus, a way to index and get a function&rsquo;s argument types is needed.</p>
 <h2 id="function-traits">Function traits</h2>
-
 <p>Storing function traits can be done easily.</p>
-
-<pre><code class="language-cpp">template&lt; typename F &gt;
-struct function_traits;
-
-template&lt; typename R, typename... Args &gt;
-struct function_traits&lt; R( Args... ) &gt; {
-    using return_type = R;
-
-    constexpr static const std::size_t arity = sizeof...( Args );
-
-    template&lt; std::size_t N &gt;
-    struct argument {
-        static_assert( N &lt; arity, &quot;FunctionTraits error: invalid argument count parameter&quot; );
-        using type = std::tuple_element_t&lt; N, std::tuple&lt; Args... &gt; &gt;;
-    };
-
-    template&lt; std::size_t N &gt;
-    using argument_type = typename argument&lt;N&gt;::type;
-};
-</code></pre>
-
-<p>The class can be used like this:</p>
-
-<pre><code class="language-cpp">using traits = function_traits&lt; decltype(convertToDegrees) &gt;;
-cout &lt;&lt; is_same&lt;double, traits::argument_type&lt;0&gt;&gt;::value &lt;&lt; endl;
-cout &lt;&lt; is_same&lt;double, traits::return_type&gt;::value &lt;&lt; endl;
-</code></pre>
-
-<p>You can use the <code>decltype</code> specifier to get the function&rsquo;s type, or just enter it manually. For <code>convertToDegrees</code>, the type would be <code>double(double)</code>.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> F &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">function_traits</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> R, <span style="color:#00f">typename</span>... Args &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">function_traits</span>&lt; R( Args... ) &gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> return_type = R;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">constexpr</span> <span style="color:#00f">static</span> <span style="color:#00f">const</span> std::size_t arity = <span style="color:#00f">sizeof</span>...( Args );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt; std::size_t N &gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">struct</span> <span style="color:#2b91af">argument</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">static_assert</span>( N &lt; arity, <span style="color:#a31515">&#34;FunctionTraits error: invalid argument count parameter&#34;</span> );
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">using</span> type = std::tuple_element_t&lt; N, std::tuple&lt; Args... &gt; &gt;;
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">template</span>&lt; std::size_t N &gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> argument_type = <span style="color:#00f">typename</span> argument&lt;N&gt;::type;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The class can be used like this:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">using</span> traits = function_traits&lt; <span style="color:#00f">decltype</span>(convertToDegrees) &gt;;
+</span></span><span style="display:flex;"><span>cout &lt;&lt; is_same&lt;<span style="color:#2b91af">double</span>, traits::argument_type&lt;0&gt;&gt;::value &lt;&lt; endl;
+</span></span><span style="display:flex;"><span>cout &lt;&lt; is_same&lt;<span style="color:#2b91af">double</span>, traits::return_type&gt;::value &lt;&lt; endl;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can use the <code>decltype</code> specifier to get the function&rsquo;s type, or just enter it manually. For <code>convertToDegrees</code>, the type would be <code>double(double)</code>.</p>
 <h2 id="unpacking-a-tuple-into-a-function-argument-list">Unpacking a tuple into a function argument list</h2>
-
 <p>Tuples can be unpacked into a function call surprisingly easily. Use std::index_sequence to generate a non-type parameter pack of indices to index the tuple elements at compile time.</p>
-
-<pre><code class="language-cpp">template&lt; typename Function, typename Tuple, std::size_t... index&gt;
-decltype( auto ) invokeHelper( Function&amp;&amp; f, Tuple&amp;&amp; tup, std::index_sequence&lt;index...&gt; ) {
-    return f( std::get&lt;index&gt;( std::forward&lt;Tuple&gt;(tup) )... );
-}
-
-template&lt; typename Function, typename Tuple &gt;
-decltype( auto ) invokeWithTuple( Function&amp;&amp; f, Tuple&amp;&amp; tup ) {
-    constexpr auto Arity = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::arity;
-    return invoke_helper( 
-        std::forward&lt;Function&gt;( f ), 
-        std::forward&lt;Tuple&gt;( tup ), 
-        std::make_index_sequence&lt;Arity&gt;{} 
-    );
-}
-</code></pre>
-
-<p>How exactly does this work? When the ellipsis operator is placed after a pattern containing a variadic parameter, the pattern is instantiated for each instance of the variadic parameter. The instances are separated by commas. In <code>invokeHelper</code>, the (non-type) variadic parameter is <code>index</code>.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function, <span style="color:#00f">typename</span> Tuple, std::size_t... index&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">decltype</span>( <span style="color:#00f">auto</span> ) invokeHelper( Function&amp;&amp; f, Tuple&amp;&amp; tup, std::index_sequence&lt;index...&gt; ) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> f( std::get&lt;index&gt;( std::forward&lt;Tuple&gt;(tup) )... );
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function, <span style="color:#00f">typename</span> Tuple &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">decltype</span>( <span style="color:#00f">auto</span> ) invokeWithTuple( Function&amp;&amp; f, Tuple&amp;&amp; tup ) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">constexpr</span> <span style="color:#00f">auto</span> Arity = function_traits&lt; std::remove_reference_t&lt;<span style="color:#00f">decltype</span>(f)&gt; &gt;::arity;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> invoke_helper( 
+</span></span><span style="display:flex;"><span>        std::forward&lt;Function&gt;( f ), 
+</span></span><span style="display:flex;"><span>        std::forward&lt;Tuple&gt;( tup ), 
+</span></span><span style="display:flex;"><span>        std::make_index_sequence&lt;Arity&gt;{} 
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>How exactly does this work? When the ellipsis operator is placed after a pattern containing a variadic parameter, the pattern is instantiated for each instance of the variadic parameter. The instances are separated by commas. In <code>invokeHelper</code>, the (non-type) variadic parameter is <code>index</code>.</p>
 <p>Note the C++14-ism in the above code. In C++11, you would write <code>function_traits&lt; typename std::remove_reference&lt;decltype(f)&gt;::type &gt;</code>. C++14 introduced aliasing, which allows this: <code>template&lt;typename T&gt; using remove_reference_t = typename remove_reference&lt;T&gt;::type;</code>. All the type traits in <code>type_traits</code> have aliases of this form in C++14.</p>
-
 <p>Now this should work:</p>
-
-<pre><code class="language-cpp">void say( int val, double val2 ) {
-    std::cout &lt;&lt; &quot;called with &quot; &lt;&lt; val &lt;&lt; &quot;, &quot; &lt;&lt; val2 &lt;&lt; std::endl;
-}
-
-int main() {
-    auto tup = std::make_tuple( 5, 42.0 );
-    invokeWithTuple( say, tup );
-
-    return 0;
-}
-</code></pre>
-
-<h2 id="placing-getargument-t-into-a-function-argument-list">Placing <code>GetArgument&lt;T&gt;</code> into a function argument list</h2>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#2b91af">void</span> say( <span style="color:#2b91af">int</span> val, <span style="color:#2b91af">double</span> val2 ) {
+</span></span><span style="display:flex;"><span>    std::cout &lt;&lt; <span style="color:#a31515">&#34;called with &#34;</span> &lt;&lt; val &lt;&lt; <span style="color:#a31515">&#34;, &#34;</span> &lt;&lt; val2 &lt;&lt; std::endl;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main() {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">auto</span> tup = std::make_tuple( 5, 42.0 );
+</span></span><span style="display:flex;"><span>    invokeWithTuple( say, tup );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="placing-getargumentt-into-a-function-argument-list">Placing <code>GetArgument&lt;T&gt;</code> into a function argument list</h2>
 <p>We can place the calls to <code>GetArgument&lt;T&gt;</code> in a very similar way.</p>
-
-<pre><code class="language-cpp">template&lt; typename Function, std::size_t... index&gt;
-decltype( auto ) invokeHelper( Function&amp;&amp; f, std::index_sequence&lt;index...&gt; ) {
-  using traits = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;;
-  return f( GetArgument&lt; typename traits::template argument_type&lt;index&gt; &gt;( index + 1 )... );
-}
-
-template&lt; typename Function &gt;
-decltype( auto ) invokeWithArguments( Function&amp;&amp; f ) {
-  constexpr auto Arity = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::arity;
-  return invoke_helper( 
-    std::forward&lt;Function&gt;( f ),
-    std::make_index_sequence&lt;Arity&gt;{} 
-  );
-}
-</code></pre>
-
-<h2 id="generate-a-unique-wrapper-class-for-a-function">Generate a unique wrapper class for a function</h2>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function, std::size_t... index&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">decltype</span>( <span style="color:#00f">auto</span> ) invokeHelper( Function&amp;&amp; f, std::index_sequence&lt;index...&gt; ) {
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">using</span> traits = function_traits&lt; std::remove_reference_t&lt;<span style="color:#00f">decltype</span>(f)&gt; &gt;;
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">return</span> f( GetArgument&lt; <span style="color:#00f">typename</span> traits::<span style="color:#00f">template</span> argument_type&lt;index&gt; &gt;( index + 1 )... );
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">decltype</span>( <span style="color:#00f">auto</span> ) invokeWithArguments( Function&amp;&amp; f ) {
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">constexpr</span> <span style="color:#00f">auto</span> Arity = function_traits&lt; std::remove_reference_t&lt;<span style="color:#00f">decltype</span>(f)&gt; &gt;::arity;
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">return</span> invoke_helper( 
+</span></span><span style="display:flex;"><span>    std::forward&lt;Function&gt;( f ),
+</span></span><span style="display:flex;"><span>    std::make_index_sequence&lt;Arity&gt;{} 
+</span></span><span style="display:flex;"><span>  );
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="generate-a-unique-wrapper-class-for-a-function">Generate a unique wrapper class for a function</h2>
 <p>The last piece of my toy puzzle. I call <code>invokeWithArguments</code> from a static method, so that I can give the static method to the virtual machine&rsquo;s C API.</p>
-
-<pre><code class="language-cpp">template&lt; typename Signature, Signature&amp; &gt;
-struct ForeignMethodWrapper;
-
-template&lt; typename R, typename... Args, R( &amp;P )( Args... ) &gt;
-struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
-    static void call() {
-        invokeWithArguments( P );
-    }
-};
-</code></pre>
-
-<h2 id="invoking-code-conditionally">Invoking code conditionally</h2>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Signature, Signature&amp; &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">ForeignMethodWrapper</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> R, <span style="color:#00f">typename</span>... Args, R( &amp;P )( Args... ) &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">ForeignMethodWrapper</span>&lt; R( Args... ), P &gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">static</span> <span style="color:#2b91af">void</span> call() {
+</span></span><span style="display:flex;"><span>        invokeWithArguments( P );
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="invoking-code-conditionally">Invoking code conditionally</h2>
 <p>Actually, I&rsquo;m not done yet. I still haven&rsquo;t explained how I call <code>Return&lt;T&gt;( T val )</code> only when the function&rsquo;s return value is not <code>void</code>. A specialized struct can be used to store the different invocations.</p>
-
-<pre><code class="language-cpp">// to be used with std::is_void
-template&lt;bool predicate&gt;
-struct InvokeWithoutReturningIf {
-  template&lt; typename Function &gt;
-  static void invoke( Function&amp;&amp; f ) {
-    invokeWithArguments( std::forward&lt; Function &gt;( f ) );
-  }
-};
-
-template&lt;&gt;
-struct InvokeWithoutReturningIf&lt;false&gt; {
-  template&lt; typename Function &gt;
-  static void invoke( Function&amp;&amp; f ) {
-    using R = function_traits&lt; std::remove_reference_t&lt;decltype(f)&gt; &gt;::return_type;
-    Return&lt;R&gt;( invokeWithArguments( std::forward&lt;Function&gt;(f) ) );
-    }
-};
-</code></pre>
-
-<p>Finally, I modified <code>ForeignMethodWrapper</code> to</p>
-
-<pre><code class="language-cpp">template&lt; typename R, typename... Args, R( &amp;P )( Args... ) &gt;
-struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
-  static void call() {
-    InvokeWithoutReturningIf&lt; std::is_void&lt;R&gt;::value &gt;::invoke( P );
-  }
-};
-</code></pre>
-
-<p>which completes the solution for my toy problem.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// to be used with std::is_void
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">template</span>&lt;<span style="color:#2b91af">bool</span> predicate&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">InvokeWithoutReturningIf</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function &gt;
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">static</span> <span style="color:#2b91af">void</span> invoke( Function&amp;&amp; f ) {
+</span></span><span style="display:flex;"><span>    invokeWithArguments( std::forward&lt; Function &gt;( f ) );
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">template</span>&lt;&gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">InvokeWithoutReturningIf</span>&lt;false&gt; {
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> Function &gt;
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">static</span> <span style="color:#2b91af">void</span> invoke( Function&amp;&amp; f ) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">using</span> R = function_traits&lt; std::remove_reference_t&lt;<span style="color:#00f">decltype</span>(f)&gt; &gt;::return_type;
+</span></span><span style="display:flex;"><span>    Return&lt;R&gt;( invokeWithArguments( std::forward&lt;Function&gt;(f) ) );
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, I modified <code>ForeignMethodWrapper</code> to</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">template</span>&lt; <span style="color:#00f">typename</span> R, <span style="color:#00f">typename</span>... Args, R( &amp;P )( Args... ) &gt;
+</span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">ForeignMethodWrapper</span>&lt; R( Args... ), P &gt; {
+</span></span><span style="display:flex;"><span>  <span style="color:#00f">static</span> <span style="color:#2b91af">void</span> call() {
+</span></span><span style="display:flex;"><span>    InvokeWithoutReturningIf&lt; std::is_void&lt;R&gt;::value &gt;::invoke( P );
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>which completes the solution for my toy problem.</p>
 
         </div>
 
@@ -251,16 +378,13 @@ struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#function-traits">Function traits</a></li>
-<li><a href="#unpacking-a-tuple-into-a-function-argument-list">Unpacking a tuple into a function argument list</a></li>
-<li><a href="#placing-getargument-t-into-a-function-argument-list">Placing <code>GetArgument&lt;T&gt;</code> into a function argument list</a></li>
-<li><a href="#generate-a-unique-wrapper-class-for-a-function">Generate a unique wrapper class for a function</a></li>
-<li><a href="#invoking-code-conditionally">Invoking code conditionally</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#function-traits">Function traits</a></li>
+    <li><a href="#unpacking-a-tuple-into-a-function-argument-list">Unpacking a tuple into a function argument list</a></li>
+    <li><a href="#placing-getargumentt-into-a-function-argument-list">Placing <code>GetArgument&lt;T&gt;</code> into a function argument list</a></li>
+    <li><a href="#generate-a-unique-wrapper-class-for-a-function">Generate a unique wrapper class for a function</a></li>
+    <li><a href="#invoking-code-conditionally">Invoking code conditionally</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -274,12 +398,12 @@ struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
             <ul class="article-tag-list">
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/c&#43;&#43;">c&#43;&#43;
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/c&#43;&#43;">c&#43;&#43;
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/metaprogramming">metaprogramming
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/metaprogramming">metaprogramming
                     </a>
                 </li>
                 
@@ -287,7 +411,8 @@ struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
         </footer>
         
     </div>
-    <nav id="article-nav">
+    
+<nav id="article-nav">
     
     <a href="/post/wren-embedding-1/" id="article-nav-newer" class="article-nav-link-wrap">
         <div class="article-nav-title"><span>&lt;</span>&nbsp;
@@ -297,6 +422,7 @@ struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
     
     
 </nav>
+
 
 </article>
 
@@ -323,14 +449,10 @@ struct ForeignMethodWrapper&lt; R( Args... ), P &gt; {
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2022 Johann Muszynski
+            &copy; 2023 Johann Muszynski
         </div>
     </div>
     
-
-    <link rel="stylesheet" href="/css/grayscale.css">
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 
     
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">

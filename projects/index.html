@@ -3,30 +3,32 @@
 <head>
     <title>Projects // My thought repository</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
     <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+
         <meta property="og:title" content="Projects" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://nelari.us/projects/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    <link rel="stylesheet" href="https://nelari.us/css/style.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <meta name="generator" content="Hugo 0.54.0" />
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
 </head>
 
 
@@ -69,45 +71,46 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            
-
-<p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
-
+            <p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
 <h2 id="imnodes">imnodes</h2>
-
-<p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes" /></p>
-
+<p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes"></p>
 <p>A small, dependency-free node editor extension for <a href="https://github.com/ocornut/imgui">dear imgui</a>. It features a small immediate-mode API similar to <code>dear imgui</code> itself.</p>
-
 <p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
-
 <h2 id="wren">Wren++</h2>
-
-<pre><code class="language-cpp">wrenpp::VM vm;
-vm.beginModule( &quot;math&quot; )
-.beginClass( &quot;Math&quot; )
-  .bindFunction&lt; decltype(&amp;cos), &amp;cos &gt;( true, &quot;cos(_)&quot; )
-  .bindFunction&lt; decltype(&amp;sin), &amp;sin &gt;( true, &quot;sin(_)&quot; )
-  .bindFunction&lt; decltype(&amp;tan), &amp;tan &gt;( true, &quot;tan(_)&quot; )
-  .bindFunction&lt; decltype(&amp;exp), &amp;exp &gt;( true, &quot;exp(_)&quot; )
-.endClass()
-.endModule();
-
-vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.cos(0.12345) )&quot; );
-</code></pre>
-
-<p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>wrenpp::VM vm;
+</span></span><span style="display:flex;"><span>vm.beginModule( <span style="color:#a31515">&#34;math&#34;</span> )
+</span></span><span style="display:flex;"><span>.beginClass( <span style="color:#a31515">&#34;Math&#34;</span> )
+</span></span><span style="display:flex;"><span>  .bindFunction&lt; <span style="color:#00f">decltype</span>(&amp;cos), &amp;cos &gt;( true, <span style="color:#a31515">&#34;cos(_)&#34;</span> )
+</span></span><span style="display:flex;"><span>  .bindFunction&lt; <span style="color:#00f">decltype</span>(&amp;sin), &amp;sin &gt;( true, <span style="color:#a31515">&#34;sin(_)&#34;</span> )
+</span></span><span style="display:flex;"><span>  .bindFunction&lt; <span style="color:#00f">decltype</span>(&amp;tan), &amp;tan &gt;( true, <span style="color:#a31515">&#34;tan(_)&#34;</span> )
+</span></span><span style="display:flex;"><span>  .bindFunction&lt; <span style="color:#00f">decltype</span>(&amp;exp), &amp;exp &gt;( true, <span style="color:#a31515">&#34;exp(_)&#34;</span> )
+</span></span><span style="display:flex;"><span>.endClass()
+</span></span><span style="display:flex;"><span>.endModule();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>vm.executeString( <span style="color:#a31515">&#34;import </span><span style="color:#a31515">\&#34;</span><span style="color:#a31515">math</span><span style="color:#a31515">\&#34;</span><span style="color:#a31515"> for Math</span><span style="color:#a31515">\n</span><span style="color:#a31515">System.print( Math.cos(0.12345) )&#34;</span> );
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
 <p>I wrote a small tutorial on its usage <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
-
 <p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
-
 <h2 id="vscode-wren">vscode-wren</h2>
-
-<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting" /></p>
-
+<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting"></p>
 <p>A Visual Studio Code extension for the Wren programming language. Currently the extension provides snippets and syntax highlighting for most language features.</p>
-
 <p>Find it on <a href="https://github.com/Nelarius/vscode-wren">github</a> and the vscode <a href="https://marketplace.visualstudio.com/items?itemName=nelarius.vscode-wren">marketplace</a>.</p>
 
         </div>
@@ -117,14 +120,11 @@ vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.c
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#imnodes">imnodes</a></li>
-<li><a href="#wren">Wren++</a></li>
-<li><a href="#vscode-wren">vscode-wren</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#imnodes">imnodes</a></li>
+    <li><a href="#wren">Wren++</a></li>
+    <li><a href="#vscode-wren">vscode-wren</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -135,7 +135,8 @@ vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.c
 
         
     </div>
-    <nav id="article-nav">
+    
+<nav id="article-nav">
     
     <a href="/post/raytracer_with_rust_and_zig/" id="article-nav-newer" class="article-nav-link-wrap">
         <div class="article-nav-title"><span>&lt;</span>&nbsp;
@@ -149,6 +150,7 @@ vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.c
     </a>
     
 </nav>
+
 
 </article>
 
@@ -175,14 +177,10 @@ vm.executeString( &quot;import \&quot;math\&quot; for Math\nSystem.print( Math.c
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2022 Johann Muszynski
+            &copy; 2023 Johann Muszynski
         </div>
     </div>
     
-
-    <link rel="stylesheet" href="/css/grayscale.css">
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 
     
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">

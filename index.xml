@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>My thought repository</title>
@@ -6,11 +6,7 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 06 Mar 2022 10:58:00 +0200</lastBuildDate>
-    
-	<atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 06 Mar 2022 10:58:00 +0200</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Quick and dirty image dithering</title>
       <link>https://nelari.us/post/quick_and_dirty_dithering/</link>
@@ -51,7 +47,7 @@ The two languages that I spent most of my time daydreaming about writing code in
       <description>Here is an overview of some of the software projects I&amp;rsquo;ve worked on in my free time.
 imnodes A small, dependency-free node editor extension for dear imgui. It features a small immediate-mode API similar to dear imgui itself.
 Find it on github.
-Wren++ wrenpp::VM vm; vm.beginModule( &amp;quot;math&amp;quot; ) .beginClass( &amp;quot;Math&amp;quot; ) .bindFunction&amp;lt; decltype(&amp;amp;cos), &amp;amp;cos &amp;gt;( true, &amp;quot;cos(_)&amp;quot; ) .bindFunction&amp;lt; decltype(&amp;amp;sin), &amp;amp;sin &amp;gt;( true, &amp;quot;sin(_)&amp;quot; ) .bindFunction&amp;lt; decltype(&amp;amp;tan), &amp;amp;tan &amp;gt;( true, &amp;quot;tan(_)&amp;quot; ) .</description>
+Wren++ 1 2 3 4 5 6 7 8 9 10 11 wrenpp::VM vm; vm.beginModule( &amp;#34;math&amp;#34; ) .beginClass( &amp;#34;Math&amp;#34; ) .bindFunction&amp;lt; decltype(&amp;amp;cos), &amp;amp;cos &amp;gt;( true, &amp;#34;cos(_)&amp;#34; ) .bindFunction&amp;lt; decltype(&amp;amp;sin), &amp;amp;sin &amp;gt;( true, &amp;#34;sin(_)&amp;#34; ) .</description>
     </item>
     
     <item>

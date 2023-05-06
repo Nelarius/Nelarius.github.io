@@ -1,16 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Modeling on My thought repository</title>
+    <title>modeling on My thought repository</title>
     <link>https://nelari.us/tags/modeling/</link>
-    <description>Recent content in Modeling on My thought repository</description>
+    <description>Recent content in modeling on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 01 May 2020 08:00:00 +0300</lastBuildDate>
-    
-	<atom:link href="https://nelari.us/tags/modeling/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Fri, 01 May 2020 08:00:00 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/modeling/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Generating 3d buildings using node graphs</title>
       <link>https://nelari.us/post/shape_grammar_intro/</link>

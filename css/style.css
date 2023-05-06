@@ -104,6 +104,7 @@ button::-moz-focus-inner {
   font-family: FontAwesome;
   font-style: normal;
   font-weight: normal;
+  font-display: swap;
   src: url("fonts/fontawesome-webfont.eot?v=#4.0.3");
   src: url("fonts/fontawesome-webfont.eot?#iefix&v=#4.0.3") format("embedded-opentype"), url("fonts/fontawesome-webfont.woff?v=#4.0.3") format("woff"), url("fonts/fontawesome-webfont.ttf?v=#4.0.3") format("truetype"), url("fonts/fontawesome-webfont.svg#fontawesomeregular?v=#4.0.3") format("svg");
 }
@@ -257,7 +258,7 @@ a.article-title:hover,
 .article-entry ul,
 .article-entry ol,
 .article-entry dl {
-  margin: 0 20px;
+  margin: 0 25px;
   line-height: 1.4em;
 }
 .article-entry ul ul,
@@ -804,23 +805,9 @@ a.article-title:hover,
   font-size: 0.85em;
 }
 .article-entry pre,
-.article-entry .highlight {
-  margin: 0;
-  font-size: 14px;
-  background: #fafafa;
-  padding: 15px 0;
-  overflow: auto;
-  color: #fff;
-  line-height: 22.4px;
-}
-.article-entry .highlight .gutter pre,
-.article-entry .gist .gist-file .gist-data .line-numbers {
-  color: #666;
-  font-size: 0.85em;
-}
-.article-entry pre,
 .article-entry code {
-  font-family: "Source Code Pro", Consolas, Monaco, Menlo, Consolas, monospace, '华文中宋';
+  font-family: FontAwesome, Consolas, Monaco, Menlo, monospace;
+  font-size: 0.9em;
 }
 .article-entry code {
   background: #f2f2f2;
@@ -833,45 +820,6 @@ a.article-title:hover,
   background: none;
   text-shadow: none;
   padding: 0;
-}
-.article-entry pre .highlight {
-  padding: 0;
-}
-.article-entry .highlight pre {
-  border: none;
-  margin: 0;
-  padding: 0 20px;
-}
-.article-entry .highlight table {
-  margin: 0;
-  width: auto;
-}
-.article-entry .highlight td {
-  border: none;
-  padding: 0;
-}
-.article-entry .highlight figcaption {
-  font-size: 0.85em;
-  color: highlight-comment;
-  line-height: 1em;
-  margin-bottom: 1em;
-}
-.article-entry .highlight figcaption:before,
-.article-entry .highlight figcaption:after {
-  content: "";
-  display: table;
-}
-.article-entry .highlight figcaption:after {
-  clear: both;
-}
-.article-entry .highlight figcaption a {
-  float: right;
-}
-.article-entry .highlight .gutter pre {
-  text-align: right;
-}
-.article-entry .highlight .line {
-  height: 22.4px;
 }
 .article-entry .gist {
   margin: 0;
@@ -893,11 +841,6 @@ a.article-title:hover,
 }
 .article-entry .gist .gist-file .gist-data .line-data {
   padding: 0 !important;
-}
-.article-entry .gist .gist-file .highlight {
-  margin: 0;
-  padding: 0;
-  border: none;
 }
 .article-entry .gist .gist-file .gist-meta {
   background: highlight-background;

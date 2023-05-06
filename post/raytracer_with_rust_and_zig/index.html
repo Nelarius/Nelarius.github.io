@@ -3,30 +3,32 @@
 <head>
     <title>Writing a small ray tracer in Rust and Zig // My thought repository</title>
 
-        <meta charset="utf-8">
+    <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
+    
+    <meta name="description" content="I spend most of my programming time writing C&#43;&#43;. And like many other C&#43;&#43; programmers, I&#39;ve shot myself in the foot countless times with a feature I didn&#39;t fully grok. And I&#39;ve spent enormous amounts of time trying to understand the language. Like many other C&#43;&#43; developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.">
+    
+
         <meta property="og:title" content="Writing a small ray tracer in Rust and Zig" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://nelari.us/post/raytracer_with_rust_and_zig/" />
     
 
-    <link href="" rel="alternate" type="application/rss+xml" title="My thought repository" />
-    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
     <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
 
-    <link rel="stylesheet" href="https://nelari.us/css/style.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
 
-    <meta name="generator" content="Hugo 0.54.0" />
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
 </head>
 
 
@@ -69,647 +71,1059 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            
-
-<p>I spend most of my programming time writing C++. And like many other C++ programmers, I&rsquo;ve shot myself in the foot countless times with a feature I didn&rsquo;t fully grok. And I&rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.</p>
-
+            <p>I spend most of my programming time writing C++. And like many other C++ programmers, I&rsquo;ve shot myself in the foot countless times with a feature I didn&rsquo;t fully grok. And I&rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.</p>
 <p>The two languages that I spent most of my time daydreaming about writing code in are Rust and Zig.</p>
-
 <p>Rust, because of its focus on safety and performance. The language effectively tries to prevent you from shooting yourself in the foot. The language has been designed with more care than C++ &ndash; features are tested for feasibility in a nightly branch before being released. A few promising graphics libraries, like <code>gfx-rs</code>, make the language very appealing. But on the other hand, the language has a steep learning curve. Additionally, some of the <a href="https://www.reddit.com/r/rust/comments/a9stnw/rust_2019_and_beyond_limits_to_some_growth/ecn5e5o/?context=3">community discussion</a> gives me little hope that the language is going to stop growing anytime soon. At this time, there are already two slightly different ways of using modules.</p>
-
 <p>Zig, because of its focus on robustness and clarity. The language aims to be easily readable and understandable. The language also features a very elegant take on metaprogramming and generics, far nicer to use than what you currently get in C++. But on the other hand, the language lacks lots of features, like operator overloading, interfaces, and traits.</p>
-
 <p>Would the lack of features in Zig make me more or less productive than with Rust&rsquo;s feature overload? Which language is more enjoyable to use for writing a small, self-contained computer graphics project?</p>
-
 <p>To find out, I decided to implement the same simple project in both languages: a small ray tracer, following the book <a href="http://www.realtimerendering.com/raytracing/Ray%20Tracing%20in%20a%20Weekend.pdf">Ray Tracing in One Weekend</a>. Briefly put, ray tracing is a computer graphics algorithm in which light is simulated by shooting a bunch of rays from the camera into the scene and tracking the path the rays take as they interact with the scene. The book&rsquo;s code samples are C++, but the code is not complex and lends itself well to being reimplemented in other languages. Here&rsquo;s how it went.</p>
-
 <h2 id="rendering-the-first-pixels">Rendering the first pixels</h2>
-
 <p>To kick the project off, a way to display images is required. I wanted to render the image directly to an open window, instead of outputting the image to an image file, like the book does. So, to start this project off, I had to open a window and display some colored pixels on the screen.</p>
-
-<p><img src="/img/rust_and_zig/initial_pixels.png" alt="initial pixels" />
-<p align="center"><i>The goal of this section: open a small window and add some colors to the pixel buffer.</i></p></p>
-
+<p><img src="/img/rust_and_zig/initial_pixels.png" alt="initial pixels"></p>
+<!-- raw HTML omitted -->
 <h3 id="rust">Rust</h3>
-
 <p>In the C/C++ ecosystem, I&rsquo;m most familiar with using the SDL media library for providing a window to use for rendering. Of course, you can use SDL in Rust as well. But Rusts&rsquo;s main package registry, crates.io, actually had something better: the <code>minifb</code> crate (crates are Rust parlance for packages). It does one thing well &ndash; it lets you open a window and set its pixel buffer. No complex setup required, perfect!</p>
-
 <p>Adding the crate was as easy as adding one line to <code>Cargo.toml</code>.</p>
-
-<pre><code class="language-toml">[dependencies]
-minifb = &quot;0.11.2&quot;
-</code></pre>
-
-<p>The crate was automatically downloaded and compiled in the background the next time the build was executed.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[dependencies]
+</span></span><span style="display:flex;"><span>minifb = <span style="color:#a31515">&#34;0.11.2&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The crate was automatically downloaded and compiled in the background the next time the build was executed.</p>
 <p>I have to say the discoverability of packages is really nice on websites like <a href="https://crates.io">crates.io</a> and especially <a href="https://lib.rs">lib.rs</a>. While many packages are not mature, it is nice to see what people have worked on in one place. If you want to find a C++ library, you most likely have to scrape through sourceforge, only to find something written during the last millenia using completely different style and standards than you are.</p>
-
 <h3 id="zig">Zig</h3>
-
 <p>Zig is a <em>very</em> new language in comparison to Rust. That means no convenient packages to get you started. But Zig has something else up its sleeve: C headers can be imported into the current Zig module using <code>@cInclude(&quot;SDL.h&quot;)</code> allowing you to use the C functions, structs, and even macro values directly in the Zig code. This made introducing SDL into the project fairly painless.</p>
-
 <p>Zig actually goes a step further, because the Zig compiler is also a C compiler. I wrote a small C function to set pixel values in the window surface in C, and the C source file could be compiled alongside the Zig source, with the following small addition to the <code>build.zig</code> file, which tells the Zig compiler how your project should be built.</p>
-
-<pre><code class="language-cpp">// Add Zig source to the ray tracer executable
-const exe = b.addExecutable(&quot;zig-tracer&quot;, &quot;src/main.zig&quot;);
-exe.setBuildMode(b.standardReleaseOptions());
-
-// Add the C source file to the executable
-exe.addCSourceFile(&quot;src/pixel.c&quot;, lib_cflags);
-exe.addIncludeDir(&quot;src/&quot;);
-exe.linkSystemLibrary(&quot;c&quot;);
-</code></pre>
-
-<p>This allows Zig to easily coexist alongside C source code.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Add Zig source to the ray tracer executable
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">const</span> exe = b.addExecutable(<span style="color:#a31515">&#34;zig-tracer&#34;</span>, <span style="color:#a31515">&#34;src/main.zig&#34;</span>);
+</span></span><span style="display:flex;"><span>exe.setBuildMode(b.standardReleaseOptions());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Add the C source file to the executable
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>exe.addCSourceFile(<span style="color:#a31515">&#34;src/pixel.c&#34;</span>, lib_cflags);
+</span></span><span style="display:flex;"><span>exe.addIncludeDir(<span style="color:#a31515">&#34;src/&#34;</span>);
+</span></span><span style="display:flex;"><span>exe.linkSystemLibrary(<span style="color:#a31515">&#34;c&#34;</span>);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This allows Zig to easily coexist alongside C source code.</p>
 <h2 id="implementing-the-ray-tracer">Implementing the ray tracer</h2>
-
 <p>Rendering images in the ray tracing book involves writing definitions for ray-sphere collision testing as well as writing definitions for how the ray interacts with the surface of a sphere once it collides.</p>
-
-<p><img src="/img/rust_and_zig/albedo_render.png" alt="albedo render" />
-<p align="center"><i>Testing whether my ray-sphere collision tests work: the scene rendered using just the color value of the object.</i></p></p>
-
-<p><img src="/img/rust_and_zig/normal_render.png" alt="normal map render" />
-<p align="center"><i>More tests: the scene rendered using the surface normal vector as a color.</i></p></p>
-
+<p><img src="/img/rust_and_zig/albedo_render.png" alt="albedo render"></p>
+<!-- raw HTML omitted -->
+<p><img src="/img/rust_and_zig/normal_render.png" alt="normal map render"></p>
+<!-- raw HTML omitted -->
 <p>Controlling how the ray interacts with the sphere&rsquo;s surface is implemented using a number of different material objects, which define how the ray <em>scatters</em> from the sphere&rsquo;s surface. The materials the book implements are lambertian (paper, marble), metal, and dielectric (glass).</p>
-
-<p><img src="/img/rust_and_zig/depth_render.png" alt="depth render" />
-<p align="center"><i>A render showing the number of times a ray has bounced off of a surface for each pixel. The brighter the pixel, the more bounces occurred.</i></p></p>
-
-<p><img src="/img/rust_and_zig/final_render.png" alt="final image" />
-<p align="center"><i>The final image containing a glass, lambertian, and metallic sphere. This is what we&rsquo;re trying to accomplish in this section.</i></p></p>
-
+<p><img src="/img/rust_and_zig/depth_render.png" alt="depth render"></p>
+<!-- raw HTML omitted -->
+<p><img src="/img/rust_and_zig/final_render.png" alt="final image"></p>
+<!-- raw HTML omitted -->
 <h3 id="rust-1">Rust</h3>
-
 <h4 id="program-structure">Program structure</h4>
-
 <p><em>Ray Tracing in One Weekend</em> adheres to a more old-fashioned style of C++, where relations between types are often modeled using inheritance. I opted to leave polymoprhism on the table and go for a very simple approach.</p>
-
 <p>In Rust, there are no fancy inheritance mechanism so my scene objects, <code>World</code> and <code>Sphere</code>, are just simple structs.</p>
-
-<pre><code class="language-rust">#[derive(Copy, Clone)]
-pub struct Sphere {
-    pub center: Vec3,
-    pub radius: f32,
-    pub material: Material,
-}
-
-pub struct World {
-    spheres: Vec&lt;Sphere&gt;,
-}
-
-impl World {
-    pub fn new(spheres: Vec&lt;Sphere&gt;) -&gt; World {
-        World { spheres }
-    }
-}
-</code></pre>
-
-<p>As we can see from the definition of the <code>Sphere</code>, it has one field for a material. The sphere&rsquo;s material can be any one of the three materials, lambertian, metal, or a dielectric. Once again, this could be a good place to use polymorphism, but I decided to use Rust&rsquo;s really handy tagged unions instead.</p>
-
-<pre><code class="language-rust">#[derive(Copy, Clone)]
-pub struct Lambertian {
-    pub albedo: Vec3,
-}
-
-#[derive(Copy, Clone)]
-pub struct Metal {
-    pub albedo: Vec3,
-    pub fuzz: f32,
-}
-
-#[derive(Copy, Clone)]
-pub struct Dielectric {
-    pub refraction_index: f32,
-}
-
-#[derive(Copy, Clone)]
-pub enum Material {
-    Dielectric(Dielectric),
-    Lambertian(Lambertian),
-    Metal(Metal),
-}
-
-impl Material {
-    pub fn lambertian(albedo: Vec3) -&gt; Material {
-        Material::Lambertian(Lambertian { albedo })
-    }
-
-    pub fn metal(albedo: Vec3, fuzz: f32) -&gt; Material {
-        Material::Metal(Metal { albedo, fuzz })
-    }
-
-    pub fn dielectric(refraction_index: f32) -&gt; Material {
-        return Material::Dielectric(Dielectric { refraction_index });
-    }
-}
-
-// Lambertian, Metal, and Dielectric scattering functions omitted for brevity
-</code></pre>
-
-<p>One could argue that the degree of code reuse is less in this scheme than in the book, since now we have to pattern match on the material union type to call their associated member scatter functions.</p>
-
-<pre><code class="language-rust">let scatter = match hit.material {
-    Material::Dielectric(d) =&gt; d.scatter(r, hit, rng),
-    Material::Lambertian(l) =&gt; l.scatter(r, hit, rng),
-    Material::Metal(m) =&gt; m.scatter(r, hit, rng),
-};
-</code></pre>
-
-<p>But I thought it was an easy tradeoff to make.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">#[derive(Copy, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">Sphere</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> center: <span style="color:#2b91af">Vec3</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> radius: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> material: <span style="color:#2b91af">Material</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">World</span> {
+</span></span><span style="display:flex;"><span>    spheres: Vec&lt;Sphere&gt;,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">impl</span> World {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> new(spheres: Vec&lt;Sphere&gt;) -&gt; <span style="color:#2b91af">World</span> {
+</span></span><span style="display:flex;"><span>        World { spheres }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>As we can see from the definition of the <code>Sphere</code>, it has one field for a material. The sphere&rsquo;s material can be any one of the three materials, lambertian, metal, or a dielectric. Once again, this could be a good place to use polymorphism, but I decided to use Rust&rsquo;s really handy tagged unions instead.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">#[derive(Copy, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">Lambertian</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> albedo: <span style="color:#2b91af">Vec3</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#[derive(Copy, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">Metal</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> albedo: <span style="color:#2b91af">Vec3</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> fuzz: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#[derive(Copy, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">Dielectric</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> refraction_index: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#[derive(Copy, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">enum</span> <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>    Dielectric(Dielectric),
+</span></span><span style="display:flex;"><span>    Lambertian(Lambertian),
+</span></span><span style="display:flex;"><span>    Metal(Metal),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">impl</span> Material {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> lambertian(albedo: <span style="color:#2b91af">Vec3</span>) -&gt; <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>        Material::Lambertian(Lambertian { albedo })
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> metal(albedo: <span style="color:#2b91af">Vec3</span>, fuzz: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>        Material::Metal(Metal { albedo, fuzz })
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> dielectric(refraction_index: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> Material::Dielectric(Dielectric { refraction_index });
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Lambertian, Metal, and Dielectric scattering functions omitted for brevity
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>One could argue that the degree of code reuse is less in this scheme than in the book, since now we have to pattern match on the material union type to call their associated member scatter functions.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> scatter = <span style="color:#00f">match</span> hit.material {
+</span></span><span style="display:flex;"><span>    Material::Dielectric(d) =&gt; d.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>    Material::Lambertian(l) =&gt; l.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>    Material::Metal(m) =&gt; m.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>But I thought it was an easy tradeoff to make.</p>
 <p>Finally, one last missing bit from the ray tracer. Here&rsquo;s the snippet which calculates whether a given ray intersects a sphere. You can see I created a <code>Hitable</code> trait for my sphere and world structs to implement. In the end, I did not need the trait, because I just called the <code>hit</code> functions directly on the objects. A little bit of premature &ldquo;architecture&rdquo; on my part.</p>
-
-<pre><code class="language-rust">impl Hitable for Sphere {
-    fn hit(&amp;self, ray: &amp;Ray, t_min: f32, t_max: f32) -&gt; Option&lt;HitRecord&gt; {
-        let oc = ray.origin - self.center;
-        let a = ray.direction.dot(ray.direction);
-        let b = oc.dot(ray.direction);
-        let c = oc.dot(oc) - self.radius * self.radius;
-        let discriminant = b * b - a * c;
-
-        if discriminant &gt; 0.0 {
-            let mut temp = (-b - (b * b - a * c).sqrt()) / a;
-            if temp &lt; t_max &amp;&amp; temp &gt; t_min {
-                let hit_point = ray.point_at_parameter(temp);
-                return Some(HitRecord {
-                    t: temp,
-                    p: hit_point,
-                    n: (1.0 / self.radius) * (hit_point - self.center),
-                    material: &amp;self.material,
-                });
-            }
-
-            temp = (-b + (b * b - a * c).sqrt()) / a;
-            if temp &lt; t_max &amp;&amp; temp &gt; t_min {
-                let hit_point = ray.point_at_parameter(temp);
-                return Some(HitRecord {
-                    t: temp,
-                    p: hit_point,
-                    n: (1.0 / self.radius) * (hit_point - self.center),
-                    material: &amp;self.material,
-                });
-            }
-        }
-        None
-    }
-}
-</code></pre>
-
-<h4 id="control-flow">Control flow</h4>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">impl</span> Hitable <span style="color:#00f">for</span> Sphere {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">fn</span> hit(&amp;self, ray: <span style="color:#00f">&amp;</span><span style="color:#2b91af">Ray</span>, t_min: <span style="color:#2b91af">f32</span>, t_max: <span style="color:#2b91af">f32</span>) -&gt; Option&lt;HitRecord&gt; {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> oc = ray.origin - self.center;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> a = ray.direction.dot(ray.direction);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> b = oc.dot(ray.direction);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> c = oc.dot(oc) - self.radius * self.radius;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> discriminant = b * b - a * c;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> discriminant &gt; 0.0 {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> <span style="color:#00f">mut</span> temp = (-b - (b * b - a * c).sqrt()) / a;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> temp &lt; t_max &amp;&amp; temp &gt; t_min {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">let</span> hit_point = ray.point_at_parameter(temp);
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> Some(HitRecord {
+</span></span><span style="display:flex;"><span>                    t: <span style="color:#2b91af">temp</span>,
+</span></span><span style="display:flex;"><span>                    p: <span style="color:#2b91af">hit_point</span>,
+</span></span><span style="display:flex;"><span>                    n: (1.0 / self.radius) * (hit_point - self.center),
+</span></span><span style="display:flex;"><span>                    material: <span style="color:#00f">&amp;</span><span style="color:#2b91af">self</span>.material,
+</span></span><span style="display:flex;"><span>                });
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            temp = (-b + (b * b - a * c).sqrt()) / a;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> temp &lt; t_max &amp;&amp; temp &gt; t_min {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">let</span> hit_point = ray.point_at_parameter(temp);
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> Some(HitRecord {
+</span></span><span style="display:flex;"><span>                    t: <span style="color:#2b91af">temp</span>,
+</span></span><span style="display:flex;"><span>                    p: <span style="color:#2b91af">hit_point</span>,
+</span></span><span style="display:flex;"><span>                    n: (1.0 / self.radius) * (hit_point - self.center),
+</span></span><span style="display:flex;"><span>                    material: <span style="color:#00f">&amp;</span><span style="color:#2b91af">self</span>.material,
+</span></span><span style="display:flex;"><span>                });
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        None
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h4 id="control-flow">Control flow</h4>
 <p>After spending around a weekend&rsquo;s worth of time with the project, the thing I actually liked most about Rust was the control flow.</p>
-
 <p>The ability to return values from <code>if</code> expressions and blocks is awesome and I don&rsquo;t know how I&rsquo;ve managed to live up until now without it. Instead of conditionally assigning to a bunch of variables it is better to return them from an <code>if</code> expression instead.</p>
-
-<pre><code class="language-rust">// Rust
-
-// Returnign a tuple of values  out of an if expression
-let (outward_normal, ni_over_nt, cosine) = if ray.direction.dot(hit.n) &gt; 0.0 {
-    (
-        -hit.n,
-        self.refraction_index,
-        self.refraction_index * ray.direction.dot(hit.n) / ray.direction.length(),
-    )
-} else {
-    (
-        hit.n,
-        1.0 / self.refraction_index,
-        -ray.direction.dot(hit.n) / ray.direction.length(),
-    )
-};
-</code></pre>
-
-<pre><code class="language-cpp">// C++
-
-vec3 outward_normal;
-float ni_over_nt;
-float cosine;
-if (dot(ray.direction(), hit.normal) &gt; 0.0) {
-    outward_normal = -hit.normal;
-    ni_over_nt = refraction_index;
-    cosine = refraction_index * dot(ray.direction(), hit.normal) / ray.direction().length();
-} else {
-    outward_normal = hit.normal;
-    ni_over_nt = 1.0 / refraction_index;
-    cosine = -dot(ray.direction(), hit.normal) / ray.direction().length();
-}
-</code></pre>
-
-<p>Returning all the values is more watertight and leaves less room for accidentally leaving something unassigned.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Rust
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Returnign a tuple of values  out of an if expression
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">let</span> (outward_normal, ni_over_nt, cosine) = <span style="color:#00f">if</span> ray.direction.dot(hit.n) &gt; 0.0 {
+</span></span><span style="display:flex;"><span>    (
+</span></span><span style="display:flex;"><span>        -hit.n,
+</span></span><span style="display:flex;"><span>        self.refraction_index,
+</span></span><span style="display:flex;"><span>        self.refraction_index * ray.direction.dot(hit.n) / ray.direction.length(),
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    (
+</span></span><span style="display:flex;"><span>        hit.n,
+</span></span><span style="display:flex;"><span>        1.0 / self.refraction_index,
+</span></span><span style="display:flex;"><span>        -ray.direction.dot(hit.n) / ray.direction.length(),
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// C++
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>vec3 outward_normal;
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">float</span> ni_over_nt;
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">float</span> cosine;
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> (dot(ray.direction(), hit.normal) &gt; 0.0) {
+</span></span><span style="display:flex;"><span>    outward_normal = -hit.normal;
+</span></span><span style="display:flex;"><span>    ni_over_nt = refraction_index;
+</span></span><span style="display:flex;"><span>    cosine = refraction_index * dot(ray.direction(), hit.normal) / ray.direction().length();
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    outward_normal = hit.normal;
+</span></span><span style="display:flex;"><span>    ni_over_nt = 1.0 / refraction_index;
+</span></span><span style="display:flex;"><span>    cosine = -dot(ray.direction(), hit.normal) / ray.direction().length();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Returning all the values is more watertight and leaves less room for accidentally leaving something unassigned.</p>
 <p>Rust also allows breaking out of loops with a value.</p>
-
-<pre><code class="language-rust">// Rust
-
-pub fn random_in_unit_sphere(rng: &amp;mut ThreadRng) -&gt; Vec3 {
-    loop {
-        let p = 2.0 * Vec3::new(rng.gen::&lt;f32&gt;(), rng.gen::&lt;f32&gt;(), rng.gen::&lt;f32&gt;())
-            - Vec3::new(1.0, 1.0, 1.0);
-        if p.squared_length() &lt; 1.0 {
-            break p;
-        }
-    }
-}
-</code></pre>
-
-<pre><code class="language-cpp">// C++
-
-vec3 random_in_unit_sphere() {
-    vec3 p;
-    do {
-        p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);
-    } while(p.squared_length() &gt;= 1.0);
-    return p;
-}
-</code></pre>
-
-<p>Even though the code looks very similar this time around, the Rust version is just more watertight and wholesome.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Rust
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">fn</span> random_in_unit_sphere(rng: <span style="color:#00f">&amp;</span><span style="color:#2b91af">mut</span> ThreadRng) -&gt; <span style="color:#2b91af">Vec3</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">loop</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> p = 2.0 * Vec3::new(rng.gen::&lt;<span style="color:#2b91af">f32</span>&gt;(), rng.gen::&lt;<span style="color:#2b91af">f32</span>&gt;(), rng.gen::&lt;<span style="color:#2b91af">f32</span>&gt;())
+</span></span><span style="display:flex;"><span>            - Vec3::new(1.0, 1.0, 1.0);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> p.squared_length() &lt; 1.0 {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span> p;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// C++
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>vec3 random_in_unit_sphere() {
+</span></span><span style="display:flex;"><span>    vec3 p;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">do</span> {
+</span></span><span style="display:flex;"><span>        p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);
+</span></span><span style="display:flex;"><span>    } <span style="color:#00f">while</span>(p.squared_length() &gt;= 1.0);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> p;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Even though the code looks very similar this time around, the Rust version is just more watertight and wholesome.</p>
 <p>Using the <code>Option</code> type was a great way to return the ray-sphere collision information as well as indicate whether a hit occurred, all at once.</p>
-
-<pre><code class="language-rust">// World::hit returns an optional hit result
-if let Some(hit) = world.hit(&amp;r, 0.001, std::f32::MAX) {
-    let scatter = match hit.material {
-        Material::Dielectric(d) =&gt; d.scatter(r, hit, rng),
-        Material::Lambertian(l) =&gt; l.scatter(r, hit, rng),
-        Material::Metal(m) =&gt; m.scatter(r, hit, rng),
-    };
-    return scatter.attenuation * color(scatter.ray, world, rng, depth + 1);
-} else {
-    let unit_direction = r.direction.make_unit_vector();
-    let t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
-}
-</code></pre>
-
-<p>It&rsquo;s as if the language was custom-designed to solve many of slightly icky control flow situations you encounter in the book, and in C++ in general. Going back to writing C++ code after this felt like a downgrade.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// World::hit returns an optional hit result
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">if</span> <span style="color:#00f">let</span> Some(hit) = world.hit(&amp;r, 0.001, std::<span style="color:#2b91af">f32</span>::MAX) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> scatter = <span style="color:#00f">match</span> hit.material {
+</span></span><span style="display:flex;"><span>        Material::Dielectric(d) =&gt; d.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>        Material::Lambertian(l) =&gt; l.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>        Material::Metal(m) =&gt; m.scatter(r, hit, rng),
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> scatter.attenuation * color(scatter.ray, world, rng, depth + 1);
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> unit_direction = r.direction.make_unit_vector();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> t = 0.5 * (unit_direction.y + 1.0);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>It&rsquo;s as if the language was custom-designed to solve many of slightly icky control flow situations you encounter in the book, and in C++ in general. Going back to writing C++ code after this felt like a downgrade.</p>
 <h3 id="zig-1">Zig</h3>
-
 <h4 id="program-structure-1">Program structure</h4>
-
 <p>Even though Zig is trying to be familiar to C programmers, I found that I could structure the program in a practically identical fashion to the Rust version, due to the language having a surprising degree of little similarities with Rust.</p>
-
 <p>The scene works identically to Rust.</p>
-
-<pre><code class="language-rust">pub const Sphere = struct {
-    pub center: Vec3f,
-    pub radius: f32,
-    pub material: Material,
-};
-
-pub const World = struct {
-    pub spheres: ArrayList(Sphere),
-
-    // This code would be more idiomatic if we passed the allocator by parameter to init(),
-    // but I'm just going to use the global debug allocator anyway, so I will skip it for now
-    pub fn init() World {
-        return World {
-            .spheres = ArrayList(Sphere).init(debug.global_allocator)
-        };
-    }
-
-    pub fn deinit(self: *World) void {
-        self.spheres.deinit();
-    }
-
-    // implementation omitted
-};
-</code></pre>
-
-<p>I defined the materials in an identical fashion in Zig, since Zig also has very handy tagged unions.</p>
-
-<pre><code class="language-rust">pub const Lambertian = struct {
-    pub albedo: Vec3f,
-
-    // scatter function omitted
-};
-
-pub const Metal = struct {
-    albedo: Vec3f,
-    fuzz: f32,
-
-    // ...
-};
-
-pub const Dielectric = struct {
-    pub refraction_index: f32,
-
-    // ...
-};
-
-pub const Material = union(enum) {
-    Lambertian: Lambertian,
-    Metal: Metal,
-    Dielectric: Dielectric,
-
-    pub fn lambertian(albedo: Vec3f) Material {
-        return Material{ .Lambertian = Lambertian{ .albedo = albedo } };
-    }
-
-    pub fn metal(albedo: Vec3f, fuzz: f32) Material {
-        return Material{ .Metal = Metal{ .albedo = albedo, .fuzz = fuzz } };
-    }
-
-    pub fn dielectric(refraction_index: f32) Material {
-        return Material{ .Dielectric = Dielectric{ .refraction_index = refraction_index } };
-    }
-};
-</code></pre>
-
-<p>A small aside: notice how in Zig, structs aren&rsquo;t given names in their definition, but are instead assigned to named constants. The language allows you to return and assign types, like any other variables, at compile time. In fact, generics in Zig are built on this idea: you pass a function a type, and it returns a new type using the parameter type you specified.</p>
-
-<pre><code class="language-rust">pub fn Vector3(comptime T: type) type {
-    return packed struct {
-        pub x: T,
-        pub y: T,
-        pub z: T,
-
-        // implementation omitted
-    };
-}
-</code></pre>
-
-<p>This feature has a Lua-like elegance to it. In the Lua language, all objects are essentially tables. The global state is a table, and classes and inheritance mechanisms can be implemented using tables. When you import another module, the module is namespaced inside a table. In Zig, your type declarations, generics, and type name aliasing are based on returning and assigning types. When you import another module, the import returns an anonymous struct with the module content within. Sweet, I love it!</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> Sphere = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> center: <span style="color:#2b91af">Vec3f</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> radius: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> material: <span style="color:#2b91af">Material</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> World = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> spheres: <span style="color:#2b91af">ArrayList</span>(Sphere),
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// This code would be more idiomatic if we passed the allocator by parameter to init(),
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// but I&#39;m just going to use the global debug allocator anyway, so I will skip it for now
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> init() World {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> World {
+</span></span><span style="display:flex;"><span>            .spheres = ArrayList(Sphere).init(debug.global_allocator)
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> deinit(self: *World) void {
+</span></span><span style="display:flex;"><span>        self.spheres.deinit();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// implementation omitted
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>I defined the materials in an identical fashion in Zig, since Zig also has very handy tagged unions.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> Lambertian = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> albedo: <span style="color:#2b91af">Vec3f</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// scatter function omitted
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> Metal = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    albedo: <span style="color:#2b91af">Vec3f</span>,
+</span></span><span style="display:flex;"><span>    fuzz: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> Dielectric = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> refraction_index: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">const</span> Material = <span style="color:#00f">union</span>(<span style="color:#00f">enum</span>) {
+</span></span><span style="display:flex;"><span>    Lambertian: <span style="color:#2b91af">Lambertian</span>,
+</span></span><span style="display:flex;"><span>    Metal: <span style="color:#2b91af">Metal</span>,
+</span></span><span style="display:flex;"><span>    Dielectric: <span style="color:#2b91af">Dielectric</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> lambertian(albedo: <span style="color:#2b91af">Vec3f</span>) Material {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> Material{ .Lambertian = Lambertian{ .albedo = albedo } };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> metal(albedo: <span style="color:#2b91af">Vec3f</span>, fuzz: <span style="color:#2b91af">f32</span>) Material {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> Material{ .Metal = Metal{ .albedo = albedo, .fuzz = fuzz } };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">pub</span> <span style="color:#00f">fn</span> dielectric(refraction_index: <span style="color:#2b91af">f32</span>) Material {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> Material{ .Dielectric = Dielectric{ .refraction_index = refraction_index } };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A small aside: notice how in Zig, structs aren&rsquo;t given names in their definition, but are instead assigned to named constants. The language allows you to return and assign types, like any other variables, at compile time. In fact, generics in Zig are built on this idea: you pass a function a type, and it returns a new type using the parameter type you specified.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">fn</span> Vector3(comptime T: <span style="color:#2b91af">type</span>) <span style="color:#00f">type</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> packed <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">pub</span> x: <span style="color:#2b91af">T</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">pub</span> y: <span style="color:#2b91af">T</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">pub</span> z: <span style="color:#2b91af">T</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// implementation omitted
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    };
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This feature has a Lua-like elegance to it. In the Lua language, all objects are essentially tables. The global state is a table, and classes and inheritance mechanisms can be implemented using tables. When you import another module, the module is namespaced inside a table. In Zig, your type declarations, generics, and type name aliasing are based on returning and assigning types. When you import another module, the import returns an anonymous struct with the module content within. Sweet, I love it!</p>
 <h4 id="control-flow-1">Control flow</h4>
-
 <p>Zig also allows you to return values out of <code>if</code>-statements and blocks. Here&rsquo;s an example where the conditional body contains only one statement.</p>
-
-<pre><code class="language-javascript">const scattered_ray = if (rand.float(f32) &lt; reflection_prob)
-    Scatter.new(Vec3f.one(), Ray.new(hit.p, ray.direction.reflect(hit.n).makeUnitVector()))
-else
-    Scatter.new(Vec3f.one(), Ray.new(hit.p, refracted_dir.makeUnitVector()));
-</code></pre>
-
-<p>If the body or block contains more than one statement, though, you have to <code>break</code> out of the body with the value.</p>
-
-<pre><code class="language-cpp">const chunk_size = blk: {
-    const num_pixels = window_width * window_height;
-    const n = num_pixels / num_threads;
-    const rem = num_pixels % num_threads;
-    if (rem &gt; 0) {
-        break :blk n + 1;
-    } else {
-        break :blk n;
-    }
-};
-</code></pre>
-
-<p>Not quite as effortless and elegant as Rust, but it is sort of consistent with C at least.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#00f">const</span> scattered_ray = <span style="color:#00f">if</span> (rand.<span style="color:#00f">float</span>(f32) &lt; reflection_prob)
+</span></span><span style="display:flex;"><span>    Scatter.<span style="color:#00f">new</span>(Vec3f.one(), Ray.<span style="color:#00f">new</span>(hit.p, ray.direction.reflect(hit.n).makeUnitVector()))
+</span></span><span style="display:flex;"><span><span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>    Scatter.<span style="color:#00f">new</span>(Vec3f.one(), Ray.<span style="color:#00f">new</span>(hit.p, refracted_dir.makeUnitVector()));
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>If the body or block contains more than one statement, though, you have to <code>break</code> out of the body with the value.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">const</span> chunk_size = blk: {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> num_pixels = window_width * window_height;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> n = num_pixels / num_threads;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> rem = num_pixels % num_threads;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (rem &gt; 0) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span> :blk n + 1;
+</span></span><span style="display:flex;"><span>    } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">break</span> :blk n;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Not quite as effortless and elegant as Rust, but it is sort of consistent with C at least.</p>
 <p>There&rsquo;s no tuples in the language and that means no multiple return values. The dielectric material scattering snippet looks much like the C++ version:</p>
-
-<pre><code class="language-javascript">var outward_normal: Vec3f = undefined;
-var ni_over_nt: f32 = undefined;
-var cosine: f32 = undefined;
-
-if (ray.direction.dot(hit.n) &gt; 0.0) {
-    outward_normal = Vec3f.new(-hit.n.x, -hit.n.y, -hit.n.z);
-    ni_over_nt = self.refraction_index;
-    cosine = self.refraction_index * ray.direction.dot(hit.n) / ray.direction.length();
-} else {
-    outward_normal = hit.n;
-    ni_over_nt = 1.0 / self.refraction_index;
-    cosine = -ray.direction.dot(hit.n) / ray.direction.length();
-}
-</code></pre>
-
-<p>The language forces you to declare your variables as <code>undefined</code> explicitly for added safety, however. This should also make undefined variables much easier to find in a codebase.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#00f">var</span> outward_normal: Vec3f = <span style="color:#00f">undefined</span>;
+</span></span><span style="display:flex;"><span><span style="color:#00f">var</span> ni_over_nt: f32 = <span style="color:#00f">undefined</span>;
+</span></span><span style="display:flex;"><span><span style="color:#00f">var</span> cosine: f32 = <span style="color:#00f">undefined</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> (ray.direction.dot(hit.n) &gt; 0.0) {
+</span></span><span style="display:flex;"><span>    outward_normal = Vec3f.<span style="color:#00f">new</span>(-hit.n.x, -hit.n.y, -hit.n.z);
+</span></span><span style="display:flex;"><span>    ni_over_nt = self.refraction_index;
+</span></span><span style="display:flex;"><span>    cosine = self.refraction_index * ray.direction.dot(hit.n) / ray.direction.length();
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    outward_normal = hit.n;
+</span></span><span style="display:flex;"><span>    ni_over_nt = 1.0 / self.refraction_index;
+</span></span><span style="display:flex;"><span>    cosine = -ray.direction.dot(hit.n) / ray.direction.length();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The language forces you to declare your variables as <code>undefined</code> explicitly for added safety, however. This should also make undefined variables much easier to find in a codebase.</p>
 <h4 id="living-without-operator-overloading">Living without operator overloading</h4>
-
 <p>I&rsquo;m not sure what I think about the lack of operator overloading. Here&rsquo;s a small snippet of code I had to write which contained some vector math. While you avoid the problem of operator precedence entirely as well as the possibility of hiding something complicated behind a simple-seeming operator, I&rsquo;m pretty sure I spent much more time writing this little expression out compared to when I had access to operators.</p>
-
-<pre><code class="language-C++">// Zig
-
-if (discriminant &gt; 0.0) {
-    // I stared at this monster for a while to ensure I got it right
-    return uv.sub(n.mul(dt)).mul(ni_over_nt).sub(n.mul(math.sqrt(discriminant)));
-}
-
-return null;
-</code></pre>
-
-<pre><code class="language-rust">// Rust
-
-if discriminant &gt; 0.0 {
-    let refracted = ni_over_nt * (uv - dt * n) - discriminant.sqrt() * n;
-    Some(refracted)
-} else {
-    None
-}
-</code></pre>
-
-<p>How do C programmers manage?</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C++" data-lang="C++"><span style="display:flex;"><span><span style="color:#008000">// Zig
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> (discriminant &gt; 0.0) {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// I stared at this monster for a while to ensure I got it right
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">return</span> uv.sub(n.mul(dt)).mul(ni_over_nt).sub(n.mul(math.sqrt(discriminant)));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">return</span> null;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Rust
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> discriminant &gt; 0.0 {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> refracted = ni_over_nt * (uv - dt * n) - discriminant.sqrt() * n;
+</span></span><span style="display:flex;"><span>    Some(refracted)
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    None
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>How do C programmers manage?</p>
 <h4 id="loops">Loops</h4>
-
 <p>There was one surprising facet of the language which made me scratch my head on multiple occasions: loops.</p>
-
 <p>I wanted to loop through a range of numbers using a for-loop, but it looks like you can&rsquo;t do that. Instead, you can use a while-loop with a continuation expression:</p>
-
-<pre><code class="language-javascript">var idx: i32 = start_index;
-while (idx &lt; end_index) : (idx += 1) {
-    // ...
-}
-</code></pre>
-
-<p>I don&rsquo;t think I&rsquo;ve seen such a construct in a language before, and I&rsquo;m not sure if this is the final way iterating through ranges is going to work. What is the benefit of doing it this way? I would think that a loop which doesn&rsquo;t leak the <code>idx</code> variable outside the loop body would be better.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#00f">var</span> idx: i32 = start_index;
+</span></span><span style="display:flex;"><span><span style="color:#00f">while</span> (idx &lt; end_index) : (idx += 1) {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>I don&rsquo;t think I&rsquo;ve seen such a construct in a language before, and I&rsquo;m not sure if this is the final way iterating through ranges is going to work. What is the benefit of doing it this way? I would think that a loop which doesn&rsquo;t leak the <code>idx</code> variable outside the loop body would be better.</p>
 <p>To be clear, <code>for</code> loops are in the language, but based on the documentation, I think that they can only be used for iterating over slices.</p>
-
-<pre><code class="language-rust">// From the documentation
-const items = []i32 { 4, 5, 3, 4, 0 };
-var sum: i32 = 0;
-
-// For loops iterate over slices and arrays.
-for (items) |value| {
-    sum += value;
-}
-</code></pre>
-
-<p>There&rsquo;s one more use case where Zig&rsquo;s loops caused me to scratch my head. Let&rsquo;s return briefly to our earlier example of the <code>random_in_unit_sphere</code> function. Just like in Rust, it is possible to break out of loops with values. However, Zig doesn&rsquo;t have the <code>loop</code> construct, and so you have to use a <code>while</code> loop instead. Thus Zig has to assume that the while loop terminates at some point without breaking. This leads to a weird construct: you have to include an <code>else</code> branch after your while loop to ensure that a value is returned even in the case that the loop terminates without hitting the break. I didn&rsquo;t think of including the <code>else</code> branch in this snippet at first, and it took me an embarassingly long time to figure out why it didn&rsquo;t compile.</p>
-
-<pre><code class="language-rust">pub fn randomInUnitSphere(r: *Random) Self {
-    return while (true) {
-        const p = Vec3f.new(r.float(f32), r.float(f32), r.float(f32));
-        if (p.lengthSquared() &lt; 1.0) {
-            break p;
-        }
-    } else Vec3f.zero();
-}
-</code></pre>
-
-<p>Somehow, of all the things in the language, I feel like loops shouldn&rsquo;t be this surprising to work with.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// From the documentation
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">const</span> items = []<span style="color:#2b91af">i32</span> { 4, 5, 3, 4, 0 };
+</span></span><span style="display:flex;"><span>var sum: <span style="color:#2b91af">i32</span> = 0;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// For loops iterate over slices and arrays.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">for</span> (items) |value| {
+</span></span><span style="display:flex;"><span>    sum += value;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>There&rsquo;s one more use case where Zig&rsquo;s loops caused me to scratch my head. Let&rsquo;s return briefly to our earlier example of the <code>random_in_unit_sphere</code> function. Just like in Rust, it is possible to break out of loops with values. However, Zig doesn&rsquo;t have the <code>loop</code> construct, and so you have to use a <code>while</code> loop instead. Thus Zig has to assume that the while loop terminates at some point without breaking. This leads to a weird construct: you have to include an <code>else</code> branch after your while loop to ensure that a value is returned even in the case that the loop terminates without hitting the break. I didn&rsquo;t think of including the <code>else</code> branch in this snippet at first, and it took me an embarassingly long time to figure out why it didn&rsquo;t compile.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">fn</span> randomInUnitSphere(r: *Random) Self {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#00f">while</span> (<span style="color:#00f">true</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> p = Vec3f.new(r.float(<span style="color:#2b91af">f32</span>), r.float(<span style="color:#2b91af">f32</span>), r.float(<span style="color:#2b91af">f32</span>));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (p.lengthSquared() &lt; 1.0) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span> p;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    } <span style="color:#00f">else</span> Vec3f.zero();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Somehow, of all the things in the language, I feel like loops shouldn&rsquo;t be this surprising to work with.</p>
 <h2 id="multithreaded-rendering">Multithreaded rendering</h2>
-
 <p>The scope of <em>Ray Tracing in One Weekend</em> is not large and so far I had only really touched upon the absolute basic features of Rust. I wanted to add simple multithreading to accelerate the rendering and get a small taste of what it is like to get smacked around by the Rust compiler!</p>
-
 <p>The plan was to split the image into multiple blocks and render them all independently, at once. This is not a hard task on paper, since the only shared resource that we are changing is the pixel buffer we are rendering to, and there is no overlap between the image blocks.</p>
-
-<p><img src="/img/rust_and_zig/final_image.png" alt="the book cover image" />
+<p><img src="/img/rust_and_zig/final_image.png" alt="the book cover image">
 <em>A similar image to the final image in the book. Rendered in about 20 seconds using 128 rays per pixel.</em></p>
-
 <h3 id="rust-2">Rust</h3>
-
 <p>My Rust journey so far had actually been very smooth, with no major stumbling blocks. But rendering in separate threads turned out to be (unsurprisingly) harder than the way I would do it in C++.</p>
-
 <p>Even though there is no overlap between the image blocks, the compiler doesn&rsquo;t know that and the code didn&rsquo;t compile.</p>
-
 <p>It was a bit frustrating to figure out how to accomplish this. Googling yielded a few stack overflow posts with similar questions, and were answered by people basically saying <a href="https://stackoverflow.com/questions/31644152/processing-vec-in-parallel-how-to-do-safely-or-without-using-unstable-features">use my crate</a>! I suppose package popularity contests are bound to happen whenever you have a central package registry displaying stats like downloads and dependents.</p>
-
 <p>In the end, the best way to learn was to browse similarly-scoped Rust source code on Github.</p>
-
 <p>I wrapped my objects in atomic reference counters, and wrapped my pixel buffer in a mutex. It might not be the most efficient scheme, but it was a cool to get this non-trivial piece of Rust code to compile and run!</p>
-
-<pre><code class="language-rust">// move our existing world into the reference counter.
-let world = Arc::new(world);
-let buffer: Arc&lt;Mutex&lt;Vec&lt;u32&gt;&gt;&gt; = Arc::new(Mutex::new(vec![0; width * height]));
-
-// ...
-
-let mut tasks = Vec::new();
-
-for ithread in 0..NUM_THREADS {
-    // these get moved into the thread
-    let buffer_ref = buffer.clone();
-    let world_ref = world.clone();
-
-    tasks.push(thread::spawn(move || {
-        let mut rng = thread_rng();
-        // render into a thread-local block of pixels to minimize the time we need to
-        // lock the shared pixel buffer
-        let mut local_pixels: Vec&lt;u32&gt; = Vec::with_capacity(end_index - start_index);
-
-        // use world_ref to render stuff into local_pixels
-        // ...
-
-        // finally, copy the pixels into the shared pixel buffer
-        let mut buffer = buffer_ref.lock().unwrap();
-
-        for (pos, pixel) in local_pixels.iter().enumerate() {
-            let k = start_index + pos;
-            let i = k / width;
-            let j = k % width;
-
-            buffer[to_buffer_index(i, j, width, height)] = *pixel;
-        }
-    }));
-}
-</code></pre>
-
-<h3 id="zig-2">Zig</h3>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// move our existing world into the reference counter.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">let</span> world = Arc::new(world);
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> buffer: <span style="color:#2b91af">Arc</span>&lt;Mutex&lt;Vec&lt;<span style="color:#2b91af">u32</span>&gt;&gt;&gt; = Arc::new(Mutex::new(vec![0; width * height]));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> <span style="color:#00f">mut</span> tasks = Vec::new();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> ithread <span style="color:#00f">in</span> 0..NUM_THREADS {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// these get moved into the thread
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> buffer_ref = buffer.clone();
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> world_ref = world.clone();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tasks.push(thread::spawn(<span style="color:#00f">move</span> || {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> <span style="color:#00f">mut</span> rng = thread_rng();
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// render into a thread-local block of pixels to minimize the time we need to
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// lock the shared pixel buffer
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">let</span> <span style="color:#00f">mut</span> local_pixels: Vec&lt;<span style="color:#2b91af">u32</span>&gt; = Vec::with_capacity(end_index - start_index);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// use world_ref to render stuff into local_pixels
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// finally, copy the pixels into the shared pixel buffer
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">let</span> <span style="color:#00f">mut</span> buffer = buffer_ref.lock().unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (pos, pixel) <span style="color:#00f">in</span> local_pixels.iter().enumerate() {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> k = start_index + pos;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> i = k / width;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> j = k % width;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            buffer[to_buffer_index(i, j, width, height)] = *pixel;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="zig-2">Zig</h3>
 <p>Zig doesn&rsquo;t have any checks for multiple mutable data access, so I was free to do whatever I wanted. The challenge mainly arose from the fact that this aspect of the language is somewhat incomplete. In order to see how to use threads, you have to read the standard library source code directly.</p>
-
 <p>This is the gist of my first attempt.</p>
-
-<pre><code class="language-rust">const ThreadContext = struct {
-    thread_index: i32,
-    num_pixels: i32,
-    chunk_size: i32,
-    rng: rand.DefaultPrng,
-    surface: *c.SDL_Surface,
-    world: *const World,
-    camera: *const Camera,
-};
-
-fn renderFn(context: ThreadContext) void {
-    // rendering happens here
-}
-
-pub fn main() !void {
-    // ...
-    var tasks = ArrayList(*os.Thread).init(std.debug.global_allocator);
-    defer tasks.deinit();
-    // ...
-
-    {
-        var ithread: i32 = 0;
-        while (ithread &lt; num_threads) : (ithread += 1) {
-            const context = ThreadContext{
-                .thread_index = ithread,
-                .num_pixels = window_width * window_height,
-                .chunk_size = chunk_size,
-                .rng = rand.DefaultPrng.init(@intCast(u64, ithread)),
-                .surface = surface,
-                .world = &amp;world,
-                .camera = &amp;camera,
-            };
-            const thread = try os.spawnThread(context, renderFn);
-            try tasks.append(thread);
-        }
-    }
-
-    // ...
-}
-</code></pre>
-
-<p>We need to pass a thread context object and a function pointer to <code>os.spawnThread</code>. There are no closures in the language, so you have to manage the variable capture yourself, manually.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">const</span> ThreadContext = <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    thread_index: <span style="color:#2b91af">i32</span>,
+</span></span><span style="display:flex;"><span>    num_pixels: <span style="color:#2b91af">i32</span>,
+</span></span><span style="display:flex;"><span>    chunk_size: <span style="color:#2b91af">i32</span>,
+</span></span><span style="display:flex;"><span>    rng: <span style="color:#2b91af">rand</span>.DefaultPrng,
+</span></span><span style="display:flex;"><span>    surface: *c.SDL_Surface,
+</span></span><span style="display:flex;"><span>    world: *<span style="color:#00f">const</span> World,
+</span></span><span style="display:flex;"><span>    camera: *<span style="color:#00f">const</span> Camera,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> renderFn(context: <span style="color:#2b91af">ThreadContext</span>) void {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// rendering happens here
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">fn</span> main() !void {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    var tasks = ArrayList(*os.Thread).init(std.debug.global_allocator);
+</span></span><span style="display:flex;"><span>    defer tasks.deinit();
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        var ithread: <span style="color:#2b91af">i32</span> = 0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">while</span> (ithread &lt; num_threads) : (ithread += 1) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> context = ThreadContext{
+</span></span><span style="display:flex;"><span>                .thread_index = ithread,
+</span></span><span style="display:flex;"><span>                .num_pixels = window_width * window_height,
+</span></span><span style="display:flex;"><span>                .chunk_size = chunk_size,
+</span></span><span style="display:flex;"><span>                .rng = rand.DefaultPrng.init(@intCast(<span style="color:#2b91af">u64</span>, ithread)),
+</span></span><span style="display:flex;"><span>                .surface = surface,
+</span></span><span style="display:flex;"><span>                .world = &amp;world,
+</span></span><span style="display:flex;"><span>                .camera = &amp;camera,
+</span></span><span style="display:flex;"><span>            };
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">const</span> thread = <span style="color:#00f">try</span> os.spawnThread(context, renderFn);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">try</span> tasks.append(thread);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>We need to pass a thread context object and a function pointer to <code>os.spawnThread</code>. There are no closures in the language, so you have to manage the variable capture yourself, manually.</p>
 <p>The problem with this code was that, in Zig, function arguments are implicitly <code>const</code> and therefore I couldn&rsquo;t use the random number generator contained in the context. I worked around this limitation by casting the random number generator into a non-const pointer using this unholy hack.</p>
-
-<pre><code class="language-javascript">var random = blk: {
-    const intPtr = @ptrToInt(&amp;context.rng.random);
-    break :blk @intToPtr(*rand.Random, intPtr); // cast the const-ness away
-};
-</code></pre>
-
-<p>This really seemed to be working against the language, though, so I popped by the Zig community on <a href="old.reddit.com/r/zig">Reddit</a>, and was told that a thread context can be passed via a pointer to the thread function. Duh!</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#00f">var</span> random = blk: {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> intPtr = <span style="">@</span>ptrToInt(&amp;context.rng.random);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">break</span> :blk <span style="">@</span>intToPtr(*rand.Random, intPtr); <span style="color:#008000">// cast the const-ness away
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This really seemed to be working against the language, though, so I popped by the Zig community on <a href="old.reddit.com/r/zig">Reddit</a>, and was told that a thread context can be passed via a pointer to the thread function. Duh!</p>
 <p>And so, the problem was fixed by changing the <code>renderFn</code> signature to contain <code>context: *ThreadContext</code>.</p>
-
 <h2 id="explicit-memory-management">Explicit memory management</h2>
-
 <p>There is one more thing worth mentioning. Memory management in Zig is explicit and manual.</p>
-
-<pre><code class="language-javascript">var map = std.HashMap(i32, void, hash_i32, eql_i32).init(std.debug.global_allocator);
-defer map.deinit();
-</code></pre>
-
-<p>If any allocations are made, by e.g. a container, you need to free the memory manually. Zig makes that much easier than C with the <code>defer</code> keyword. You should always pair an <code>init</code> call with a deferred <code>deinit</code> call.</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#00f">var</span> map = std.HashMap(i32, <span style="color:#00f">void</span>, hash_i32, eql_i32).init(std.debug.global_allocator);
+</span></span><span style="display:flex;"><span>defer map.deinit();
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>If any allocations are made, by e.g. a container, you need to free the memory manually. Zig makes that much easier than C with the <code>defer</code> keyword. You should always pair an <code>init</code> call with a deferred <code>deinit</code> call.</p>
 <p>The philosophy of Zig is to always pass an allocator to a function if it needs to do allocation. Likewise, if there is an allocation failure, then that function returns an error. Here&rsquo;s what creating an array of spheres looks like in Rust and Zig, respectively.</p>
-
-<pre><code class="language-rust">// Rust
-
-let mut spheres = vec![
-        Sphere::new(
-            Vec3::new(0.0, -1000.0, -1.0), 1000.0,
-            Material::lambertian(Vec3::new(0.5, 0.5, 0.5)))
-];
-</code></pre>
-
-<pre><code class="language-javascript">// Zig
-
-var spheres = ArrayList(Sphere).init(debug.global_allocator);
-defer spheres.deinit();
-
-// Append allocates, which can fail, so we have to do error handling.
-// Using `try` like this is like using the ? operator in Rust.
-try spheres.append(
-    Sphere.new(
-        Vec3f.new(0.0, -1000.0, -1.0), 1000.0,
-        Material.lambertian(Vec3f.new(0.5, 0.5, 0.5))));
-
-</code></pre>
-
-<p>Rust is rather implicit in this regard since containers use the crate&rsquo;s allocator internally. I&rsquo;m not exactly sure what the custom allocator story in Rust is, but it seems like at this time it&rsquo;s not possible to customize allocations on a per-container level. I like the fine-grained control of memory management you get with Zig, even if there&rsquo;s no RAII like in C++ and Rust!</p>
-
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Rust
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> <span style="color:#00f">mut</span> spheres = vec![
+</span></span><span style="display:flex;"><span>        Sphere::new(
+</span></span><span style="display:flex;"><span>            Vec3::new(0.0, -1000.0, -1.0), 1000.0,
+</span></span><span style="display:flex;"><span>            Material::lambertian(Vec3::new(0.5, 0.5, 0.5)))
+</span></span><span style="display:flex;"><span>];
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#008000">// Zig
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">var</span> spheres = ArrayList(Sphere).init(debug.global_allocator);
+</span></span><span style="display:flex;"><span>defer spheres.deinit();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Append allocates, which can fail, so we have to do error handling.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// Using `try` like this is like using the ? operator in Rust.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">try</span> spheres.append(
+</span></span><span style="display:flex;"><span>    Sphere.<span style="color:#00f">new</span>(
+</span></span><span style="display:flex;"><span>        Vec3f.<span style="color:#00f">new</span>(0.0, -1000.0, -1.0), 1000.0,
+</span></span><span style="display:flex;"><span>        Material.lambertian(Vec3f.<span style="color:#00f">new</span>(0.5, 0.5, 0.5))));
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Rust is rather implicit in this regard since containers use the crate&rsquo;s allocator internally. I&rsquo;m not exactly sure what the custom allocator story in Rust is, but it seems like at this time it&rsquo;s not possible to customize allocations on a per-container level. I like the fine-grained control of memory management you get with Zig, even if there&rsquo;s no RAII like in C++ and Rust!</p>
 <h2 id="my-impressions">My impressions</h2>
-
 <p>So, which language is better? 🙂</p>
-
 <p>I actually liked both languages, but for different reasons.</p>
-
 <p>I was surprised by how frictionless Rust felt, despite what some say &ndash; even at this very small scope, I found its functional features to be super useful. The availability of the <code>minifb</code> crate made it actually easier to get started with writing the ray tracer than in Zig. For the most part, there were no stumbling blocks while writing code. I think that if I were to tackle a larger project, especially one with complex resource management, the added safety guarantees of Rust would make programming more smooth and thus more fun as well.</p>
-
 <p>But I also liked Zig&rsquo;s simplicity. In total, I spent <em>way</em> more time on the Rust part of this post, if you count the time spent reading documentation as well. I read a good chunk of the <em>Programming in Rust</em> book and followed along with a code editor before starting this project. As for Zig, I downloaded the available documentation for offline viewing, and read it through during a 1.5 hour bus ride (and wrote a small vector math library in the process). I feel like mucking around with Zig in smaller scale projects might be more fun in the long run. While I had some issues with the language, it isn&rsquo;t done yet and it is a project I will definitely be keeping in my radar.</p>
-
 <p>The full Rust and Zig code can be found on Github in case you want to take a look: <a href="https://github.com/Nelarius/weekend-raytracer-rust">weekend-raytracer-rust</a>, <a href="https://github.com/Nelarius/weekend-raytracer-zig">weekend-raytracer-zig</a>.</p>
 
         </div>
@@ -719,38 +1133,28 @@ try spheres.append(
         <div class="article-toc" >
             <h3>Contents</h3>
             <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#rendering-the-first-pixels">Rendering the first pixels</a>
-<ul>
-<li><a href="#rust">Rust</a></li>
-<li><a href="#zig">Zig</a></li>
-</ul></li>
-<li><a href="#implementing-the-ray-tracer">Implementing the ray tracer</a>
-<ul>
-<li><a href="#rust-1">Rust</a>
-<ul>
-<li><a href="#program-structure">Program structure</a></li>
-<li><a href="#control-flow">Control flow</a></li>
-</ul></li>
-<li><a href="#zig-1">Zig</a>
-<ul>
-<li><a href="#program-structure-1">Program structure</a></li>
-<li><a href="#control-flow-1">Control flow</a></li>
-<li><a href="#living-without-operator-overloading">Living without operator overloading</a></li>
-<li><a href="#loops">Loops</a></li>
-</ul></li>
-</ul></li>
-<li><a href="#multithreaded-rendering">Multithreaded rendering</a>
-<ul>
-<li><a href="#rust-2">Rust</a></li>
-<li><a href="#zig-2">Zig</a></li>
-</ul></li>
-<li><a href="#explicit-memory-management">Explicit memory management</a></li>
-<li><a href="#my-impressions">My impressions</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#rendering-the-first-pixels">Rendering the first pixels</a>
+      <ul>
+        <li><a href="#rust">Rust</a></li>
+        <li><a href="#zig">Zig</a></li>
+      </ul>
+    </li>
+    <li><a href="#implementing-the-ray-tracer">Implementing the ray tracer</a>
+      <ul>
+        <li><a href="#rust-1">Rust</a></li>
+        <li><a href="#zig-1">Zig</a></li>
+      </ul>
+    </li>
+    <li><a href="#multithreaded-rendering">Multithreaded rendering</a>
+      <ul>
+        <li><a href="#rust-2">Rust</a></li>
+        <li><a href="#zig-2">Zig</a></li>
+      </ul>
+    </li>
+    <li><a href="#explicit-memory-management">Explicit memory management</a></li>
+    <li><a href="#my-impressions">My impressions</a></li>
+  </ul>
 </nav>
         </div>
         
@@ -764,17 +1168,17 @@ try spheres.append(
             <ul class="article-tag-list">
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/rust">rust
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/rust">rust
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/zig">zig
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/zig">zig
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us//tags/raytracing">raytracing
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
                     </a>
                 </li>
                 
@@ -782,7 +1186,8 @@ try spheres.append(
         </footer>
         
     </div>
-    <nav id="article-nav">
+    
+<nav id="article-nav">
     
     <a href="/post/shape_grammar_intro/" id="article-nav-newer" class="article-nav-link-wrap">
         <div class="article-nav-title"><span>&lt;</span>&nbsp;
@@ -796,6 +1201,7 @@ try spheres.append(
     </a>
     
 </nav>
+
 
 </article>
 
@@ -822,14 +1228,10 @@ try spheres.append(
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2022 Johann Muszynski
+            &copy; 2023 Johann Muszynski
         </div>
     </div>
     
-
-    <link rel="stylesheet" href="/css/grayscale.css">
-    <script src="/js/highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 
     
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">

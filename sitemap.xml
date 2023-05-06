@@ -1,174 +1,94 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
-  <url>
-    <loc>https://nelari.us/post/quick_and_dirty_dithering/</loc>
-    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/shape_grammar_intro/</loc>
-    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/raytracer_with_rust_and_zig/</loc>
-    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/projects/</loc>
-    <lastmod>2019-03-25T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/imnodes/</loc>
-    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/about/</loc>
-    <lastmod>2018-09-18T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/gizmos/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/wren-embedding-2/</loc>
-    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/wren-embedding-1/</loc>
-    <lastmod>2016-05-05T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/post/template-function-args/</loc>
-    <lastmod>2015-08-31T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/3d/</loc>
-    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/c&#43;&#43;/</loc>
-    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/categories/</loc>
-    <priority>0</priority>
-  </url>
-  
   <url>
     <loc>https://nelari.us/tags/dithering/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/embedding/</loc>
-    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/engine/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/game/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/gizmo/</loc>
-    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nelari.us/tags/image/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/imgui/</loc>
-    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/metaprogramming/</loc>
-    <lastmod>2015-08-31T00:00:00+00:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/modeling/</loc>
-    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nelari.us/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nelari.us/post/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/raytracing/</loc>
-    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
+    <loc>https://nelari.us/post/quick_and_dirty_dithering/</loc>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/tags/rust/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nelari.us/tags/</loc>
+    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/3d/</loc>
     <lastmod>2020-05-01T08:00:00+03:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/tools/</loc>
-    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://nelari.us/tags/wren/</loc>
-    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
+    <loc>https://nelari.us/post/shape_grammar_intro/</loc>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/modeling/</loc>
+    <lastmod>2020-05-01T08:00:00+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/raytracing/</loc>
+    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/raytracer_with_rust_and_zig/</loc>
+    <lastmod>2019-06-27T20:00:00+02:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/tags/zig/</loc>
     <lastmod>2019-06-27T20:00:00+02:00</lastmod>
-    <priority>0</priority>
+  </url><url>
+    <loc>https://nelari.us/projects/</loc>
+    <lastmod>2019-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/c&#43;&#43;/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/imgui/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/imnodes/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/tools/</loc>
+    <lastmod>2019-03-24T08:22:27+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/about/</loc>
+    <lastmod>2018-09-18T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/engine/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/game/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/gizmo/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/gizmos/</loc>
+    <lastmod>2018-04-06T16:17:29+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/embedding/</loc>
+    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/wren-embedding-2/</loc>
+    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/wren/</loc>
+    <lastmod>2016-05-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/wren-embedding-1/</loc>
+    <lastmod>2016-05-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/metaprogramming/</loc>
+    <lastmod>2015-08-31T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/template-function-args/</loc>
+    <lastmod>2015-08-31T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/categories/</loc>
   </url>
-  
 </urlset>

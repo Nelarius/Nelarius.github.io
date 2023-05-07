@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>math on My thought repository</title>
+    <link>https://nelari.us/tags/math/</link>
+    <description>Recent content in math on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 05 May 2023 13:00:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/math/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Using inverse transform sampling to generate random numbers in a given distribution</title>
+      <link>https://nelari.us/post/inverse_transform_sampling/</link>
+      <pubDate>Fri, 05 May 2023 13:00:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/inverse_transform_sampling/</guid>
+      <description>In inverse transform sampling, we use the inverse cumulative distribution function (CDF) to generate random numbers in a given distribution. But why does this work?
+This post attempts to demystify inverse transform sampling works by plugging samples from a distribution into the same distribution&amp;rsquo;s CDF and verifying that we get numbers with a uniform distribution in \([0, 1]\).
+Let&amp;rsquo;s start with a few definitions first.
+Definitions We want to generate random numbers according to a given probability density function (PDF) \(f(x)\).</description>
+    </item>
+    
+  </channel>
+</rss>

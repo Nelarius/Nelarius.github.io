@@ -2,25 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://nelari.us/tags/math/</loc>
+    <lastmod>2023-05-05T13:00:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/</loc>
+    <lastmod>2023-05-05T13:00:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/</loc>
+    <lastmod>2023-05-05T13:00:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/</loc>
+    <lastmod>2023-05-05T13:00:00+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/inverse_transform_sampling/</loc>
+    <lastmod>2023-05-05T13:00:00+02:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/tags/dithering/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/image/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/</loc>
-    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/post/</loc>
-    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-  </url><url>
     <loc>https://nelari.us/post/quick_and_dirty_dithering/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/rust/</loc>
-    <lastmod>2022-03-06T10:58:00+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/</loc>
     <lastmod>2022-03-06T10:58:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/3d/</loc>

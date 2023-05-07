@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Using inverse transform sampling to generate random numbers in a given distribution // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="In inverse transform sampling, the inverse cumulative distribution function is used to generate random numbers in a given distribution. Why why does this work? And how can you use it to generate random numbers in a given distribution by drawing random numbers from any arbitrary distribution?">
+    
+
+        <meta property="og:title" content="Using inverse transform sampling to generate random numbers in a given distribution" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/inverse_transform_sampling/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Using inverse transform sampling to generate random numbers in a given distribution</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/inverse_transform_sampling/" class="article-date">
+                <time datetime='2023-05-05T13:00:00.000&#43;02:00' itemprop="datePublished">2023-05-05</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>In <a href="https://en.wikipedia.org/wiki/Inverse_transform_sampling">inverse transform sampling</a>, we use the inverse cumulative distribution function (CDF) to generate random numbers in a given distribution. But why does this work?</p>
+<p>This post attempts to demystify inverse transform sampling works by plugging samples from a distribution into the same distribution&rsquo;s CDF and verifying that we get numbers with a uniform distribution in \([0, 1]\).</p>
+<p>Let&rsquo;s start with a few definitions first.</p>
+<h2 id="definitions">Definitions</h2>
+<p>We want to generate random numbers according to a given <em>probability density function</em> (PDF) \(f(x)\). The probability density function \(f(x)\) and the <em>cumulative distribution function</em> \(F(x)\) are related to each other by an integral:</p>
+<p>$$
+F(x) = \int f(x) dx
+$$</p>
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
+<p>We can use this to calculate the CDF of a simple function, the uniform density function <em>U</em> in the interval \([0,1]\). In <em>U</em>, the probability density is constant everywhere in the interval:</p>
+<p>$$
+F_U(x) = \int cdx = cx+d
+$$</p>
+<p>The cumulative distribution function has the property that it must be zero before the range, and one after the range. We can use these constraints, \(U(0)=0\) and \(U(1)=1\), to obtain</p>
+<p>$$
+F_U(x) = x.
+$$</p>
+<h2 id="the-cdf-of-a-sample-is-uniformly-distributed">The CDF of a sample is uniformly distributed</h2>
+<p>Inverse transform sampling works, because when we plug values of random variable \(X\) into its own CDF \(F_X\), we obtain numbers which are uniformly distributed in \([0, 1]\). I.e., the shape of \(F_X(X)\) is uniform.</p>
+<p>Let&rsquo;s observe the distribution we obtain from the normal distribution&rsquo;s CDF over normally distributed random numbers. This is easy to do with Python and a few libraries.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#00f">import</span> matplotlib.pyplot <span style="color:#00f">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#00f">import</span> numpy <span style="color:#00f">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#00f">import</span> math
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng = np.random.default_rng()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000"># The definition of the normal distribution&#39;s CDF which we will reuse</span>
+</span></span><span style="display:flex;"><span>cdf_normal = <span style="color:#00f">lambda</span> x : 0.5 * (1.0 + math.erf(0.7071067811865475 * x))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>n = rng.normal(loc=0.0, scale=1.0, size=50000)
+</span></span><span style="display:flex;"><span>x = np.array([cdf_normal(x) <span style="color:#00f">for</span> x <span style="color:#00f">in</span> n])
+</span></span><span style="display:flex;"><span>plt.hist(x, bins=50)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/inverse_transform_sampling/hist1.png" alt="normal distribution"></p>
+<!-- raw HTML omitted -->
+<p>From the histogram we can see that \(F_N(N)\) yields nice uniformly distributed values between 0 and 1.</p>
+<p>Using the definition of the CDF,</p>
+<p>$$
+F_X(x) = P(X \le x),
+$$</p>
+<p>we also arrive at the conclusion that the distribution of \(F_X(X)\) is uniform. Let&rsquo;s assign \(Z = F_X(X)\) and use the definition of the CDF on it:</p>
+<p>$$
+F_Z(x) = P(F_X(X) \le x) = P(F^{-1}_{X}(F_X(X)) \le F_X^{-1}(x)) = P(X \le F_X^{-1}(x))
+$$</p>
+<p>$$
+\therefore F_Z(x) = F_X(F_X^{-1}(x)) = x
+$$</p>
+<p>The shape of \(F_Z\) is that of the uniform distribution \(F_U\) that we calculated earlier! This is why for \(X\), our random number with a distribution, we can do this:</p>
+<p>$$
+F_X(X) = (\textrm{uniformly distributed number})
+$$</p>
+<p>$$
+\therefore X = F^{-1}(\textrm{uniformly distributed number}).
+$$</p>
+<h2 id="generating-random-numbers-using-inverse-transform-sampling">Generating random numbers using inverse transform sampling</h2>
+<p>We can now generate random numbers in the shape of any given density function using the recipe:</p>
+<ol>
+<li>Given a PDF, calculate the CDF using the integral equation.</li>
+<li>Take the inverse of the CDF.</li>
+<li>Plug your uniformly distributed random numbers into the inverse CDF.</li>
+</ol>
+<p>For example, to generate random numbers according to the density function \(f(x)=x^2\), in the range \([0,2]\), we can apply the recipe as follows.</p>
+<p>First, we obtain the CDF.</p>
+<p>$$
+F(x) = \int x^2dx = C \frac{x^3}{3}
+$$</p>
+<p>Using the constraints \(F(0)=0\) and \(F(2)=1\), we get</p>
+<p>$$
+F(x) = \frac{1}{8}x^3.
+$$</p>
+<p>Next, let&rsquo;s take the inverse of \(F(x)\):</p>
+<p>$$
+F^{-1}(x) = (8x)^{\frac{1}{3}}
+$$</p>
+<p>Finally, we can plug numbers into our inverse function.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>u = rng.uniform(0, 1, 50000)
+</span></span><span style="display:flex;"><span>x = np.array([(8.0 * x) ** (1.0 / 3.0) <span style="color:#00f">for</span> x <span style="color:#00f">in</span> u])
+</span></span><span style="display:flex;"><span>plt.hist(x, bins=50)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/inverse_transform_sampling/hist2.png" alt="power distribution"></p>
+<!-- raw HTML omitted -->
+<p>To confirm that everything works, we can look at a plot of \(x^2\).</p>
+<p><img src="/img/inverse_transform_sampling/curve.png" alt="curve"></p>
+<!-- raw HTML omitted -->
+<h2 id="inverse-transform-sampling-using-normally-distributed-random-numbers">Inverse transform sampling using normally distributed random numbers</h2>
+<p>The fact that evaluating a uniform distribution function yields uniformly distributed values means that we can actually plug in random numbers from <em>any</em> distribution into \(F^{-1}\)! Given that two CDFs \(F(X)\) and \(G(Y)\) have the exact same uniform distribution, we can apply the inverse of \(F^{-1}\) like we did before to find the mapping between \(X\) and \(Y\):</p>
+<p>$$
+F(X) = G(Y)
+$$</p>
+<p>$$
+\therefore X = F^{-1}(G(Y))
+$$</p>
+<p>We can use this fact to generate random numbers in our earlier distribution \(f(x)=x^2\) using normally distributed random numbers:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># Note how `x` is replaced with `cdf_normal(x)` here</span>
+</span></span><span style="display:flex;"><span>x = np.array([(8.0 * cdf_normal(x)) ** (1.0 / 3.0) <span style="color:#00f">for</span> x <span style="color:#00f">in</span> n])
+</span></span><span style="display:flex;"><span>plt.hist(x, bins=50)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/inverse_transform_sampling/hist3.png" alt="curve"></p>
+<!-- raw HTML omitted -->
+<p>And again, looks like a graph of \(x^2\)!</p>
+<p>I&rsquo;m not sure why you would want to generate random numbers in a given distribution in such a contrived way, but it&rsquo;s nice to know that it is possible.</p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#definitions">Definitions</a></li>
+    <li><a href="#the-cdf-of-a-sample-is-uniformly-distributed">The CDF of a sample is uniformly distributed</a></li>
+    <li><a href="#generating-random-numbers-using-inverse-transform-sampling">Generating random numbers using inverse transform sampling</a></li>
+    <li><a href="#inverse-transform-sampling-using-normally-distributed-random-numbers">Inverse transform sampling using normally distributed random numbers</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/math">math
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/quick_and_dirty_dithering/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Quick and dirty image dithering&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2023 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

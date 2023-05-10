@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>wgpu on My thought repository</title>
+    <link>https://nelari.us/tags/wgpu/</link>
+    <description>Recent content in wgpu on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 07 May 2023 06:43:00 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/wgpu/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weekend raytracing with wgpu, part 1</title>
+      <link>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</link>
+      <pubDate>Sun, 07 May 2023 06:43:00 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</guid>
+      <description>Peter Shirley&amp;rsquo;s book Raytracing In One Weekend is a great way to kickstart your own path tracer. The book gives just enough information to get spheres rendered to your screen, minimizing the amount of time spent studying theory.
+I wrote a straightforward implementation of the book’s renderer using Rust many years ago. Recently, I decided to go the extra mile and port the code to the GPU, using the wgpu crate.</description>
+    </item>
+    
+  </channel>
+</rss>

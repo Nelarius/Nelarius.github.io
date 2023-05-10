@@ -6,7 +6,17 @@
     <description>Recent content in raytracing on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 27 Jun 2019 20:00:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 07 May 2023 06:43:00 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weekend raytracing with wgpu, part 1</title>
+      <link>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</link>
+      <pubDate>Sun, 07 May 2023 06:43:00 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</guid>
+      <description>Peter Shirley&amp;rsquo;s book Raytracing In One Weekend is a great way to kickstart your own path tracer. The book gives just enough information to get spheres rendered to your screen, minimizing the amount of time spent studying theory.
+I wrote a straightforward implementation of the book’s renderer using Rust many years ago. Recently, I decided to go the extra mile and port the code to the GPU, using the wgpu crate.</description>
+    </item>
+    
     <item>
       <title>Writing a small ray tracer in Rust and Zig</title>
       <link>https://nelari.us/post/raytracer_with_rust_and_zig/</link>

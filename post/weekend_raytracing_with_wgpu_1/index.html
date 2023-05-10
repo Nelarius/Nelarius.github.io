@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekend raytracing with wgpu, part 1 // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="A look at the most notable challenges in implementing Peter Shirley&#39;s Raytracing In One Weekend to wgpu and WGSL.">
+    
+
+        <meta property="og:title" content="Weekend raytracing with wgpu, part 1" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/weekend_raytracing_with_wgpu_1/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Weekend raytracing with wgpu, part 1</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/weekend_raytracing_with_wgpu_1/" class="article-date">
+                <time datetime='2023-05-07T06:43:00.000&#43;03:00' itemprop="datePublished">2023-05-07</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>Peter Shirley&rsquo;s book <a href="https://raytracing.github.io/books/RayTracingInOneWeekend.html">Raytracing In One Weekend</a> is a great way to kickstart your own path tracer. The book gives just enough information to get spheres rendered to your screen, minimizing the amount of time spent studying theory.</p>
+<p>I wrote a <a href="https://github.com/Nelarius/weekend-raytracer-rust">straightforward implementation</a> of the book’s renderer using Rust many years ago. Recently, I decided to go the extra mile and port the code to the GPU, using the wgpu crate. This turned out to be much more fun than I imagined:</p>
+<ol>
+<li>The GPU implementation converges so fast that it is practically a real-time raytracer. It is ridiculously motivating to tinker with the code and algorithms.</li>
+<li>Diving into WGSL, the shading language of WebGPU, has proven enjoyable. It is a small Rust-like shading language with great editor support.</li>
+</ol>
+<p>I decided to implement the entire raytracing algorithm in the fragment shader, generating pixel values for a fullscreen quad. Each fragment shader invocation runs the full code for the book’s <code>ray_color</code> function, and requires porting most of the code from the book to WGSL, including a random number generator.</p>
+<p>Getting the raytracer to run on the GPU was not totally straightforward. This post goes over the most notable challenges faced when implementing Raytracing In One Weekend using wgpu and WGSL. Small snippets of raytracing shader code are included when relevant. The rest of the raytracer can be found in the following two files in the <a href="https://github.com/Nelarius/weekend-raytracer-wgpu/tree/de240cb61218f1ac65f77cc80fc05b5d53b430ba">repository</a>:</p>
+<ul>
+<li><code>src/raytracer/mod.rs</code></li>
+<li><code>src/raytracer/raytracer.wgsl</code></li>
+</ul>
+<p><img src="/img/weekend_raytracing_with_wgpu_1/final_render.png" alt="final raytraced image"></p>
+<!-- raw HTML omitted -->
+<h2 id="use-the-wgsl-analyzer-plugin-vs-code">Use the wgsl-analyzer plugin (VS Code)</h2>
+<p>First, a recommendation, not a challenge.</p>
+<p>If you are a VS Code user, I recommend installing the <a href="https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer">wgsl-analyzer</a> plugin. It contains lots of functionality you would associate with the tools of a real programming language, such as auto-formatting, type checking, and go to definitions.</p>
+<p>I think this plugin is a big part of why I liked programming in WGSL.</p>
+<h2 id="use-uniform-and-storage-buffers-instead-of-textures-for-everything">Use uniform and storage buffers instead of textures for everything</h2>
+<p>In order to store all the state that the raytracer needs, such as the random number generation and image state, it’s easier to use storage buffers than textures, as you can place arbitrary data in a storage buffer.</p>
+<p>For instance, I wanted to accumulate pixel samples over multiple frames. A buffer is required to hold the accumulated samples. It may seem natural to use a texture to store pixel values, but a storage buffer is equally easy to use in the shader, and is much easier to set up in the host program.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@group(1) @binding(0) var&lt;uniform&gt; imageDimensions: <span style="color:#2b91af">vec2</span>&lt;<span style="color:#2b91af">u32</span>&gt;;
+</span></span><span style="display:flex;"><span>@group(1) @binding(1) var&lt;storage, read_write&gt; imageBuffer: <span style="color:#2b91af">array</span>&lt;array&lt;<span style="color:#2b91af">f32</span>, 3&gt;&gt;;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>There is one limitation to consider when using storage buffers. By default, on wgpu, the largest supported storage buffer size is 128 MB. For a 4K image, <code>imageBuffer</code> as defined above is already close to 100 MB. My buffers went over the limit when I tested less tightly packed memory layouts. Luckily, you can increase the buffer size by overriding the default limit when requesting the device:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>wgpu::DeviceDescriptor {
+</span></span><span style="display:flex;"><span>    features: <span style="color:#2b91af">wgpu</span>::Features::empty(),
+</span></span><span style="display:flex;"><span>    limits: <span style="color:#2b91af">wgpu</span>::Limits {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Increase storage buffer max size to 512 MB
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        max_storage_buffer_binding_size: 512_<span style="color:#00f">u32</span> &lt;&lt; 20,
+</span></span><span style="display:flex;"><span>        ..Default::default()
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    label: None,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Even my early 2015 Macbook Pro supports up to 1 GB buffer binding sizes (I haven’t tested larger), so bumping the value up appears to be quite well supported.</p>
+<h2 id="implement-a-random-number-generator">Implement a random number generator</h2>
+<p>One of the first things to get out of the way is to implement a random number generator on the GPU. I used the PCG random number generator algorithm, which requires a single <code>u32</code> as its state.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextFloat(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">f32</span> {
+</span></span><span style="display:flex;"><span>    rngNextInt(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#2b91af">f32</span>(*state) / <span style="color:#2b91af">f32</span>(0xffffffffu);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInt(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// PCG random number generator
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Based on https://www.shadertoy.com/view/XlGcRh
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> oldState = *state + 747796405u + 2891336453u;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> word = ((oldState &gt;&gt; ((oldState &gt;&gt; 28u) + 4u)) ^ oldState) * 277803737u;
+</span></span><span style="display:flex;"><span>    *state = (word &gt;&gt; 22u) ^ word;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A straightforward way of getting noise in each pixel is to have a copy of a random number generator in each pixel. This requires an additional storage buffer alongside the image buffers to store the state for each instance of the RNG:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@group(1) @binding(2) var&lt;storage, read_write&gt; rngStateBuffer: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">u32</span>&gt;;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>In the host program, the buffer was initialized with the index of each buffer element to ensure that each pixel has an RNG with a different seed.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> rng_state_buffer = {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> seed_buffer: Vec&lt;<span style="color:#2b91af">u32</span>&gt; = (0..max_viewport_resolution).collect();
+</span></span><span style="display:flex;"><span>    StorageBuffer::new_from_bytes(
+</span></span><span style="display:flex;"><span>        device,
+</span></span><span style="display:flex;"><span>        bytemuck::cast_slice(seed_buffer.as_slice()),
+</span></span><span style="display:flex;"><span>        2_<span style="color:#00f">u32</span>,
+</span></span><span style="display:flex;"><span>        Some(<span style="color:#a31515">&#34;rng seed buffer&#34;</span>),
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can ensure the random number generator works by rendering the output as a color for each pixel:</p>
+<p><img src="/img/weekend_raytracing_with_wgpu_1/rng_in_gpu.png" alt="rng in the fragment shader"></p>
+<p>The noise will not be animated on the screen if we start each frame with the same state. Storing the current RNG state at the end of each fragment shader invocation allows us to continue the random number sequence in the next frame.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@fragment
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> fsMain(<span style="color:#00f">in</span>: <span style="color:#2b91af">VertexOutput</span>) -&gt; @location(0) vec4&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    var rngState = rngStateBuffer[idx];
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ... raytracing algorithm
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    rngStateBuffer[idx] = rngState;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This ensures that we can accumulate new samples over multiple frames.</p>
+<h2 id="generate-random-points-in-spheres-and-disks">Generate random points in spheres and disks</h2>
+<p>Raytracing In One Weekend generates random points in spheres and disks using the rejection sampling method, which is conceptually easy to implement. I initially ported the rejection sampling method using WGSL’s <a href="https://www.w3.org/TR/WGSL/#loop-statement">loop</a> construct but the renderer had terrible performance as a result.</p>
+<p>It&rsquo;s possible to generate random points uniformly in a disk and sphere without a loop, by generating random numbers directly using the correct distribution. You can read more about generating points in a disk over <a href="https://stats.stackexchange.com/a/481559">here</a>, for instance. Notice how the random value for <code>r</code> is generated. The sphere case is similar, but with \(r^3 \sim U(0,1)\).</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextVec3InUnitDisk(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// r^2 ~ U(0, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> r = sqrt(rngNextFloat(state));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> alpha = 2f * pi * rngNextFloat(state);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = r * cos(alpha);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = r * sin(alpha);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, 0f);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextVec3InUnitSphere(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// r^3 ~ U(0, 1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> r = pow(rngNextFloat(state), 0.33333f);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> theta = pi * rngNextFloat(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * pi * rngNextFloat(state);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = r * sin(theta) * cos(phi);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = r * sin(theta) * sin(phi);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = r * cos(theta);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>With our random number utilities in place, we are ready to implement the main raytracing function.</p>
+<h2 id="porting-the-recursive-ray_color-function-to-wgsl">Porting the recursive ray_color function to WGSL</h2>
+<p>Raytracing In One Weekend’s <code>ray_color</code> function uses recursion to build the path that a ray takes through the scene. Unfortunately, recursion is not a thing in WGSL, so the recursive function must be translated into a loop.</p>
+<p>Ray Tracing Gems II Chapter 14, “The Reference Path Tracer”, contains the following simple rendering loop in pseudocode.</p>
+<pre tabindex="0"><code>ray = generatePrimaryRay(); throughput = 1.0;
+radiance = 0.0;
+for bounce ∈ {1 . . . MAX_BOUNCES} do
+    Trace(ray);
+    if hit surface then
+            brdf, brdfPdf, ray = SampleBrdf(); throughput *= brdf / brdfPdf;
+    else
+        radiance += throughput * skyColor; break;
+return radiance;
+</code></pre><p>My <code>rayColor</code> implementation is inspired by this pseudocode. Intersection testing with the scene is done by iterating through the array of spheres, another storage buffer. The materials are stored in another array, and are looked up using the <code>materialIdx</code> stored in each sphere. The sky color follows the code from Raytracing In One Weekend.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rayColor(primaryRay: <span style="color:#2b91af">Ray</span>, rngState: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    var ray = primaryRay;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    var color = vec3(0f, 0f, 0f);
+</span></span><span style="display:flex;"><span>    var throughput = vec3(1f, 1f, 1f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// samplingParams is a buffer
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">for</span> (var bounce = 0u; bounce &lt; samplingParams.numBounces; bounce += 1u) {
+</span></span><span style="display:flex;"><span>        var intersection = Intersection();
+</span></span><span style="display:flex;"><span>        var materialIdx = 0u;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Intersection test
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        var closestT = maxT;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (var idx = 0u; idx &lt; arrayLength(&amp;spheres); idx += 1u) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> sphere = spheres[idx];
+</span></span><span style="display:flex;"><span>            var testIntersect = Intersection();
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> rayIntersectSphere(ray, sphere, minT, closestT, &amp;testIntersect) {
+</span></span><span style="display:flex;"><span>                closestT = testIntersect.t;
+</span></span><span style="display:flex;"><span>                intersection = testIntersect;
+</span></span><span style="display:flex;"><span>                materialIdx = sphere.materialIdx;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> closestT &lt; maxT {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Scatter the ray from the surface
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">let</span> material = materials[materialIdx];
+</span></span><span style="display:flex;"><span>            var scatter = scatterRay(ray, intersection, material, rngState);
+</span></span><span style="display:flex;"><span>            ray = scatter.ray;
+</span></span><span style="display:flex;"><span>            throughput *= scatter.albedo;
+</span></span><span style="display:flex;"><span>        } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// The ray missed. Output background color.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>            <span style="color:#00f">let</span> unitDirection = normalize(ray.direction);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">let</span> t = 0.5f * (unitDirection.y + 1f);
+</span></span><span style="display:flex;"><span>            color = (1f - t) * vec3(1f, 1f, 1f) + t * vec3(0.5f, 0.7f, 1f);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> throughput * color;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="be-careful-of-memory-layout-issues-between-apis">Be careful of memory layout issues between APIs</h2>
+<p>The WGSL spec has a <a href="https://www.w3.org/TR/WGSL/#alignment-and-size">table</a> on memory size and alignment requirements. However, memory layout issues cropped up on wgpu and it is safest just to use <code>vec4</code>s everywhere, to guarantee that arrays are laid out in memory the same way when using wgpu across different platforms.</p>
+<p>For example, according to the table, <code>vec3</code> has an alignment of 16 bytes and a size of 12 bytes. On Windows, structuring your memory according to the rules specified in the table works, but on macOS it turns out that the same vector has the memory layout of an array. This appears to be a <a href="https://github.com/gfx-rs/naga/issues/2000">known issue</a> in naga, wgpu’s shader translation infrastructure. Using <code>vec4</code> in all structs works around this problem.</p>
+<p>In my raytracer, a four element vector is not needed to represent the center of a sphere, but is used for memory layout purposes:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// WGSL declaration
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">struct</span> <span style="color:#2b91af">Sphere</span> {
+</span></span><span style="display:flex;"><span>    centerAndPad: <span style="color:#2b91af">vec4</span>&lt;<span style="color:#2b91af">f32</span>&gt;,  <span style="color:#008000">// 0 byte offset, 16 byte size
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    radius: <span style="color:#2b91af">f32</span>,                <span style="color:#008000">// 16 byte offset, 4 byte size
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    materialIdx: <span style="color:#2b91af">u32</span>,           <span style="color:#008000">// 20 byte offset, 4 byte size
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// 8 byte pad required
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Rust declaration
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">#[repr(C)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">pub</span> <span style="color:#00f">struct</span> <span style="color:#2b91af">Sphere</span> {
+</span></span><span style="display:flex;"><span>    center: <span style="color:#2b91af">glm</span>::Vec4,
+</span></span><span style="display:flex;"><span>    radius: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>    material_idx: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    _padding: [<span style="color:#2b91af">u32</span>; 2],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Overriding the size requirement of <code>vec3</code> using explicit <a href="https://www.w3.org/TR/WGSL/#structure-member-layout">layout attributes</a> also solves the problem.</p>
+<h2 id="what-next">What next</h2>
+<p>In the next post, the raytracer will be made shinier by adding a prettier sky model and textured spheres. Textures will be implemented using a data-oriented approach.</p>
+<h2 id="references-and-links">References and links</h2>
+<p><a href="https://github.com/Nelarius/weekend-raytracer-wgpu/tree/de240cb61218f1ac65f77cc80fc05b5d53b430ba">weekend-raytracer-wgpu</a> (project repository, see <code>src/raytracer/raytracer.wgsl</code> for full implementation)</p>
+<p><a href="https://stats.stackexchange.com/questions/481543/generating-random-points-uniformly-on-a-disk/481559#481559">Generating random points uniformly on a disk</a> (stackexchange post)</p>
+<p><a href="https://www.realtimerendering.com/raytracinggems/rtg2/index.html">Ray Tracing Gems II</a> (free download is available)</p>
+<p><a href="https://www.w3.org/TR/WGSL/">WGSL spec</a></p>
+<p><a href="https://gist.github.com/teoxoy/936891c16c2a3d1c3c5e7204ac6cd76c">Shader Buffer Memory Layout Info</a></p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#use-the-wgsl-analyzer-plugin-vs-code">Use the wgsl-analyzer plugin (VS Code)</a></li>
+    <li><a href="#use-uniform-and-storage-buffers-instead-of-textures-for-everything">Use uniform and storage buffers instead of textures for everything</a></li>
+    <li><a href="#implement-a-random-number-generator">Implement a random number generator</a></li>
+    <li><a href="#generate-random-points-in-spheres-and-disks">Generate random points in spheres and disks</a></li>
+    <li><a href="#porting-the-recursive-ray_color-function-to-wgsl">Porting the recursive ray_color function to WGSL</a></li>
+    <li><a href="#be-careful-of-memory-layout-issues-between-apis">Be careful of memory layout issues between APIs</a></li>
+    <li><a href="#what-next">What next</a></li>
+    <li><a href="#references-and-links">References and links</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/wgpu">wgpu
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/inverse_transform_sampling/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Using inverse transform sampling to generate random numbers in a given distribution&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2023 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

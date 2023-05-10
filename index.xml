@@ -82,15 +82,6 @@ I enjoy writing all kinds of software, but I usually gravitate towards writing g
     </item>
     
     <item>
-      <title>Implementing simple translation and rotation gizmos</title>
-      <link>https://nelari.us/post/gizmos/</link>
-      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
-      
-      <guid>https://nelari.us/post/gizmos/</guid>
-      <description>Fed up with entering numbers manually via the UI for each game object transform in my home-made game engine, I wanted to integrate a gizmo tool. Gizmos, at least in the context of game engine editors, are little 3d tools that you can use to manipulate objects in 3d space. While there are a few easy-ish-to-integrate transform gizmo libraries on github, I was not completely happy with them. The interface of tinygizmo is nice, but it intersects camera rays with the triangle meshes of the primitive.</description>
-    </item>
-    
-    <item>
       <title>Embedding Wren in C&#43;&#43;, part 2</title>
       <link>https://nelari.us/post/wren-embedding-2/</link>
       <pubDate>Fri, 06 May 2016 00:00:00 +0000</pubDate>

@@ -16,14 +16,5 @@
       <description>Node editors are one of the more discussed use cases for the dear imgui UI library, and there are lots of gists as well as fully-fledged implementations for them on Github. If you want to implement your own node editor, you can get cracking! However, my pet peeve with the available samples and implementations is that they often aren&amp;rsquo;t immediate mode and don&amp;rsquo;t obey dear imgui&amp;rsquo;s philosophy of being lightweight and dependency free.</description>
     </item>
     
-    <item>
-      <title>Implementing simple translation and rotation gizmos</title>
-      <link>https://nelari.us/post/gizmos/</link>
-      <pubDate>Fri, 06 Apr 2018 16:17:29 +0200</pubDate>
-      
-      <guid>https://nelari.us/post/gizmos/</guid>
-      <description>Fed up with entering numbers manually via the UI for each game object transform in my home-made game engine, I wanted to integrate a gizmo tool. Gizmos, at least in the context of game engine editors, are little 3d tools that you can use to manipulate objects in 3d space. While there are a few easy-ish-to-integrate transform gizmo libraries on github, I was not completely happy with them. The interface of tinygizmo is nice, but it intersects camera rays with the triangle meshes of the primitive.</description>
-    </item>
-    
   </channel>
 </rss>

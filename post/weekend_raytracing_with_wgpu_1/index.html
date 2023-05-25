@@ -162,43 +162,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>A straightforward way of getting noise in each pixel is to have a copy of a random number generator in each pixel. This requires an additional storage buffer alongside the image buffers to store the state for each instance of the RNG:</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
-<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@group(1) @binding(2) var&lt;storage, read_write&gt; rngStateBuffer: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">u32</span>&gt;;
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p>In the host program, the buffer was initialized with the index of each buffer element to ensure that each pixel has an RNG with a different seed.</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
-<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> rng_state_buffer = {
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> seed_buffer: Vec&lt;<span style="color:#2b91af">u32</span>&gt; = (0..max_viewport_resolution).collect();
-</span></span><span style="display:flex;"><span>    StorageBuffer::new_from_bytes(
-</span></span><span style="display:flex;"><span>        device,
-</span></span><span style="display:flex;"><span>        bytemuck::cast_slice(seed_buffer.as_slice()),
-</span></span><span style="display:flex;"><span>        2_<span style="color:#00f">u32</span>,
-</span></span><span style="display:flex;"><span>        Some(<span style="color:#a31515">&#34;rng seed buffer&#34;</span>),
-</span></span><span style="display:flex;"><span>    )
-</span></span><span style="display:flex;"><span>};
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p>You can ensure the random number generator works by rendering the output as a color for each pixel:</p>
-<p><img src="/img/weekend_raytracing_with_wgpu_1/rng_in_gpu.png" alt="rng in the fragment shader"></p>
-<p>The noise will not be animated on the screen if we start each frame with the same state. Storing the current RNG state at the end of each fragment shader invocation allows us to continue the random number sequence in the next frame.</p>
+</div><p>A straightforward way of getting noise in each pixel is to have a separate seed in each pixel. We also want the seed to be different for each pixel, and even across each frame. <a href="https://www.realtimerendering.com/raytracinggems/rtg2/index.html">Ray Tracing Gems II</a> Chapter 14, “The Reference Path Tracer” uses the following function that combines the pixel index and the frame count to generate a unique seed for each pixel and frame.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
@@ -211,21 +175,33 @@
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@fragment
-</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> fsMain(<span style="color:#00f">in</span>: <span style="color:#2b91af">VertexOutput</span>) -&gt; @location(0) vec4&lt;<span style="color:#2b91af">f32</span>&gt; {
-</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
-</span></span><span style="display:flex;"><span>    var rngState = rngStateBuffer[idx];
-</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ... raytracing algorithm
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    rngStateBuffer[idx] = rngState;
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> initRng(pixel: <span style="color:#2b91af">vec2</span>&lt;<span style="color:#2b91af">u32</span>&gt;, resolution: <span style="color:#2b91af">vec2</span>&lt;<span style="color:#2b91af">u32</span>&gt;, frame: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">u32</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Adapted from https://github.com/boksajak/referencePT
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> seed = dot(pixel, vec2&lt;<span style="color:#2b91af">u32</span>&gt;(1u, resolution.x)) ^ jenkinsHash(frame);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> jenkinsHash(seed);
+</span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>}
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> jenkinsHash(input: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">u32</span> {
+</span></span><span style="display:flex;"><span>    var x = input;
+</span></span><span style="display:flex;"><span>    x += x &lt;&lt; 10u;
+</span></span><span style="display:flex;"><span>    x ^= x &gt;&gt; 6u;
+</span></span><span style="display:flex;"><span>    x += x &lt;&lt; 3u;
+</span></span><span style="display:flex;"><span>    x ^= x &gt;&gt; 11u;
+</span></span><span style="display:flex;"><span>    x += x &lt;&lt; 15u;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> x;
+</span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>This ensures that we can accumulate new samples over multiple frames.</p>
+</div><p>You can ensure the random number generator works by rendering the output as a color for each pixel:</p>
+<p><img src="/img/weekend_raytracing_with_wgpu_1/rng_in_gpu.png" alt="rng in the fragment shader"></p>
+<p>Random numbers changing over time ensures that we can accumulate new samples over multiple frames.</p>
 <h2 id="generate-random-points-in-spheres-and-disks">Generate random points in spheres and disks</h2>
 <p>Raytracing In One Weekend generates random points in spheres and disks using the rejection sampling method, which is conceptually easy to implement. I initially ported the rejection sampling method using WGSL’s <a href="https://www.w3.org/TR/WGSL/#loop-statement">loop</a> construct but the renderer had terrible performance as a result.</p>
 <p>It&rsquo;s possible to generate random points uniformly in a disk and sphere without a loop, by generating random numbers directly using the correct distribution. You can read more about generating points in a disk over <a href="https://stats.stackexchange.com/a/481559">here</a>, for instance. Notice how the random value for <code>r</code> is generated. The sphere case is similar, but with \(r^3 \sim U(0,1)\).</p>
@@ -284,7 +260,7 @@
 </div><p>With our random number utilities in place, we are ready to implement the main raytracing function.</p>
 <h2 id="porting-the-recursive-ray_color-function-to-wgsl">Porting the recursive ray_color function to WGSL</h2>
 <p>Raytracing In One Weekend’s <code>ray_color</code> function uses recursion to build the path that a ray takes through the scene. Unfortunately, recursion is not a thing in WGSL, so the recursive function must be translated into a loop.</p>
-<p>Ray Tracing Gems II Chapter 14, “The Reference Path Tracer”, contains the following simple rendering loop in pseudocode.</p>
+<p>Again, <a href="https://www.realtimerendering.com/raytracinggems/rtg2/index.html">Ray Tracing Gems II</a> Chapter 14, “The Reference Path Tracer”, contains the following simple rendering loop in pseudocode.</p>
 <pre tabindex="0"><code>ray = generatePrimaryRay(); throughput = 1.0;
 radiance = 0.0;
 for bounce ∈ {1 . . . MAX_BOUNCES} do
@@ -431,7 +407,7 @@ return radiance;
 <h2 id="what-next">What next</h2>
 <p>In the next post, the raytracer will be made shinier by adding a prettier sky model and textured spheres. Textures will be implemented using a data-oriented approach.</p>
 <h2 id="references-and-links">References and links</h2>
-<p><a href="https://github.com/Nelarius/weekend-raytracer-wgpu/tree/de240cb61218f1ac65f77cc80fc05b5d53b430ba">weekend-raytracer-wgpu</a> (project repository, see <code>src/raytracer/raytracer.wgsl</code> for full implementation)</p>
+<p><a href="https://github.com/Nelarius/weekend-raytracer-wgpu/tree/232ffca207dcefce00fedf935cc094950b2dee48">weekend-raytracer-wgpu</a> (project repository, see <code>src/raytracer/raytracer.wgsl</code> for full implementation)</p>
 <p><a href="https://stats.stackexchange.com/questions/481543/generating-random-points-uniformly-on-a-disk/481559#481559">Generating random points uniformly on a disk</a> (stackexchange post)</p>
 <p><a href="https://www.realtimerendering.com/raytracinggems/rtg2/index.html">Ray Tracing Gems II</a> (free download is available)</p>
 <p><a href="https://www.w3.org/TR/WGSL/">WGSL spec</a></p>

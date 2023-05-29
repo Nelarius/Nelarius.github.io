@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekend raytracing with wgpu, part 2 // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="This post focuses on making the raytracer discussed in part 1 much shinier. Notes on integrating a physically based sky model and textured material support are discussed next.">
+    
+
+        <meta property="og:title" content="Weekend raytracing with wgpu, part 2" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/weekend_raytracing_with_wgpu_2/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.111.3">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Weekend raytracing with wgpu, part 2</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/weekend_raytracing_with_wgpu_2/" class="article-date">
+                <time datetime='2023-05-27T21:47:16.000&#43;03:00' itemprop="datePublished">2023-05-27</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>The first part of &ldquo;Weekend raytracing with wgpu&rdquo; left us with a basic implementation of Peter Shirley&rsquo;s first book in the series of &ldquo;Ray Tracing In One Weekend &quot; books. &ldquo;Ray Tracing: The Next Week&rdquo; introduces additional features, such as texture support.</p>
+<p>This post takes a look at adding a physically based sky model, in addition to adding textured material support. These features, combined, result in much nicer images than the basic renderer, without appreciably slowing down the renderer. Adding textures was not as simple as porting the code over from the book as the book&rsquo;s OOP-heavy approach does not map easily to a GPU.</p>
+<p>Unlike the previous post, where the sky color was an almost flat shade of blue, we now have an actual light source in the scene, the sun. This leads to emergent visual features, which didn&rsquo;t have to be implemented separately. Notice the light reflected off the gold orb onto the checkerboard pattern in the image below. As you rotate the sun around the orb, you can watch the reflection move in real-time. Nothing was changed in the way the rays bounce off the spheres, the spheres are simple reflecting a much higher quality sky.</p>
+<p><img src="/img/weekend_raytracing_with_wgpu_2/sunset_reflection.png" alt="sunset reflections"></p>
+<p><img src="/img/weekend_raytracing_with_wgpu_2/sunset.png" alt="physically-based sunset"></p>
+<h2 id="adding-a-physically-based-sky-model">Adding a physically-based sky model</h2>
+<p>There are many sky models to choose from, all with distinct goals and use-cases in mind. The sky model I chose was the <a href="https://cgg.mff.cuni.cz/projects/SkylightModelling/HosekWilkie_SkylightModel_SIGGRAPH2012_Preprint_lowres.pdf">Hosek-Wilkie</a> model. It looks good enough for the weekend raytracer project and is easy to integrate in a raytracer, regardless of whether you are rendering on the GPU or the CPU.</p>
+<p>The model provides physically-based radiance values for any direction in the sky, assuming the viewer is on the ground of the Earth. The model was obtained by doing brute-force simulations of the atmospheric scattering process on Earth, and then fitting the results into a simple model that is much faster to evaluate at runtime.</p>
+<h3 id="integrating-the-hosek-wilkie-model">Integrating the Hosek-Wilkie model</h3>
+<p>Evaluating the sky model (i.e. calculating the radiance for a viewing direction) involves doing some calculations using a lookup table. If you change a sky parameter, such as the sun direction or the atmospheric turbidity, the table values will need to be recomputed.</p>
+<p>The authors behind the original paper provide a reference C implementation, which can be used a basis of an integration. However, the fastest way to get the model integrated in a Rust-based renderer is to use the <a href="https://crates.io/crates/hw-skymodel">hw-skymodel crate</a>. This crate only supports RGB radiances, simplifying runtime evaluation and calculation of the table values.</p>
+<p>To summarize, using the <code>hw-skymodel</code> crate involves two steps: generating the lookup table values, and using the <code>radiance</code> function to calculate the radiance for any given viewing direction at runtime.</p>
+<p>The table values and sun direction are contained the raytracer&rsquo;s <code>SkyState</code> struct.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">SkyState</span> {
+</span></span><span style="display:flex;"><span>    params: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">f32</span>, 27&gt;,
+</span></span><span style="display:flex;"><span>    radiances: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">f32</span>, 3&gt;,
+</span></span><span style="display:flex;"><span>    sunDirection: <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt;,
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The raytracer&rsquo;s <code>radiance</code> function is copy-pasted from the crate. Rust and WGSL are similar enough that it takes just a few minutes to fix syntactical differences. With this setup, all you have to do is upload the <code>SkyState</code> data on initialization and any time sky parameters change. The <code>hw-skymodel</code> crate&rsquo;s <code>SkyState::new</code> function is fast enough that you can call it at runtime to regenerate the lookup table.</p>
+<p>In order to call the <code>radiance</code> function, you need to provide information about the view direction. Two angles are required: <code>theta</code>, the polar angle of the view vector, and <code>gamma</code>, the angle between the view vector and the sun direction. Here is one way those can be computed:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> v = normalize(ray.direction);
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> s = skyState.sunDirection;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> theta = acos(v.y);
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> gamma = acos(clamp(dot(v, s), -1f, 1f));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>color = vec3(
+</span></span><span style="display:flex;"><span>    radiance(theta, gamma, channelR),
+</span></span><span style="display:flex;"><span>    radiance(theta, gamma, channelG),
+</span></span><span style="display:flex;"><span>    radiance(theta, gamma, channelB)
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>channelR</code>, <code>channelG</code>, <code>channelB</code> are constant values representing the channel index.</p>
+<p>To see everything in context, you can read the <a href="https://github.com/Nelarius/weekend-raytracer-wgpu/blob/c3cd5535bb6c0cf8e116c56598926278ad6ddc74/src/raytracer/raytracer.wgsl#L150"><code>rayColor</code></a> function where the sky model is evaluated in the ray miss branch.</p>
+<h3 id="adding-tonemapping">Adding tonemapping</h3>
+<p>The sky model outputs physical radiance values, which are not contained in the 0, 1 range. Without a tone mapping function, the image will be completely white.</p>
+<p>A tone mapping function applies a curve to the raw radiance value, to map it to the 0, 1 range. The <a href="https://dmnsgn.github.io/glsl-tone-map">glsl-tone-map</a> page contains a gallery of different functions you can use. I found that the uncharted2 function looked the best in the weekend-raytracer scene, so I chose that. Note that the example code&rsquo;s <code>exposureBias = 2.0</code> yielded an image which was too bright. A value of <code>0.246</code> worked much better.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> uncharted2(x: <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt;) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> exposureBias = 0.246;   <span style="color:#008000">// determined experimentally for the scene
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> curr = uncharted2Tonemap(exposureBias * x);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> w = 11.2;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> whiteScale = 1f / uncharted2Tonemap(vec3(w));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> whiteScale * curr;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> uncharted2Tonemap(x: <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt;) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> a = 0.15;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> b = 0.50;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> c = 0.10;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> d = 0.20;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> e = 0.02;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> f = 0.30;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> w = 11.2;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> ((x*(a*x+c*b)+d*e)/(x*(a*x+b)+d*f))-e/f;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To tone map your image, you simply pass each RGB value through the function.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> invN = 1f / <span style="color:#2b91af">f32</span>(samplingParams.accumulatedSamplesPerPixel);
+</span></span><span style="display:flex;"><span><span style="color:#00f">return</span> vec4(
+</span></span><span style="display:flex;"><span>        uncharted2(invN * pixel),
+</span></span><span style="display:flex;"><span>        1f
+</span></span><span style="display:flex;"><span>    );
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="adding-texture-support">Adding texture support</h2>
+<p>Unlike rasterization, where you render one object at a time, in raytracing the ray may hit <em>any</em> object in the scene. We already retain all our spheres in memory, and we will have to do the same for the textures, which once again means that we need to ignore WebGPU&rsquo;s built-in texture support and implement our own system.</p>
+<h3 id="uv-coordinates">UV coordinates</h3>
+<p>First, in order to map a texture to a sphere&rsquo;s surface, we need a way to generate UV coordinates for ever ray-sphere intersection. The updated <code>sphereIntersection</code> function generates uv coordinates for any intersection on the surface of a sphere. This implementation is straight out of the <a href="https://raytracing.github.io/books/RayTracingTheNextWeek.html">Ray Tracing: The Next Week</a> book.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> sphereIntersection(ray: <span style="color:#2b91af">Ray</span>, sphere: <span style="color:#2b91af">Sphere</span>, t: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">Intersection</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> p = rayPointAtParameter(ray, t);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> n = (1f / sphere.radius) * (p - sphere.centerAndPad.xyz);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> theta = acos(-n.y);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = atan2(-n.z, n.x) + pi;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u = 0.5 * frac1Pi * phi;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> v = frac1Pi * theta;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Intersection(p, n, u, v, t);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now that we have rectangular UV coordinates for our surface, we can do a texture lookup using the UV coordinates.</p>
+<h3 id="texture-storage-and-lookup">Texture storage and lookup</h3>
+<p>All textures are stored in a single array, back to back. Texels are an <code>array&lt;f32,3&gt;</code>, instead of a <code>vec3&lt;f32&gt;</code> to avoid the 16-byte memory alignment requirement that a <code>vec3</code> would require. This way, the textures consume less memory.</p>
+<pre tabindex="0"><code>@group(3) @binding(2) var&lt;storage, read&gt; textures: array&lt;array&lt;f32, 3&gt;&gt;;
+</code></pre><p>The texture object contains the dimensions of the texture, as well as the texture&rsquo;s offset into the global texture storage array.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">TextureDescriptor</span> {
+</span></span><span style="display:flex;"><span>    width: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    height: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    offset: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This descriptor contains all the information that is needed to look up a pixel. We can map the UV coordinate of the intersection to an actual pixel index using the descriptor&rsquo;s dimensions.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> textureLookup(desc: <span style="color:#2b91af">TextureDescriptor</span>, u: <span style="color:#2b91af">f32</span>, v: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u = clamp(u, 0f, 1f);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> v = 1f - clamp(v, 0f, 1f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> j = <span style="color:#2b91af">u32</span>(u * <span style="color:#2b91af">f32</span>(desc.width));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> i = <span style="color:#2b91af">u32</span>(v * <span style="color:#2b91af">f32</span>(desc.height));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> idx = i * desc.width + j;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> elem = textures[desc.offset + idx];
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(elem[0u], elem[1u], elem[2u]);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, we need to actually use the textures in the materials. One easy way is to use a texture in place of a color in the material. For objects which just have a single color, like our gold orb, we can create a texture with one pixel.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>    id: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    desc: <span style="color:#2b91af">TextureDescriptor</span>,
+</span></span><span style="display:flex;"><span>    x: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The drawback of this system is, of course, that we lose the built-in texture filtering abilities that WGSL provides. This is particularly visible when zooming in close to either the Moon or Earth.</p>
+<p><img src="/img/weekend_raytracing_with_wgpu_2/texture_artifacts.png" alt="artifacts due to no texture filtering"></p>
+<h2 id="adding-a-checkerboard-material">Adding a checkerboard material</h2>
+<p>One final addition from the Ray Tracing: The Next Week book is the checkerboard material. We use two colors (two textures), and pick them depending on where we are on the surface. Two colors requires two textures descriptors, so our material declaration actually ends up being:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">Material</span> {
+</span></span><span style="display:flex;"><span>    id: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>    desc1: <span style="color:#2b91af">TextureDescriptor</span>,
+</span></span><span style="display:flex;"><span>    desc2: <span style="color:#2b91af">TextureDescriptor</span>,
+</span></span><span style="display:flex;"><span>    x: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The checkerboard material&rsquo;s scattering function multiplies the sines of the surface coordinate together, and uses that as a test for which checkerboard element we are in:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> scatterCheckerboard(rayIn: <span style="color:#2b91af">Ray</span>, hit: <span style="color:#2b91af">Intersection</span>, material: <span style="color:#2b91af">Material</span>, rngState: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">Scatter</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sines = sin(5f * hit.p.x) * sin(5f * hit.p.y) * sin(5f * hit.p.z);
+</span></span><span style="display:flex;"><span>    var albedo: <span style="color:#2b91af">vec3</span>&lt;<span style="color:#2b91af">f32</span>&gt;;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> sines &lt; 0f {
+</span></span><span style="display:flex;"><span>        albedo = textureLookup(material.desc1, hit.u, hit.v);
+</span></span><span style="display:flex;"><span>    } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        albedo = textureLookup(material.desc2, hit.u, hit.v);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> scatterDirection = hit.n + rngNextVec3InUnitSphere(rngState);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Scatter(Ray(hit.p, scatterDirection), albedo);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="what-next">What next</h2>
+<p>In the next post, a spherical lights will be added to the scene. In order to ensure that the image converges sufficiently fast with the light, light sampling techniques will have to be introduced into the raytracer.</p>
+<h2 id="references-and-links">References and links</h2>
+<p><a href="https://github.com/Nelarius/weekend-raytracer-wgpu/tree/c3cd5535bb6c0cf8e116c56598926278ad6ddc74">weekend-raytracer-wgpu</a> (project repository, see <code>src/raytracer/raytracer.wgsl</code> for full implementation)</p>
+<p><a href="https://cgg.mff.cuni.cz/projects/SkylightModelling/HosekWilkie_SkylightModel_SIGGRAPH2012_Preprint_lowres.pdf">Hosek-Wilkie sky model paper</a></p>
+<p><a href="https://crates.io/crates/hw-skymodel">hw-skymodel crate</a></p>
+<p><a href="https://dmnsgn.github.io/glsl-tone-map/">glsl-tone-map</a></p>
+<p><a href="https://raytracing.github.io/books/RayTracingTheNextWeek.html">Ray Tracing: The Next Week</a></p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#adding-a-physically-based-sky-model">Adding a physically-based sky model</a>
+      <ul>
+        <li><a href="#integrating-the-hosek-wilkie-model">Integrating the Hosek-Wilkie model</a></li>
+        <li><a href="#adding-tonemapping">Adding tonemapping</a></li>
+      </ul>
+    </li>
+    <li><a href="#adding-texture-support">Adding texture support</a>
+      <ul>
+        <li><a href="#uv-coordinates">UV coordinates</a></li>
+        <li><a href="#texture-storage-and-lookup">Texture storage and lookup</a></li>
+      </ul>
+    </li>
+    <li><a href="#adding-a-checkerboard-material">Adding a checkerboard material</a></li>
+    <li><a href="#what-next">What next</a></li>
+    <li><a href="#references-and-links">References and links</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/wgpu">wgpu
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/weekend_raytracing_with_wgpu_1/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Weekend raytracing with wgpu, part 1&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2023 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

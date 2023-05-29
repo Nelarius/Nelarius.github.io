@@ -6,7 +6,17 @@
     <description>Recent content in wgpu on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 07 May 2023 06:43:00 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/wgpu/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 27 May 2023 21:47:16 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/wgpu/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weekend raytracing with wgpu, part 2</title>
+      <link>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</link>
+      <pubDate>Sat, 27 May 2023 21:47:16 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</guid>
+      <description>The first part of &amp;ldquo;Weekend raytracing with wgpu&amp;rdquo; left us with a basic implementation of Peter Shirley&amp;rsquo;s first book in the series of &amp;ldquo;Ray Tracing In One Weekend &amp;quot; books. &amp;ldquo;Ray Tracing: The Next Week&amp;rdquo; introduces additional features, such as texture support.
+This post takes a look at adding a physically based sky model, in addition to adding textured material support. These features, combined, result in much nicer images than the basic renderer, without appreciably slowing down the renderer.</description>
+    </item>
+    
     <item>
       <title>Weekend raytracing with wgpu, part 1</title>
       <link>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</link>

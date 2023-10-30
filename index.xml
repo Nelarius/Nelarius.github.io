@@ -6,7 +6,19 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 27 May 2023 21:47:16 +0300</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pathtracer Devlog</title>
+      <link>https://nelari.us/post/pathtracer_devlog/</link>
+      <pubDate>Mon, 30 Oct 2023 17:19:21 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/pathtracer_devlog/</guid>
+      <description>This post is a devlog for my pathtracer-playground project. In this project I am seeing how far I can get in writing a physically based pathtracer using WebGPU.
+Render fullscreen quad 2023-10-30
+After 1000 lines of WebGPU plumbing code, the pt executable contains
+A GpuContext for initializing the WebGPU instance, surface, adapter, device, queue, and the swap chain. A distinct Renderer which initializes a render pipeline, a uniform and vertex buffer, using the GpuContext.</description>
+    </item>
+    
     <item>
       <title>Weekend raytracing with wgpu, part 2</title>
       <link>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</link>

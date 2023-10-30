@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>raytracing // My thought repository</title>
+    <title>Pathtracer Devlog // My thought repository</title>
 
     <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
+    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer using WebGPU.">
     
 
-        <meta property="og:title" content="raytracing" />
+        <meta property="og:title" content="Pathtracer Devlog" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en" />
-    <meta property="og:url" content="https://nelari.us/tags/raytracing/" />
+    <meta property="og:url" content="https://nelari.us/post/pathtracer_devlog/" />
     
-<link href="https://nelari.us/tags/raytracing/index.xml" rel="alternate" type="application/rss+xml" title="My thought repository" />
+
     <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
@@ -30,6 +30,7 @@
 
     <meta name="generator" content="Hugo 0.119.0">
 </head>
+
 
 <body>
 <div id="container">
@@ -54,68 +55,94 @@
 </header>
 
     <section id="main" class="outer">
-        <section class="archives-wrap">
-            <div class="archive-tag-wrap">
-                <span class="archive-tag">#raytracing</span>
-            </div>
-            <div class="archives">
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/pathtracer_devlog/" class="archive-article-date">
-                <time datetime='2023-10-30T17:19:21.000&#43;02:00' itemprop="datePublished">2023 Oct 30</time>
-            </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/pathtracer_devlog/">Pathtracer Devlog</a>
-            </h1>
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Pathtracer Devlog</h1>
         </header>
-    </div>
-</article>
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/weekend_raytracing_with_wgpu_2/" class="archive-article-date">
-                <time datetime='2023-05-27T21:47:16.000&#43;03:00' itemprop="datePublished">2023 May 27</time>
+        
+        <div class="article-meta">
+            <a href="/post/pathtracer_devlog/" class="article-date">
+                <time datetime='2023-10-30T17:19:21.000&#43;02:00' itemprop="datePublished">2023-10-30</time>
             </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/weekend_raytracing_with_wgpu_2/">Weekend raytracing with wgpu, part 2</a>
-            </h1>
-        </header>
-    </div>
-</article>
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/weekend_raytracing_with_wgpu_1/" class="archive-article-date">
-                <time datetime='2023-05-07T06:43:00.000&#43;03:00' itemprop="datePublished">2023 May 7</time>
-            </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/weekend_raytracing_with_wgpu_1/">Weekend raytracing with wgpu, part 1</a>
-            </h1>
-        </header>
-    </div>
-</article>
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/raytracer_with_rust_and_zig/" class="archive-article-date">
-                <time datetime='2019-06-27T20:00:00.000&#43;02:00' itemprop="datePublished">2019 Jun 27</time>
-            </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/raytracer_with_rust_and_zig/">Writing a small ray tracer in Rust and Zig</a>
-            </h1>
-        </header>
-    </div>
-</article>
-                
-            </div></section>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. In this project I am seeing how far I can get in writing a physically based pathtracer using WebGPU.</p>
+<h2 id="render-fullscreen-quad">Render fullscreen quad</h2>
+<p><em>2023-10-30</em></p>
+<p>After 1000 lines of WebGPU plumbing code, the <code>pt</code> executable contains</p>
+<ul>
+<li>A <code>GpuContext</code> for initializing the WebGPU instance, surface, adapter, device, queue, and the swap chain.</li>
+<li>A distinct <code>Renderer</code> which initializes a render pipeline, a uniform and vertex buffer, using the <code>GpuContext</code>.</li>
+</ul>
+<p>The renderer draws to the screen using a fullscreen quad. For now, the texture coordinates are displayed as colors.</p>
+<p><img src="/img/pathtracer_devlog/fullscreen-quad.png" alt="fullscreen quad"></p>
+<h2 id="hello-glfw">Hello, GLFW!</h2>
+<p><em>2023-10-29</em></p>
+<p>All projects have to start somewhere.</p>
+<ul>
+<li>Defined a <code>pt</code> executable target in CMake. The goal is for this executable to open up a scene and display it by doing pathtracing on the GPU.</li>
+<li>The GLFW library dependency added using CMake&rsquo;s <code>FetchContent</code>.</li>
+<li>An empty window is opened with a window title. No GPU rendering support yet, only calls to <code>glfwSwapBuffers</code>.</li>
+</ul>
+<p>The state of the project after the initial commits is barebones.</p>
+<p><img src="/img/pathtracer_devlog/hello-glfw.png" alt="hello, glfw"></p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#render-fullscreen-quad">Render fullscreen quad</a></li>
+    <li><a href="#hello-glfw">Hello, GLFW!</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
         
 
 
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/cpp">cpp
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/weekend_raytracing_with_wgpu_2/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Weekend raytracing with wgpu, part 2&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
     </section>
     <footer id="footer">
     <div class="outer">

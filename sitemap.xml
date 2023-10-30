@@ -2,17 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://nelari.us/tags/cpp/</loc>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/</loc>
-    <lastmod>2023-05-27T21:47:16+03:00</lastmod>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/pathtracer_devlog/</loc>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/</loc>
-    <lastmod>2023-05-27T21:47:16+03:00</lastmod>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/raytracing/</loc>
-    <lastmod>2023-05-27T21:47:16+03:00</lastmod>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/</loc>
-    <lastmod>2023-05-27T21:47:16+03:00</lastmod>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</loc>
     <lastmod>2023-05-27T21:47:16+03:00</lastmod>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>cpp on My thought repository</title>
+    <link>https://nelari.us/tags/cpp/</link>
+    <description>Recent content in cpp on My thought repository</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/cpp/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pathtracer Devlog</title>
+      <link>https://nelari.us/post/pathtracer_devlog/</link>
+      <pubDate>Mon, 30 Oct 2023 17:19:21 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/pathtracer_devlog/</guid>
+      <description>This post is a devlog for my pathtracer-playground project. In this project I am seeing how far I can get in writing a physically based pathtracer using WebGPU.
+Render fullscreen quad 2023-10-30
+After 1000 lines of WebGPU plumbing code, the pt executable contains
+A GpuContext for initializing the WebGPU instance, surface, adapter, device, queue, and the swap chain. A distinct Renderer which initializes a render pipeline, a uniform and vertex buffer, using the GpuContext.</description>
+    </item>
+    
+  </channel>
+</rss>

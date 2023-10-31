@@ -7,7 +7,7 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     
-    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer using WebGPU.">
+    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer using WebGPU from scratch.">
     
 
         <meta property="og:title" content="Pathtracer Devlog" />
@@ -71,10 +71,60 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. In this project I am seeing how far I can get in writing a physically based pathtracer using WebGPU.</p>
-<h2 id="render-fullscreen-quad">Render fullscreen quad</h2>
+            <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="gpu-generated-noise">GPU-generated noise</h2>
+<p><em>2023-10-31</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/645c09c377face80354e820875c0be9181a18124">645c09c</a></em></p>
+<p>The major highlights of the day include generating noise on the GPU and displaying it, as well as cleaning up the main function using a new <code>Window</code> abstraction.</p>
+<p><strong><code>Window</code></strong></p>
+<p>A simple <code>Window</code> abstraction was introduced to automate GLFW library and window init and cleanup. <code>main</code> does not yet have an exception handler, but this abstraction is a step closer to ensuring all resources are cleaned up even when exceptions occur.</p>
+<p><strong>GPU noise</strong></p>
+<p>Noise is generated on the GPU using the following functions.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextFloat(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">f32</span> {
+</span></span><span style="display:flex;"><span>    rngNextInt(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#2b91af">f32</span>(*state) / <span style="color:#2b91af">f32</span>(0xffffffffu);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInt(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// PCG random number generator
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Based on https://www.shadertoy.com/view/XlGcRh
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> oldState = *state + 747796405u + 2891336453u;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> word = ((oldState &gt;&gt; ((oldState &gt;&gt; 28u) + 4u)) ^ oldState) * 277803737u;
+</span></span><span style="display:flex;"><span>    *state = (word &gt;&gt; 22u) ^ word;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Each frame,</p>
+<ol>
+<li><code>rngNextFloat</code> is used in a compute shader to generate RGB values</li>
+<li>RGB values are stored in a pixel buffer</li>
+<li>The pixel buffer is mapped to the full screen quad from the previous day.</li>
+</ol>
+<p>This approach is a bit more complex than necessary, and could just be done in the fragment shader.</p>
+<p><img src="/img/pathtracer_devlog/gpu-noise.png" alt="gpu noise"></p>
+<h2 id="fullscreen-quad">Fullscreen quad</h2>
 <p><em>2023-10-30</em></p>
-<p>After 1000 lines of WebGPU plumbing code, the <code>pt</code> executable contains</p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/51387d7b447800b0ffc25e3f2c1526e6fc2bf0f5">51387d7</a></em></p>
+<p>After 1000 lines of WebGPU plumbing code, the first <em>pair</em> of triangles is displayed on the screen in the shape of a fullscreen quad, and the UV coordinates are displayed as a color.</p>
+<p>The <code>pt</code> executable contains</p>
 <ul>
 <li>A <code>GpuContext</code> for initializing the WebGPU instance, surface, adapter, device, queue, and the swap chain.</li>
 <li>A distinct <code>Renderer</code> which initializes a render pipeline, a uniform and vertex buffer, using the <code>GpuContext</code>.</li>
@@ -83,13 +133,14 @@
 <p><img src="/img/pathtracer_devlog/fullscreen-quad.png" alt="fullscreen quad"></p>
 <h2 id="hello-glfw">Hello, GLFW!</h2>
 <p><em>2023-10-29</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/4df39fa7a165f10e7582847c999bf02e60a6ec6a">4df39fa</a></em></p>
 <p>All projects have to start somewhere.</p>
 <ul>
 <li>Defined a <code>pt</code> executable target in CMake. The goal is for this executable to open up a scene and display it by doing pathtracing on the GPU.</li>
 <li>The GLFW library dependency added using CMake&rsquo;s <code>FetchContent</code>.</li>
 <li>An empty window is opened with a window title. No GPU rendering support yet, only calls to <code>glfwSwapBuffers</code>.</li>
 </ul>
-<p>The state of the project after the initial commits is barebones.</p>
+<p>A windows opens with a black frame.</p>
 <p><img src="/img/pathtracer_devlog/hello-glfw.png" alt="hello, glfw"></p>
 
         </div>
@@ -100,7 +151,8 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
-    <li><a href="#render-fullscreen-quad">Render fullscreen quad</a></li>
+    <li><a href="#gpu-generated-noise">GPU-generated noise</a></li>
+    <li><a href="#fullscreen-quad">Fullscreen quad</a></li>
     <li><a href="#hello-glfw">Hello, GLFW!</a></li>
   </ul>
 </nav>

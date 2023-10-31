@@ -13,10 +13,12 @@
       <pubDate>Mon, 30 Oct 2023 17:19:21 +0200</pubDate>
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
-      <description>This post is a devlog for my pathtracer-playground project. In this project I am seeing how far I can get in writing a physically based pathtracer using WebGPU.
-Render fullscreen quad 2023-10-30
-After 1000 lines of WebGPU plumbing code, the pt executable contains
-A GpuContext for initializing the WebGPU instance, surface, adapter, device, queue, and the swap chain. A distinct Renderer which initializes a render pipeline, a uniform and vertex buffer, using the GpuContext.</description>
+      <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
+GPU-generated noise 2023-10-31
+Commit: 645c09c
+The major highlights of the day include generating noise on the GPU and displaying it, as well as cleaning up the main function using a new Window abstraction.
+Window
+A simple Window abstraction was introduced to automate GLFW library and window init and cleanup.</description>
     </item>
     
     <item>

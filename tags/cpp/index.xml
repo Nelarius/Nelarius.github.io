@@ -14,11 +14,11 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-GPU-generated noise 2023-10-31
-Commit: 645c09c
-The major highlights of the day include generating noise on the GPU and displaying it, as well as cleaning up the main function using a new Window abstraction.
-Window
-A simple Window abstraction was introduced to automate GLFW library and window init and cleanup.</description>
+GpuBuffer 2023-11-01
+Commit: 0a826c4
+Not a lot of visible progress, but GpuBuffer was introduced (in gpu_buffer.hpp) to significantly reduce the amount of boilerplate due to buffers &amp;amp; bind group descriptors:
+Showing 5 changed files with 254 additions and 275 deletions.
+On another note, used immediately invoked lambda functions for the first time today:</description>
     </item>
     
   </channel>

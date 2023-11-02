@@ -14,11 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-GpuBuffer 2023-11-01
-Commit: 0a826c4
-Not a lot of visible progress, but GpuBuffer was introduced (in gpu_buffer.hpp) to significantly reduce the amount of boilerplate due to buffers &amp;amp; bind group descriptors:
-Showing 5 changed files with 254 additions and 275 deletions.
-On another note, used immediately invoked lambda functions for the first time today:</description>
+Hello, bounding volume hierarchies 2023-11-02
+Commit: 624e5ea
+This entry marks the first step towards being able to shoot rays at complex triangle geometry. A bounding volume hierarchy (BVH) is introduced (common/bvh.hpp) and tested.
+The test (tests/bvh.cpp) intersects rays with the BVH, and uses a brute-force test against the full array of triangles as the ground truth.</description>
     </item>
     
   </channel>

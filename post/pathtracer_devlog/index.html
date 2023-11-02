@@ -72,6 +72,13 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</h2>
+<p><em>2023-11-02</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/624e5ead16424fb75c2fd37cac0c9edd0f113690">624e5ea</a></em></p>
+<p>This entry marks the first step towards being able to shoot rays at complex triangle geometry. A bounding volume hierarchy (BVH) is introduced (<code>common/bvh.hpp</code>) and tested.</p>
+<p>The test (<code>tests/bvh.cpp</code>) intersects rays with the BVH, and uses a brute-force test against the full array of triangles as the ground truth. The intersection test result (did intersect or did not) and the intersection point, in the case of intersection, must agree for all camera rays in order for the test to pass.</p>
+<p>As an additional end-to-end sanity check, a new executable target (<code>bvh-visualizer</code>) is introduced. Primary camera rays are generated and the number BVH nodes visited per ray is visualized as an image.</p>
+<p><img src="/img/pathtracer_devlog/duck-bvh.jpg" alt="duck bvh"></p>
 <h2 id="gpubuffer"><code>GpuBuffer</code></h2>
 <p><em>2023-11-01</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/0a826c4d6e3649c2de906b60d153469f97e20e7e">0a826c4</a></em></p>
@@ -190,6 +197,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</a></li>
     <li><a href="#gpubuffer"><code>GpuBuffer</code></a></li>
     <li><a href="#gpu-generated-noise">GPU-generated noise</a></li>
     <li><a href="#fullscreen-quad">Fullscreen quad</a></li>

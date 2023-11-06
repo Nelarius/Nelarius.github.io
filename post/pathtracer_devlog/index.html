@@ -72,7 +72,74 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="raytracing-spheres-on-the-gpu">Raytracing spheres on the GPU</h2>
+<h2 id="raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</h2>
+<p><em>2023-11-06</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e950ea8d99b467346a88bc32ca2f69f16e17f3c3">e950ea8</a></em></p>
+<p>Today&rsquo;s achivement:</p>
+<p><img src="/img/pathtracer_devlog/raytraced-duck-normals.png" alt="raytraced-duck"></p>
+<p>The BVH and all intersection testing functions are ported to the shader. The rays from the previous devlog entry are now directly used against the BVH.</p>
+<p>Porting the BVH to the GPU involved adjusting the memory layout of a number of structs. <code>Triangle</code>s, <code>Aabb</code>s, and the <code>BvhNode</code>s all have vectors in them which need to be 16-byte aligned in memory. This was achieved by padding the structs out. E.g. <code>BvhNode</code>,</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-diff" data-lang="diff"><span style="display:flex;"><span>-struct BvhNode
+</span></span><span style="display:flex;"><span>-{
+</span></span><span style="display:flex;"><span>-    Aabb aabb;                   // offset: 0, size: 24
+</span></span><span style="display:flex;"><span>-    union
+</span></span><span style="display:flex;"><span>-    {
+</span></span><span style="display:flex;"><span>-        std::uint32_t trianglesOffset;
+</span></span><span style="display:flex;"><span>-         std::uint32_t secondChildOffset;
+</span></span><span style="display:flex;"><span>-    };                           // offset: 24, size: 4
+</span></span><span style="display:flex;"><span>-    std::uint16_t triangleCount; // offset: 28, size: 2
+</span></span><span style="display:flex;"><span>-    std::uint16_t splitAxis;     // offset: 30, size: 2
+</span></span><span style="display:flex;"><span>-};
+</span></span><span style="display:flex;"><span>+struct BvhNode
+</span></span><span style="display:flex;"><span>+{
+</span></span><span style="display:flex;"><span>+    Aabb32        aabb;              // offset: 0, size: 32
+</span></span><span style="display:flex;"><span>+    std::uint32_t trianglesOffset;   // offset: 32, size: 4
+</span></span><span style="display:flex;"><span>+    std::uint32_t secondChildOffset; // offset: 36, size: 4,
+</span></span><span style="display:flex;"><span>+    std::uint32_t triangleCount;     // offset: 40, size: 4
+</span></span><span style="display:flex;"><span>+    std::uint32_t splitAxis;         // offset: 44, size: 4
+</span></span><span style="display:flex;"><span>+};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>I also tried using AI (GitHub Copilot) to translate some of the hundreds of lines of intersection testing code to WGSL. It worked well in the sense that only certain patterns of expression had to be fixed. I likely avoided errors that I would have introduced manually porting the code over.</p>
+<p>🤓 TIL about the <code>@must_use</code> tag in WGSL. It&rsquo;s used as an annotation for functions which return values and don&rsquo;t have side effects. Not using the function in assignment or an expression becomes a compile error.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@must_use
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> rayPointAtParameter(ray: <span style="color:#2b91af">Ray</span>, t: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> ray.origin + t * ray.direction;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="raytracing-spheres-on-the-gpu">Raytracing spheres on the GPU</h2>
 <p><em>2023-11-04</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/16f6255df4ebb34589d2541ddb9a67dbdfcf846a">16f6255</a></em></p>
 <p>Before attempting to raytrace triangles on the GPU, first I need to demonstrate that the camera actually works in the shader.</p>
@@ -119,7 +186,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>I used <a href="https://webgpufundamentals.org/webgpu/lessons/resources/wgsl-offset-computer.html#x=5d00000100bf06000000000000003d88886237289d13c4320e1a9ba574a7281bf711b8e0fe2ad3ce912bab0e0e45d434d61bb7773cbc401503b1a5422bc9bea039d06b8d7965bfdc6e368ea7d5dafe3438cbb62b089a4d9cec6dc7979747e1b214b3e964bcbcbf7488c72aa713fe7c5d73817e3b3f445d649816a64ac8072c28ba8c3dce046ddbe50ca41aeaa4c22ead3b60c0acb96d367309eaec44952e3088be8405bf4fae4fc8cca8764a61cee989b43b51c4fcd21564ea233ad813d4a383f2d702e9cc9f4da3f8a794715769609bd818144076ed26f05db15962b5ef3ed314fd1b0f9538ccaad3e137698dc9d42ff06c08084bc32a2d7e8edc871d8dee675148c5a69cbb85d7d8d2c61bfa357e3f573512742e291a19227c79587c6bc9e71e9b15305f2fe76e51479fea54e4d78276c06f0294f47a21d12a3b09f6e1d1ef457fdd7aed7c590bfa02acd462ad6ff2d7e62dbb7609d8b4139cb0812f4a4a96b489b24a1963fe930c202c18a8229db2e5accddd0b19c255588f10410f76e862e928cedfaa31322b931e77c0ba9b0b20c07bb7d05903330cd8008ce0ce0318e88decdbb3906947888459f57609602735cfa2db9c606f77bcc82c6500001280a20b784b165a2e3e1d3273bbbf21bd2e6b828ac3e04932d4f50adc1059d34176dbce9a8f0725b8fa47e3968be59bbd8b85e3a3db336c824942704a1cc7aa5a982120d7d7e9113d2706ab1b6051452e4f4c087985d5bd5c5c749bc6cc8e0faafba53e2a04a3db328d4d21224c6447f924a9aae62dff94d9287ecc977a49eb75d4e4ac92e4c77b755f13210bb0a3899a30f4cf264b2f8cebfdbaf9a827c79b4babb8c669dd0045488f010ab17f6c12b6d529b0b35ef34a0d8fb7c5831891fe979eea">WGSL Offset Computer</a>, a great online resource for enumerating and drawing the memory layout of your WGSL structs, for figuring out the memory layout of the <code>renderParams</code> uniform buffer.</p>
+</div><p>I used <a href="https://webgpufundamentals.org/webgpu/lessons/resources/wgsl-offset-computer.html#x=5d00000100bf06000000000000003d88886237289d13c4320e1a9ba574a7281bf711b8e0fe2ad3ce912bab0e0e45d434d61bb7773cbc401503b1a5422bc9bea039d06b8d7965bfdc6e368ea7d5dafe3438cbb62b089a4d9cec6dc7979747e1b214b3e964bcbcbf7488c72aa713fe7c5d73817e3b3f445d649816a64ac8072c28ba8c3dce046ddbe50ca41aeaa4c22ead3b60c0acb96d367309eaec44952e3088be8405bf4fae4fc8cca8764a61cee989b43b51c4fcd21564ea233ad813d4a383f2d702e9cc9f4da3f8a794715769609bd818144076ed26f05db15962b5ef3ed314fd1b0f9538ccaad3e137698dc9d42ff06c08084bc32a2d7e8edc871d8dee675148c5a69cbb85d7d8d2c61bfa357e3f573512742e291a19227c79587c6bc9e71e9b15305f2fe76e51479fea54e4d78276c06f0294f47a21d12a3b09f6e1d1ef457fdd7aed7c590bfa02acd462ad6ff2d7e62dbb7609d8b4139cb0812f4a4a96b489b24a1963fe930c202c18a8229db2e5accddd0b19c255588f10410f76e862e928cedfaa31322b931e77c0ba9b0b20c07bb7d05903330cd8008ce0ce0318e88decdbb3906947888459f57609602735cfa2db9c606f77bcc82c6500001280a20b784b165a2e3e1d3273bbbf21bd2e6b828ac3e04932d4f50adc1059d34176dbce9a8f0725b8fa47e3968be59bbd8b85e3a3db336c824942704a1cc7aa5a982120d7d7e9113d2706ab1b6051452e4f4c087985d5bd5c5c749bc6cc8e0faafba53e2a04a3db328d4d21224c6447f924a9aae62dff94d9287ecc977a49eb75d4e4ac92e4c77b755f13210bb0a3899a30f4cf264b2f8cebfdbaf9a827c79b4babb8c669dd0045488f010ab17f6c12b6d529b0b35ef34a0d8fb7c5831891fe979eea">WGSL Offset Computer</a>, a great online resource for enumerating and drawing the memory layout of your WGSL structs, as a sanity check that my memory layout for <code>renderParams</code> was correct.</p>
 <p><img src="/img/pathtracer_devlog/renderparams-layout.jpg" alt="renderparams-memory-layout"></p>
 <h2 id="hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</h2>
 <p><em>2023-11-02</em></p>
@@ -246,6 +313,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</a></li>
     <li><a href="#raytracing-spheres-on-the-gpu">Raytracing spheres on the GPU</a></li>
     <li><a href="#hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</a></li>
     <li><a href="#gpubuffer"><code>GpuBuffer</code></a></li>

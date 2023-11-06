@@ -14,10 +14,11 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Raytracing spheres on the GPU 2023-11-04
-Commit: 16f6255
-Before attempting to raytrace triangles on the GPU, first I need to demonstrate that the camera actually works in the shader.
-To do so, a simple raytracing scenario is first implemented. An array of spheres, stored directly in the shader is added.</description>
+Raytracing triangles on the GPU 🎉 2023-11-06
+Commit: e950ea8
+Today&amp;rsquo;s achivement:
+The BVH and all intersection testing functions are ported to the shader. The rays from the previous devlog entry are now directly used against the BVH.
+Porting the BVH to the GPU involved adjusting the memory layout of a number of structs.</description>
     </item>
     
     <item>

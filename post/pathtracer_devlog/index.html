@@ -75,7 +75,7 @@
 <h2 id="raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</h2>
 <p><em>2023-11-06</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e950ea8d99b467346a88bc32ca2f69f16e17f3c3">e950ea8</a></em></p>
-<p>Today&rsquo;s achivement:</p>
+<p>Today&rsquo;s achievement:</p>
 <p><img src="/img/pathtracer_devlog/raytraced-duck-normals.png" alt="raytraced-duck"></p>
 <p>The BVH and all intersection testing functions are ported to the shader. The rays from the previous devlog entry are now directly used against the BVH.</p>
 <p>Porting the BVH to the GPU involved adjusting the memory layout of a number of structs. <code>Triangle</code>s, <code>Aabb</code>s, and the <code>BvhNode</code>s all have vectors in them which need to be 16-byte aligned in memory. This was achieved by padding the structs out. E.g. <code>BvhNode</code>,</p>

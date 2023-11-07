@@ -14,11 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Raytracing triangles on the GPU 🎉 2023-11-06
-Commit: e950ea8
-Today&amp;rsquo;s achievement:
-The BVH and all intersection testing functions are ported to the shader. The rays from the previous devlog entry are now directly used against the BVH.
-Porting the BVH to the GPU involved adjusting the memory layout of a number of structs.</description>
+Camera and UI interaction 2023-11-07
+Commit: 1593e8a
+In order to work with arbitrary 3d models, camera positions and parameters should not be hard-coded. To kickstart scene interaction, two things are implemented:
+A &amp;ldquo;fly camera&amp;rdquo;, which allows you to move around and pan the scene around using the mouse.</description>
     </item>
     
     <item>

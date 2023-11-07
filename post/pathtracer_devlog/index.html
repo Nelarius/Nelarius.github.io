@@ -72,6 +72,29 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="camera-and-ui-interaction">Camera and UI interaction</h2>
+<p><em>2023-11-07</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/1593e8a49309cb1a6aa375410253df53d8e7dd5e">1593e8a</a></em></p>
+<p>In order to work with arbitrary 3d models, camera positions and parameters should not be hard-coded. To kickstart scene interaction, two things are implemented:</p>
+<ul>
+<li>A &ldquo;fly camera&rdquo;, which allows you to move around and pan the scene around using the mouse.</li>
+<li>A UI integration, and a panel which allows you to edit the camera&rsquo;s speed, and vfov.</li>
+</ul>
+<p>The UI panel also prints out scene debug information:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Scene
+</span></span><span style="display:flex;"><span>camera position: (8.00, 2.80, -8.30)
+</span></span><span style="display:flex;"><span>root centroid: (0.13, 0.87, -0.04)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A bug with the model loader&rsquo;s model transform meant that the duck was hundreds of units away from the camera vertically. Without the debug UI, it was hard to tell whether I just couldn&rsquo;t find the model in space, or whether the camera controller had a problem.</p>
+<p><img src="/img/pathtracer_devlog/imgui-camera-interaction.png" alt="camera-imgui-interaction"></p>
 <h2 id="raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</h2>
 <p><em>2023-11-06</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e950ea8d99b467346a88bc32ca2f69f16e17f3c3">e950ea8</a></em></p>
@@ -313,6 +336,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#camera-and-ui-interaction">Camera and UI interaction</a></li>
     <li><a href="#raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</a></li>
     <li><a href="#raytracing-spheres-on-the-gpu">Raytracing spheres on the GPU</a></li>
     <li><a href="#hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</a></li>

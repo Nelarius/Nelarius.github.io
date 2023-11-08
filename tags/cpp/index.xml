@@ -14,10 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Camera and UI interaction 2023-11-07
-Commit: 1593e8a
-In order to work with arbitrary 3d models, camera positions and parameters should not be hard-coded. To kickstart scene interaction, two things are implemented:
-A &amp;ldquo;fly camera&amp;rdquo;, which allows you to move around and pan the scene around using the mouse.</description>
+Loading textures 2023-11-08
+Commit: 1706265
+The glTF model loader now loads textures, and the base color textures are exposed in the model:
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 class GltfModel { public: GltfModel(std::filesystem::path gltfPath); std::span&amp;lt;const Triangle&amp;gt; triangles() const { return mTriangles; } std::span&amp;lt;const std::size_t&amp;gt; baseColorTextureIndices() const { return mBaseColorTextureIndices; } std::span&amp;lt;const Texture&amp;gt; baseColorTextures() const { return mBaseColorTextures; } private: .</description>
     </item>
     
   </channel>

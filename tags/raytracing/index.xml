@@ -14,10 +14,9 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Interpolated normals, texture coordinates, and GPU timers 2023-11-09
-Commit: 82208c1
-GPU timers
-Timing the render pass on the device timeline allows us to keep track of how long rendering the scene actually takes on the GPU, no matter what I do on the CPU side. The timings are displayed in the UI as a moving average.</description>
+Simple texture support 🖼️ 2023-11-10
+Commit: 8062be7
+Initial textures support is added. The &amp;ldquo;base color texture&amp;rdquo; from the glTF &amp;ldquo;pbr metallic roughness&amp;rdquo; material is loaded and passed over to the GPU. The same storage buffer approach from my Weekend raytracing with wgpu, part 2 post is used for texture lookup on the GPU.</description>
     </item>
     
     <item>

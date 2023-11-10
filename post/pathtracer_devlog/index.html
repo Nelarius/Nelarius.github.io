@@ -72,6 +72,91 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="simple-texture-support-">Simple texture support 🖼️</h2>
+<p><em>2023-11-10</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/8062be7f4a44580d6d83937b34ed57d52f4c5b35">8062be7</a></em></p>
+<p>Initial textures support is added. The &ldquo;base color texture&rdquo; from the glTF &ldquo;pbr metallic roughness&rdquo; material is loaded and passed over to the GPU. The same storage buffer approach from my <a href="https://nelari.us/post/weekend_raytracing_with_wgpu_2/#adding-texture-support">Weekend raytracing with wgpu, part 2</a> post is used for texture lookup on the GPU.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// Each triangle is associated with an index to a texture descriptor, a
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// placeholder for a texture on the GPU.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>@group(2) @binding(4) var&lt;storage, read_write&gt; textureDescriptorIndices: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">u32</span>&gt;;
+</span></span><span style="display:flex;"><span><span style="color:#008000">// A texture descriptor contains an offset into the texture buffer, as
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// well as the texture dimensions.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>@group(2) @binding(5) var&lt;storage, read_write&gt; textureDescriptors: <span style="color:#2b91af">array</span>&lt;TextureDescriptor&gt;;
+</span></span><span style="display:flex;"><span><span style="color:#008000">// The texture buffer contains textures from all meshes, appended end to end.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>@group(2) @binding(6) var&lt;storage, read_write&gt; textures: <span style="color:#2b91af">array</span>&lt;<span style="color:#2b91af">u32</span>&gt;;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>On ray-triangle intersection, the model vertex UV coordinates are interpolated and the color is computed from the corresponding texel.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">if</span> rayIntersectBvh(ray, T_MAX, &amp;intersection, &amp;triangleIdx) {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> textureDesc = textureDescriptors[textureDescriptorIndices[triangleIdx]];
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> b = intersection.b;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> uvs = texCoords[triangleIdx];
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> uv = b[0] * uvs[0] + b[1] * uvs[1] + b[2] * uvs[2];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    color = textureLookup(textureDesc, uv);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> textureLookup(desc: <span style="color:#2b91af">TextureDescriptor</span>, uv: <span style="color:#2b91af">vec2f</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u = clamp(uv.x, 0f, 1f);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> v = clamp(uv.y, 0f, 1f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> j = <span style="color:#2b91af">u32</span>(u * <span style="color:#2b91af">f32</span>(desc.width));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> i = <span style="color:#2b91af">u32</span>(v * <span style="color:#2b91af">f32</span>(desc.height));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> idx = i * desc.width + j;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> rgba = textures[desc.offset + idx];
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3f(<span style="color:#2b91af">f32</span>(rgba &amp; 0xffu), <span style="color:#2b91af">f32</span>((rgba &gt;&gt; 8u) &amp; 0xffu), <span style="color:#2b91af">f32</span>((rgba &gt;&gt; 16u) &amp; 0xffu)) / 255f;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The duck model from earlier looks more like a rubber duck now.</p>
+<p><img src="/img/pathtracer_devlog/textured-duck.png" alt="textured duck"></p>
+<p>Sponza looks a bit rough at this stage. Two things need work.</p>
+<ul>
+<li>The plants in the foreground need transparency support. On intersection, the transparency of the pixel also needs to be accounted for the ray to intersect the triangle.</li>
+<li>There is an issue with the textures on the ground and in some places on the walls being stretched out.</li>
+</ul>
+<p><img src="/img/pathtracer_devlog/sponza-attempt.png" alt="first sponza"></p>
+<p>The stretched textures are likely due to a problem with UV coordinate interpolation. Single colors and suspicious red-black color gradients can be seen when coloring the model according to the triangles&rsquo; interpolated UV coordinates.</p>
+<p><img src="/img/pathtracer_devlog/uv-coordinate-issue.png" alt="uv coordinate issue"></p>
 <h2 id="interpolated-normals-texture-coordinates-and-gpu-timers">Interpolated normals, texture coordinates, and GPU timers</h2>
 <p><em>2023-11-09</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/82208c19754a5fb6528e587c175af30f523c5649">82208c1</a></em></p>
@@ -491,6 +576,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#simple-texture-support-">Simple texture support 🖼️</a></li>
     <li><a href="#interpolated-normals-texture-coordinates-and-gpu-timers">Interpolated normals, texture coordinates, and GPU timers</a></li>
     <li><a href="#loading-textures">Loading textures</a></li>
     <li><a href="#camera-and-ui-interaction">Camera and UI interaction</a></li>

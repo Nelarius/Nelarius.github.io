@@ -14,9 +14,11 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Simple texture support 🖼️ 2023-11-10
-Commit: 8062be7
-Initial textures support is added. The &amp;ldquo;base color texture&amp;rdquo; from the glTF &amp;ldquo;pbr metallic roughness&amp;rdquo; material is loaded and passed over to the GPU. The same storage buffer approach from my Weekend raytracing with wgpu, part 2 post is used for texture lookup on the GPU.</description>
+The first physically-based pathtracer 2023-11-13
+Commit: c83b83e
+A simple physically-based pathtracer is implemented. ✨ The rendering equation is solved using the following Monte Carlo estimator:
+$$ F_1 = 2 \pi f_r(\mathrm{x_i},\omega_i)L_i(\mathrm{x_i},\omega_i)\omega_i\cdot\mathrm{n}, $$
+where \(2 \pi\) is the surface area of the unit hemisphere, \(f_r\) is the reflectance distribution function, \(\omega_i\) is the incoming ray direction, and \(L_i\) is the incoming radiance along \(\omega_i\).</description>
     </item>
     
   </channel>

@@ -14,11 +14,9 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-The first physically-based pathtracer 2023-11-13
-Commit: c83b83e
-A simple physically-based pathtracer is implemented. ✨ The rendering equation is solved using the following Monte Carlo estimator:
-$$ F_1 = 2 \pi f_r(\mathrm{x_i},\omega_i)L_i(\mathrm{x_i},\omega_i)\omega_i\cdot\mathrm{n}, $$
-where \(2 \pi\) is the surface area of the unit hemisphere, \(f_r\) is the reflectance distribution function, \(\omega_i\) is the incoming ray direction, and \(L_i\) is the incoming radiance along \(\omega_i\).</description>
+Better estimator: importance sampling surface normal directions 2023-11-14
+Commit: 4a76335
+Cosine-weighted hemisphere sampling is implemented. The term \((\omega_i \cdot \mathrm{n})\) in the rendering equation equals \(\cos \theta\), where \(\theta\) is the zenith angle between the surface normal and the incoming ray direction. Directions which are close to perpendicular to the surface normal contribute very little light due to the cosine.</description>
     </item>
     
     <item>

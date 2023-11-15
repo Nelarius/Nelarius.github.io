@@ -14,9 +14,11 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Better estimator: importance sampling surface normal directions 2023-11-14
-Commit: 4a76335
-Cosine-weighted hemisphere sampling is implemented. The term \((\omega_i \cdot \mathrm{n})\) in the rendering equation equals \(\cos \theta\), where \(\theta\) is the zenith angle between the surface normal and the incoming ray direction. Directions which are close to perpendicular to the surface normal contribute very little light due to the cosine.</description>
+Even better estimator: simple temporal accumulation 2023-11-15
+Commit: b10570a
+Temporal accumulation is implemented and the sum term is added back to our Monte Carlo estimator:
+$$ F_n = \frac{1}{n} \sum_{i = 1}^{n} k_{\textrm{albedo}}L_i(\omega_i), $$
+1 sample per pixel is accumulated per frame, and our estimator is thus active over multiple frames.</description>
     </item>
     
     <item>

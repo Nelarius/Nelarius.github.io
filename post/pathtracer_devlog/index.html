@@ -72,6 +72,16 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="even-better-estimator-simple-temporal-accumulation">Even better estimator: simple temporal accumulation</h2>
+<p><em>2023-11-15</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/b10570a058f844032c058bf566e818176118ebea">b10570a</a></em></p>
+<p>Temporal accumulation is implemented and the sum term is added back to our Monte Carlo estimator:</p>
+<p>$$
+F_n = \frac{1}{n} \sum_{i = 1}^{n} k_{\textrm{albedo}}L_i(\omega_i),
+$$</p>
+<p>1 sample per pixel is accumulated per frame, and our estimator is thus active over multiple frames. If the camera moves, or different rendering parameters are selected, rendering the image starts from scratch.</p>
+<p>The duck after 256 samples per pixel:</p>
+<p><img src="/img/pathtracer_devlog/temporally-accumulated-duck.png" alt="temporally accumulated samples"></p>
 <h2 id="better-estimator-importance-sampling-surface-normal-directions">Better estimator: importance sampling surface normal directions</h2>
 <p><em>2023-11-14</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/4a76335aa527d816d766606e7dab774582ed6f8b">4a76335</a></em></p>
@@ -739,6 +749,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#even-better-estimator-simple-temporal-accumulation">Even better estimator: simple temporal accumulation</a></li>
     <li><a href="#better-estimator-importance-sampling-surface-normal-directions">Better estimator: importance sampling surface normal directions</a></li>
     <li><a href="#the-first-physically-based-pathtracer">The first physically-based pathtracer</a></li>
     <li><a href="#simple-texture-support-">Simple texture support 🖼️</a></li>

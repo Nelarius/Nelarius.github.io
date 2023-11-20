@@ -14,11 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Even better estimator: simple temporal accumulation 2023-11-15
-Commit: b10570a
-Temporal accumulation is implemented and the sum term is added back to our Monte Carlo estimator:
-$$ F_n = \frac{1}{n} \sum_{i = 1}^{n} k_{\textrm{albedo}}L_i(\omega_i), $$
-1 sample per pixel is accumulated per frame, and our estimator is thus active over multiple frames.</description>
+Integrating a physically-based sky model 2023-11-20
+Commit: c040325
+The Hosek-Wilkie sky model is integrated in the renderer. The model implementation is a straightforward C-port of the hw-skymodel Hosek-Wilkie model implementation.
+The model provides physically-based radiance values for any direction in the sky, assuming the viewer is on the ground of the Earth.</description>
     </item>
     
   </channel>

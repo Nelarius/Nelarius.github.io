@@ -212,46 +212,12 @@ $$</p>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p><code>rngNextInCosineWeightedHemisphere</code> is defined as</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
-<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInCosineWeightedHemisphere(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3f</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u1 = rngNextFloat(state);
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u2 = rngNextFloat(state);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * PI * u2;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sinTheta = sqrt(1f - u1);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = cos(phi) * sinTheta;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = sin(phi) * sinTheta;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = sqrt(u1);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p><img src="/img/pathtracer_devlog/cosine-distribution.png" alt="cosine weighted hemisphere distribution"></p>
-<h3 id="inverse-transform-sampling-the-cosine-weighted-unit-hemisphere">Inverse transform sampling the cosine-weighted unit hemisphere.</h3>
-<p>The exact same recipe that was used for the unit hemisphere can be followed here. While the recipe used is introduced in <em>Physicall Based Rendering</em>, the book does not present this calculation.</p>
+</div><h3 id="inverse-transform-sampling-the-cosine-weighted-unit-hemisphere">Inverse transform sampling the cosine-weighted unit hemisphere.</h3>
+<p>The exact same recipe that was used for the unit hemisphere can be followed here to obtain <code>rngNextInCosineWeightedHemisphere</code>. While the recipe used is introduced in <em>Physically Based Rendering</em>, the book does not present this calculation.</p>
 <p><strong>Choice of PDF</strong></p>
 <p>Set probability density to be \(p(\omega) \propto \cos \theta\).</p>
 <p><strong>PDF normalization</strong></p>
-<p>Integrate $p(\omega)$ over hemisphere H again.</p>
+<p>Integrate \(p(\omega)\) over hemisphere H again.</p>
 <p>$$
 \int_H p(\omega) d\omega = \int_{0}^{2 \pi} \int_{0}^{\frac{\pi}{2}} c \cos \theta \sin \theta d\theta d\phi = \frac{c}{2} \int_{0}^{2 \pi} d\phi = 1
 $$
@@ -295,7 +261,40 @@ $$
 $$
 z = \sqrt{u_1}
 $$</p>
-<p>This is the expression used in the code.</p>
+<p>In code:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInCosineWeightedHemisphere(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u1 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u2 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * PI * u2;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sinTheta = sqrt(1f - u1);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = cos(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = sin(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = sqrt(u1);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/pathtracer_devlog/cosine-distribution.png" alt="cosine weighted hemisphere distribution"></p>
 <p>Looking at our duck, before:</p>
 <p><img src="/img/pathtracer_devlog/pathtraced-duck.png" alt="pathtraced duck"></p>
 <p>And after, with cosine-weighted hemisphere sampling:</p>
@@ -343,43 +342,8 @@ $$</p>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p><code>rngNextInUnitHemisphere</code> is defined as</p>
-<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
-<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInUnitHemisphere(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3f</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u1 = rngNextFloat(state);
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u2 = rngNextFloat(state);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * PI * u2;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sinTheta = sqrt(1f - u1 * u1);
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = cos(phi) * sinTheta;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = sin(phi) * sinTheta;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = u1;
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></td></tr></table>
-</div>
-</div><p>It generates unit vectors, distributed uniformly in a hemisphere about the z axis.</p>
-<p><img src="/img/pathtracer_devlog/uniform-distribution.png" alt="uniform hemisphere distribution"></p>
-<h3 id="inverse-transform-sampling-the-unit-hemisphere">Inverse transform sampling the unit hemisphere.</h3>
-<p>Here&rsquo;s a quick summary of the calculation steps taken to arrive at the expression for <code>x</code>, <code>y</code>, and <code>z</code>.</p>
+</div><h3 id="inverse-transform-sampling-the-unit-hemisphere">Inverse transform sampling the unit hemisphere.</h3>
+<p>To obtain <code>rngNextInUnitHemisphere</code>, we can follow a recipe introduced in <em>Physically Based Rendering</em>. Here&rsquo;s a quick summary of the calculation, which is also partially in the book.</p>
 <p><strong>The recipe</strong></p>
 <p>In order to do Monte Carlo integration, you will need to do inverse transform sampling with your selected probability density function (PDF). Here&rsquo;s the general steps that you need to take to arrive at a function that you can use to draw sampels from.</p>
 <ol>
@@ -445,7 +409,41 @@ $$
 $$
 z = u_1
 $$</p>
-<p>where we used the identity \(\sin \theta = \sqrt{1 - \cos^2 \theta}\). This is the expression used in the code.</p>
+<p>where we used the identity \(\sin \theta = \sqrt{1 - \cos^2 \theta}\). In code:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInUnitHemisphere(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u1 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u2 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * PI * u2;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sinTheta = sqrt(1f - u1 * u1);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = cos(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = sin(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = u1;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>It generates unit vectors, distributed uniformly in a hemisphere about the z axis.</p>
+<p><img src="/img/pathtracer_devlog/uniform-distribution.png" alt="uniform hemisphere distribution"></p>
 <p>The functions are used in the path-tracing loop as follows:</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -1063,6 +1061,12 @@ $$</p>
     </div>
     
 <nav id="article-nav">
+    
+    <a href="/post/cpp_initialization_notes/" id="article-nav-newer" class="article-nav-link-wrap">
+        <div class="article-nav-title"><span>&lt;</span>&nbsp;
+            Notes on C&#43;&#43; initialization
+        </div>
+    </a>
     
     
     <a href="/post/weekend_raytracing_with_wgpu_2/" id="article-nav-older" class="article-nav-link-wrap">

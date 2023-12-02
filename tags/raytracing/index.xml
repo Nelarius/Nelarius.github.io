@@ -6,7 +6,17 @@
     <description>Recent content in raytracing on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 16 Nov 2023 08:03:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Notes on C&#43;&#43; initialization</title>
+      <link>https://nelari.us/post/cpp_initialization_notes/</link>
+      <pubDate>Thu, 16 Nov 2023 08:03:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/cpp_initialization_notes/</guid>
+      <description>After getting back into hands-on programming with C++ after a long break, I reached for the shiny new way of doing aggregate initialization, called designated initializers. In two short weeks of writing code, I managed to shoot myself in the foot due to incorrect assumptions about the ways that initialization work.
+I reviewed some of the details of initialization, and developed some guidelines which should hopefully help prevent some footguns in the future.</description>
+    </item>
+    
     <item>
       <title>Pathtracer Devlog</title>
       <link>https://nelari.us/post/pathtracer_devlog/</link>

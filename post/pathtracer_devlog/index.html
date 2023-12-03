@@ -72,6 +72,38 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</h2>
+<p><em>2023-12-03</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/37bfce8d9c4c4e838d67e885305fa764be7b6fa2">37bfce8</a></em></p>
+<p>The <code>expose</code> function from the previous entry was not a very good tonemapping curve and was baked into the raytracing shader.</p>
+<p>The <a href="https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/">ACES filmic tone mapping curve</a> is a curve fit of a complex tone mapping algorithm used in the film industry and looks better than the curve used previously.</p>
+<p>A simple exposure control multiplier is introduced, defined in terms of <em>stops</em>.</p>
+<p>$$
+\mathrm{exposure} = \frac{1}{2^{\mathrm{stop}}}, \mathrm{stop} \geq 0.
+$$</p>
+<p>The exposure is halved each time the stop is incremented. The Monte Carlo estimator is scaled by the exposure multiplier and passed through the tone mapping function, which yields the final value.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> stops = <span style="color:#2b91af">f32</span>(postProcessingParams.stops);
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> exposure = 1f / pow(2f, stops);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// tonemapFn is an enumeration with linear = 0, filmic = 1.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">let</span> tonemapFn = postProcessingParams.tonemapFn;
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> rgb = expose(tonemapFn, exposure * estimator);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A linear tone map with <em>stops</em> = 4 yields the following image.</p>
+<p><img src="/img/pathtracer_devlog/linear-mapping.png" alt="linear tonemapping"></p>
+<p>Filmic tone map with <em>stops</em> = 4 yields a much better looking image.</p>
+<p><img src="/img/pathtracer_devlog/filmic-mapping.png" alt="ACES filmic tonemapping"></p>
 <h2 id="integrating-a-physically-based-sky-model">Integrating a physically-based sky model</h2>
 <p><em>2023-11-20</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/c0403255afe3a7bec244fc51c533ae5e1d7c75e0">c040325</a></em></p>
@@ -1009,6 +1041,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</a></li>
     <li><a href="#integrating-a-physically-based-sky-model">Integrating a physically-based sky model</a></li>
     <li><a href="#even-better-estimator-simple-temporal-accumulation">Even better estimator: simple temporal accumulation</a></li>
     <li><a href="#better-estimator-importance-sampling-surface-normal-directions">Better estimator: importance sampling surface normal directions</a>

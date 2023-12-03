@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Integrating a physically-based sky model 2023-11-20
-Commit: c040325
-The Hosek-Wilkie sky model is integrated in the renderer. The model implementation is a straightforward C-port of the hw-skymodel Hosek-Wilkie model implementation.
-The model provides physically-based radiance values for any direction in the sky, assuming the viewer is on the ground of the Earth.</description>
+Filmic tone mapping and better tone mapping controls 2023-12-03
+Commit: 37bfce8
+The expose function from the previous entry was not a very good tonemapping curve and was baked into the raytracing shader.
+The ACES filmic tone mapping curve is a curve fit of a complex tone mapping algorithm used in the film industry and looks better than the curve used previously.</description>
     </item>
     
     <item>

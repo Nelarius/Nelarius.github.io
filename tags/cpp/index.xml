@@ -24,10 +24,9 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Filmic tone mapping and better tone mapping controls 2023-12-03
-Commit: 37bfce8
-The expose function from the previous entry was not a very good tonemapping curve and was baked into the raytracing shader.
-The ACES filmic tone mapping curve is a curve fit of a complex tone mapping algorithm used in the film industry and looks better than the curve used previously.</description>
+Avoiding triangle self-intersection 2023-12-17
+Commit: 9183d42
+It&amp;rsquo;s possible for the intersection point to be below the triangle if one isn&amp;rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from A Fast and Robust Method for Avoiding Self-Intersection, Ray Tracing Gems is implemented. It contains two parts.</description>
     </item>
     
   </channel>

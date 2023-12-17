@@ -72,7 +72,55 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</h2>
+<h2 id="avoiding-triangle-self-intersection">Avoiding triangle self-intersection</h2>
+<p><em>2023-12-17</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/9183d425ebefda1b18e1ea4ed640f5b12c3fbf45">9183d42</a></em></p>
+<p>It&rsquo;s possible for the intersection point to be below the triangle if one isn&rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from <em>A Fast and Robust Method for Avoiding Self-Intersection</em>, <em>Ray Tracing Gems</em> is implemented. It contains two parts.</p>
+<p>First, the intersection point should be computed using barycentric coordinates, instead of the ray equation, to avoid precision issues due to the difference in magnitude of the ray origin and the distance.</p>
+<p>Second, the intersection point is offset from the surface of the triangle using the following <code>offsetRay</code> function. It offsets using a conservative estimate of the precision error, accounting for the scale of the intersection point.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">const</span> ORIGIN = 1f / 32f;
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> FLOAT_SCALE = 1f / 65536f;
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> INT_SCALE = 256f;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> offsetRay(p: <span style="color:#2b91af">vec3f</span>, n: <span style="color:#2b91af">vec3f</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> offset = vec3i(<span style="color:#2b91af">i32</span>(INT_SCALE * n.x), <span style="color:#2b91af">i32</span>(INT_SCALE * n.y), <span style="color:#2b91af">i32</span>(INT_SCALE * n.z));
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Offset added straight into the mantissa bits to ensure the offset is scale-invariant,
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// except for when close to the origin, where we use FLOAT_SCALE as a small epsilon.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> po = vec3f(
+</span></span><span style="display:flex;"><span>        bitcast&lt;<span style="color:#2b91af">f32</span>&gt;(bitcast&lt;<span style="color:#2b91af">i32</span>&gt;(p.x) + select(offset.x, -offset.x, (p.x &lt; 0))),
+</span></span><span style="display:flex;"><span>        bitcast&lt;<span style="color:#2b91af">f32</span>&gt;(bitcast&lt;<span style="color:#2b91af">i32</span>&gt;(p.y) + select(offset.y, -offset.y, (p.y &lt; 0))),
+</span></span><span style="display:flex;"><span>        bitcast&lt;<span style="color:#2b91af">f32</span>&gt;(bitcast&lt;<span style="color:#2b91af">i32</span>&gt;(p.z) + select(offset.z, -offset.z, (p.z &lt; 0)))
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3f(select(po.x, p.x + FLOAT_SCALE * n.x, (abs(p.x) &lt; ORIGIN)),
+</span></span><span style="display:flex;"><span>        select(po.y, p.y + FLOAT_SCALE * n.y, (abs(p.y) &lt; ORIGIN)),
+</span></span><span style="display:flex;"><span>        select(po.z, p.z + FLOAT_SCALE * n.z, (abs(p.z) &lt; ORIGIN)));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</h2>
 <p><em>2023-12-03</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/37bfce8d9c4c4e838d67e885305fa764be7b6fa2">37bfce8</a></em></p>
 <p>The <code>expose</code> function from the previous entry was not a very good tonemapping curve and was baked into the raytracing shader.</p>
@@ -1041,6 +1089,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#avoiding-triangle-self-intersection">Avoiding triangle self-intersection</a></li>
     <li><a href="#filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</a></li>
     <li><a href="#integrating-a-physically-based-sky-model">Integrating a physically-based sky model</a></li>
     <li><a href="#even-better-estimator-simple-temporal-accumulation">Even better estimator: simple temporal accumulation</a></li>

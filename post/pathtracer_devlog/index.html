@@ -72,10 +72,57 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="implementing-tiled-texture-support">Implementing tiled texture support</h2>
+<p><em>2023-12-24</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e190c51f8ecdcb0338a1a4c87b7c7b65d95eacd9">e190c51</a></em></p>
+<p>In the <a href="/post/pathtracer_devlog/#simple-texture-support-">Simple texture support</a> section, an apparent texture issue with the Sponza atrium scene was highlighted. On further investigation, the 3d model&rsquo;s texture coordinates were not contained in the [0, 1] range, which is what my texture sampler assumes. To look correct, the model assumes tiled texture coordinate support in the renderer. The texture coordinate is supposed to wrap around back to zero at a regular interval.</p>
+<p>The issue can be clearly seen in the corners of the model where the texture is displayed correctly once, and then gets stretched out as the texture coordinate fails to wrap around.</p>
+<p><img src="/img/pathtracer_devlog/tiled-texture-artifact.png" alt="tiled-texture-artifact"></p>
+<p>In glTF, by default, textures are assumed to be sampled using OpenGL&rsquo;s <code>GL_REPEAT</code> behavior. This can be confirmed by observing <code>cgltf_texture::sampler::wrap_s</code> and <code>wrap_t</code> values:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#008000">// Look up OpenGL texture wrap mode magic numbers:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// https://registry.khronos.org/OpenGL/api/GL/glcorearb.h
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// GL_REPEAT: 10497
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>assert(baseColorTexture.sampler-&gt;wrap_s == 10497);
+</span></span><span style="display:flex;"><span>assert(baseColorTexture.sampler-&gt;wrap_t == 10497);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The OpenGL spec says that</p>
+<ul>
+<li><code>GL_REPEAT</code> causes the integer part of the s coordinate to be ignored;
+the GL uses only the fractional part, thereby creating a repeating pattern.</li>
+</ul>
+<p>To mimic <code>GL_REPEAT</code> behavior, the UV coordinates are passed through the <code>fract</code> function during texture lookup:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> textureLookup(desc: <span style="color:#2b91af">TextureDescriptor</span>, uv: <span style="color:#2b91af">vec2f</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u = fract(uv.x);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> v = fract(uv.y);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// .. the rest of the function as before
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>With this simple change, the Sponza scene looks correct and it finally feels right to give it the path tracer treatment.</p>
+<p><img src="/img/pathtracer_devlog/sponza-fixed.png" alt="sponza-fixed"></p>
 <h2 id="avoiding-triangle-self-intersection">Avoiding triangle self-intersection</h2>
 <p><em>2023-12-17</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/9183d425ebefda1b18e1ea4ed640f5b12c3fbf45">9183d42</a></em></p>
-<p>It&rsquo;s possible for the intersection point to be below the triangle if one isn&rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from <em>A Fast and Robust Method for Avoiding Self-Intersection</em>, <em>Ray Tracing Gems</em> is implemented. It contains two parts.</p>
+<p>It&rsquo;s possible for the ray-triangle intersection point to be below the triangle if one isn&rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from <em>A Fast and Robust Method for Avoiding Self-Intersection</em>, <em>Ray Tracing Gems</em> is implemented. It contains two parts.</p>
 <p>First, the intersection point should be computed using barycentric coordinates, instead of the ray equation, to avoid precision issues due to the difference in magnitude of the ray origin and the distance.</p>
 <p>Second, the intersection point is offset from the surface of the triangle using the following <code>offsetRay</code> function. It offsets using a conservative estimate of the precision error, accounting for the scale of the intersection point.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
@@ -1089,6 +1136,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#implementing-tiled-texture-support">Implementing tiled texture support</a></li>
     <li><a href="#avoiding-triangle-self-intersection">Avoiding triangle self-intersection</a></li>
     <li><a href="#filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</a></li>
     <li><a href="#integrating-a-physically-based-sky-model">Integrating a physically-based sky model</a></li>

@@ -24,9 +24,9 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Avoiding triangle self-intersection 2023-12-17
-Commit: 9183d42
-It&amp;rsquo;s possible for the intersection point to be below the triangle if one isn&amp;rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from A Fast and Robust Method for Avoiding Self-Intersection, Ray Tracing Gems is implemented. It contains two parts.</description>
+Implementing tiled texture support 2023-12-24
+Commit: e190c51
+In the Simple texture support section, an apparent texture issue with the Sponza atrium scene was highlighted. On further investigation, the 3d model&amp;rsquo;s texture coordinates were not contained in the [0, 1] range, which is what my texture sampler assumes. To look correct, the model assumes tiled texture coordinate support in the renderer.</description>
     </item>
     
   </channel>

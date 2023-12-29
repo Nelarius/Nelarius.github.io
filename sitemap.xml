@@ -14,19 +14,19 @@
     <loc>https://nelari.us/post/</loc>
     <lastmod>2023-11-16T08:03:00+02:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/tags/raytracing/</loc>
-    <lastmod>2023-11-16T08:03:00+02:00</lastmod>
-  </url><url>
     <loc>https://nelari.us/tags/</loc>
     <lastmod>2023-11-16T08:03:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/pathtracer_devlog/</loc>
     <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</loc>
-    <lastmod>2023-05-27T21:47:16+03:00</lastmod>
+    <loc>https://nelari.us/tags/raytracing/</loc>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/tags/wgpu/</loc>
+    <loc>https://nelari.us/tags/webgpu/</loc>
+    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/weekend_raytracing_with_wgpu_2/</loc>
     <lastmod>2023-05-27T21:47:16+03:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</loc>

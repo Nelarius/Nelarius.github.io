@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>raytracing on My thought repository</title>
-    <link>https://nelari.us/tags/raytracing/</link>
-    <description>Recent content in raytracing on My thought repository</description>
+    <title>webgpu on My thought repository</title>
+    <link>https://nelari.us/tags/webgpu/</link>
+    <description>Recent content in webgpu on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/webgpu/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Pathtracer Devlog</title>
       <link>https://nelari.us/post/pathtracer_devlog/</link>
@@ -38,16 +38,6 @@ This post takes a look at adding a physically based sky model, in addition to ad
       <guid>https://nelari.us/post/weekend_raytracing_with_wgpu_1/</guid>
       <description>Peter Shirley&amp;rsquo;s book Raytracing In One Weekend is a great way to kickstart your own path tracer. The book gives just enough information to get spheres rendered to your screen, minimizing the amount of time spent studying theory.
 I wrote a straightforward implementation of the book’s renderer using Rust many years ago. Recently, I decided to go the extra mile and port the code to the GPU, using the wgpu crate.</description>
-    </item>
-    
-    <item>
-      <title>Writing a small ray tracer in Rust and Zig</title>
-      <link>https://nelari.us/post/raytracer_with_rust_and_zig/</link>
-      <pubDate>Thu, 27 Jun 2019 20:00:00 +0200</pubDate>
-      
-      <guid>https://nelari.us/post/raytracer_with_rust_and_zig/</guid>
-      <description>I spend most of my programming time writing C++. And like many other C++ programmers, I&amp;rsquo;ve shot myself in the foot countless times with a feature I didn&amp;rsquo;t fully grok. And I&amp;rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.
-The two languages that I spent most of my time daydreaming about writing code in are Rust and Zig.</description>
     </item>
     
   </channel>

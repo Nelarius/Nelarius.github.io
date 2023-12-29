@@ -7,7 +7,7 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     
-    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer using WebGPU from scratch.">
+    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer from scratch using WebGPU.">
     
 
         <meta property="og:title" content="Pathtracer Devlog" />
@@ -72,6 +72,94 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="adding-sun-light-to-the-scene">Adding sun light to the scene</h2>
+<p><em>2023-12-28</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/70624a796d7351c100ac5652159f3527e00f43f6">70624a7</a></em></p>
+<p>Previously, the Sponza scene has appeared rather dimly lit. The sky dome acts like a giant diffuse light source, since the sky dome model used does not actually contain a sun disk, the main light source.</p>
+<p>The sun disk&rsquo;s angular radius is 0.255 degrees, which means that it occupies so little space in the sky that few rays would actually hit it with random chance. The &ldquo;Next Event Estimation&rdquo; method is implemented to sample the sun efficiently. The method samples the sun disk on every ray-triangle intersection and evaluates the material&rsquo;s BRDF to accumulate the sun&rsquo;s radiance at every ray bounce. The sun&rsquo;s direct illumination is used as indirect illumination in the following bounces.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">loop</span> {
+</span></span><span style="display:flex;"><span>    var hit: <span style="color:#2b91af">Intersection</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> rayIntersectBvh(ray, T_MAX, &amp;hit) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> albedo = evalTexture(hit.textureDescriptorIdx, hit.uv);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> p = hit.p;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Sample a random direction towards the sun disk.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">let</span> lightDirection = sampleSolarDiskDirection(
+</span></span><span style="display:flex;"><span>                SOLAR_COS_THETA_MAX, skyState.sunDirection, rngState);
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Hard-coded sun radiance with plausible magnitude.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">let</span> lightIntensity = vec3f(1000000f, 1000000f, 1000000f);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> brdf = albedo * FRAC_1_PI;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> reflectance = brdf * dot(hit.n, lightDirection);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">let</span> lightVisibility = shadowRay(Ray(p, lightDirection), T_MAX);
+</span></span><span style="display:flex;"><span>        radiance += throughput * lightIntensity * reflectance *
+</span></span><span style="display:flex;"><span>                    lightVisibility * SOLAR_INV_PDF;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// The rest of the rendering loop as before
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>sampleSolarDiskDirection</code> is based on the sampling transformation function presented in <em>Sampling Transformations Zoo</em>, <em>Ray Tracing Gems</em>. It generates random directions in a cone, subtended by a disk with an angular radius, \(\theta_{\mathrm{max}}\). The directions have to be transformed into the sun&rsquo;s direction, using the <code>pixarOnb</code> orthonormal basis function.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInCone(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;, cosThetaMax: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u1 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> u2 = rngNextFloat(state);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> cosTheta = 1f - u1 * (1f - cosThetaMax);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> sinTheta = sqrt(1f - cosTheta * cosTheta);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> phi = 2f * PI * u2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = cos(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> y = sin(phi) * sinTheta;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> z = cosTheta;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3(x, y, z);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/pathtracer_devlog/uniform-cone-distribution.png" alt="uniform-cone-distribution"></p>
+<p>The value of <code>lightIntensity</code> is a very large value, with a roughly plausible order of magnitude, which results in a good looking image. In the future it could be derived from a physically based model of the sun.</p>
+<p><img src="/img/pathtracer_devlog/sponza-nee-1.png" alt="sponza-nee-1"></p>
+<p><img src="/img/pathtracer_devlog/sponza-nee-2.png" alt="sponza-nee-2"></p>
+<p>Finally, here&rsquo;s a picture of what the Sponza palace looks like in real life, from a picture that I took when I visited there in 2022.</p>
+<p><img src="/img/pathtracer_devlog/sponza-irl.jpg" alt="sponza-irl"></p>
 <h2 id="implementing-tiled-texture-support">Implementing tiled texture support</h2>
 <p><em>2023-12-24</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e190c51f8ecdcb0338a1a4c87b7c7b65d95eacd9">e190c51</a></em></p>
@@ -145,6 +233,7 @@ the GL uses only the fractional part, thereby creating a repeating pattern.</li>
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">const</span> ORIGIN = 1f / 32f;
@@ -161,7 +250,8 @@ the GL uses only the fractional part, thereby creating a repeating pattern.</li>
 </span></span><span style="display:flex;"><span>        bitcast&lt;<span style="color:#2b91af">f32</span>&gt;(bitcast&lt;<span style="color:#2b91af">i32</span>&gt;(p.z) + select(offset.z, -offset.z, (p.z &lt; 0)))
 </span></span><span style="display:flex;"><span>    );
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3f(select(po.x, p.x + FLOAT_SCALE * n.x, (abs(p.x) &lt; ORIGIN)),
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> vec3f(
+</span></span><span style="display:flex;"><span>        select(po.x, p.x + FLOAT_SCALE * n.x, (abs(p.x) &lt; ORIGIN)),
 </span></span><span style="display:flex;"><span>        select(po.y, p.y + FLOAT_SCALE * n.y, (abs(p.y) &lt; ORIGIN)),
 </span></span><span style="display:flex;"><span>        select(po.z, p.z + FLOAT_SCALE * n.z, (abs(p.z) &lt; ORIGIN)));
 </span></span><span style="display:flex;"><span>}
@@ -1136,6 +1226,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#adding-sun-light-to-the-scene">Adding sun light to the scene</a></li>
     <li><a href="#implementing-tiled-texture-support">Implementing tiled texture support</a></li>
     <li><a href="#avoiding-triangle-self-intersection">Avoiding triangle self-intersection</a></li>
     <li><a href="#filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</a></li>
@@ -1176,12 +1267,17 @@ $$</p>
             <ul class="article-tag-list">
                 
                 <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/cpp">cpp
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
                     <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
                     </a>
                 </li>
                 
                 <li class="article-tag-list-item">
-                    <a class="article-tag-list-link" href="https://nelari.us/tags/cpp">cpp
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/webgpu">webgpu
                     </a>
                 </li>
                 

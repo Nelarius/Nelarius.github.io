@@ -72,6 +72,15 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="quick-color-encoding-fix">Quick color encoding fix</h2>
+<p><em>2023-12-30</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/883ed07b0012b6a9fea913d081de8d289311c82a">883ed07</a></em></p>
+<p>The renderer contains two issues with color encoding. The model textures typically have a non-linear gamma ramp, and need to be converted to linear values. Non-linear RGB values cannot be mutually added or multiplied, so the color calculations have technically speaking not been correct. The framebuffer&rsquo;s texture format is <code>WGPUTextureFormat_BGRA8Unorm</code> and a gamma ramp needs to be manually applied to the output colors.</p>
+<p>The texture sampler converts to linear RGB values, and the final color value is written with a non-linear gamma ramp.</p>
+<p>The duck without the sun &ndash; it looks less washed out than before.</p>
+<p><img src="/img/pathtracer_devlog/duck-srgb.png" alt="duck-srgb"></p>
+<p>The difference in the Sponza scene is less pronounced, but the shadows seem to be a bit brighter than before.</p>
+<p><img src="/img/pathtracer_devlog/sponza-srgb.png" alt="sponza-srgb"></p>
 <h2 id="adding-sun-light-to-the-scene">Adding sun light to the scene</h2>
 <p><em>2023-12-28</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/70624a796d7351c100ac5652159f3527e00f43f6">70624a7</a></em></p>
@@ -1226,6 +1235,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#quick-color-encoding-fix">Quick color encoding fix</a></li>
     <li><a href="#adding-sun-light-to-the-scene">Adding sun light to the scene</a></li>
     <li><a href="#implementing-tiled-texture-support">Implementing tiled texture support</a></li>
     <li><a href="#avoiding-triangle-self-intersection">Avoiding triangle self-intersection</a></li>

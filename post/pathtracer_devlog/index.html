@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pathtracer Devlog // My thought repository</title>
+    <title>GPU Pathtracer Devlog // My thought repository</title>
 
     <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     
-    <meta name="description" content="A devlog of my pathtracer-playground project, where I am writing a physically based pathtracer from scratch using WebGPU.">
+    <meta name="description" content="A devlog of my GPU pathtracer project, where I am writing a physically based pathtracer from scratch using WebGPU.">
     
 
-        <meta property="og:title" content="Pathtracer Devlog" />
+        <meta property="og:title" content="GPU Pathtracer Devlog" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en" />
@@ -59,7 +59,7 @@
     <div class="article-inner">
         
         <header class="article-header">
-            <h1 class="article-title" itemprop="name">Pathtracer Devlog</h1>
+            <h1 class="article-title" itemprop="name">GPU Pathtracer Devlog</h1>
         </header>
         
         <div class="article-meta">
@@ -71,19 +71,68 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <p>This post is a devlog for my <a href="https://github.com/Nelarius/pathtracer-playground">pathtracer-playground</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+            <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</h2>
+<p><em>2024-01-01</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/7f69e97c4403c0a71dbe5f51a25ecacf035b79b4">7f69e97</a></em></p>
+<p>Physically-motivated sun disk radiance is added to the scene.</p>
+<p>The original sample code from the <a href="https://cgg.mff.cuni.cz/projects/SkylightModelling/">Sky Dome Appearance Project</a> is added to the pathtracer project. The sky dome model contains a code path for calculating sunlight. The model provides spectral radiance across the sun disk.</p>
+<p>In order to incorporate the sun into the pathtracer, the sun disk spectral radiances need to be converted to RGB values. Spectral radiance \(L\) can be converted to CIE XYZ values using integrals with published <em>color matching functions</em> (CMFs):</p>
+<p>$$
+X = \int_{\lambda} L(\lambda)\bar{x}(\lambda) d \lambda
+$$
+$$
+Y = \int_{\lambda} L(\lambda)\bar{y}(\lambda) d \lambda
+$$
+$$
+Z = \int_{\lambda} L(\lambda)\bar{z}(\lambda) d \lambda
+$$</p>
+<p>The following image illustrates the integration of the spectral radiances with the CMFs for the XYZ color space:</p>
+<p><img src="/img/pathtracer_devlog/xyz-cmfs.png" alt="xyz-color-matching-functions"></p>
+<p>C code from the <a href="https://jcgt.org/published/0002/02/01/">Simple Analytic Approximations to the CIE XYZ Color Matching Functions</a> paper was used to implement simple multi-lobe Gaussian fits for the CIE XYZ CMFs.</p>
+<p>The sky dome model is used to generate solar radiances across the entire sun disk at 10 different turbidities. The spectral radiance and CMF product is integrated using the trapezoidal method for each XYZ component.</p>
+<p><img src="/img/pathtracer_devlog/sundisk-radiances.png" alt="sundisk-radiances"></p>
+<p><em>Technical note</em>: the sun disks contain a bright spot, which I didn&rsquo;t bother figuring out. The model implementation appears to be a bit incomplete and therefore some issues might remain. Since averages are computed across the sun disk anyway, the bright spot should not affect the computed radiances very much.</p>
+<p>For each turbidity, the solar radiance is converted to XYZ, then to sRGB primaries. The XYZ to sRGB conversion matrix was obtained <a href="http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html">here</a>. The mean of the sRGB primaries is computed and used as a proxy of the solar radiance over the sun disk. The <code>hw-skymodel</code> library interpolates between these mean RGB solar radiances to account for the different solar intensities at different atmospheric turbidities.</p>
+<p>The solar radiance can now be generated along with the sky dome radiance.</p>
+<p><img src="/img/pathtracer_devlog/hw-skymodel-with-sundisk.png" alt=""></p>
+<p>The earlier, hard-coded <code>lightIntensity</code> value is now replaced with the computed mean RGB solar radiance.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> lightIntensity = vec3(
+</span></span><span style="display:flex;"><span>    skyState.solarRadiances[CHANNEL_R],
+</span></span><span style="display:flex;"><span>    skyState.solarRadiances[CHANNEL_G],
+</span></span><span style="display:flex;"><span>    skyState.solarRadiances[CHANNEL_B]
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This results in a more beautiful yellowish lighting in the scene.</p>
+<p><img src="/img/pathtracer_devlog/sponza-pbs-1.png" alt="sponza-pbs-1"></p>
+<p><img src="/img/pathtracer_devlog/sponza-pbs-2.png" alt="sponza-pbs-2"></p>
+<p><em>Technical note</em>: in the actual pathtracer shader, the sky dome radiance code path skips the sun disk radiance. This means that the sun disk is not visible in the sky in images produced by the pathtracer. Including the sun disk radiance when the ray scatters into the sky results in images with fireflies. This is likely due to some very rare rays which eventually hit the sun disk directly with large weights.</p>
+<p><img src="/img/pathtracer_devlog/sponza-fireflies.png" alt="sponza-fireflies"></p>
 <h2 id="quick-color-encoding-fix">Quick color encoding fix</h2>
 <p><em>2023-12-30</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/883ed07b0012b6a9fea913d081de8d289311c82a">883ed07</a></em></p>
-<p>The renderer contains two issues with color encoding. The model textures typically have a non-linear gamma ramp, and need to be converted to linear values. Non-linear RGB values cannot be mutually added or multiplied, so the color calculations have technically speaking not been correct. The framebuffer&rsquo;s texture format is <code>WGPUTextureFormat_BGRA8Unorm</code> and a gamma ramp needs to be manually applied to the output colors.</p>
-<p>The texture sampler converts to linear RGB values, and the final color value is written with a non-linear gamma ramp.</p>
-<p>The duck without the sun &ndash; it looks less washed out than before.</p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/883ed07b0012b6a9fea913d081de8d289311c82a">883ed07</a></em></p>
+<p>Two issues with color encoding are fixed.</p>
+<ul>
+<li>Textures stored in image files typically contain a standard non-linear gamma ramp, and need to be converted to linear values during sampling. Non-linear RGB values cannot be mutually added or multiplied, so the color calculations have not been correct up until now.</li>
+<li>The frame buffer&rsquo;s texture format is <code>WGPUTextureFormat_BGRA8Unorm</code> and a gamma ramp must be applied to the final image output colors.</li>
+</ul>
+<p>The duck without the sun &ndash; the image appears less washed out than before.</p>
 <p><img src="/img/pathtracer_devlog/duck-srgb.png" alt="duck-srgb"></p>
 <p>The difference in the Sponza scene is less pronounced, but the shadows seem to be a bit brighter than before.</p>
 <p><img src="/img/pathtracer_devlog/sponza-srgb.png" alt="sponza-srgb"></p>
-<h2 id="adding-sun-light-to-the-scene">Adding sun light to the scene</h2>
+<h2 id="adding-sunlight-to-the-scene">Adding sunlight to the scene</h2>
 <p><em>2023-12-28</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/70624a796d7351c100ac5652159f3527e00f43f6">70624a7</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/70624a796d7351c100ac5652159f3527e00f43f6">70624a7</a></em></p>
 <p>Previously, the Sponza scene has appeared rather dimly lit. The sky dome acts like a giant diffuse light source, since the sky dome model used does not actually contain a sun disk, the main light source.</p>
 <p>The sun disk&rsquo;s angular radius is 0.255 degrees, which means that it occupies so little space in the sky that few rays would actually hit it with random chance. The &ldquo;Next Event Estimation&rdquo; method is implemented to sample the sun efficiently. The method samples the sun disk on every ray-triangle intersection and evaluates the material&rsquo;s BRDF to accumulate the sun&rsquo;s radiance at every ray bounce. The sun&rsquo;s direct illumination is used as indirect illumination in the following bounces.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
@@ -171,7 +220,7 @@
 <p><img src="/img/pathtracer_devlog/sponza-irl.jpg" alt="sponza-irl"></p>
 <h2 id="implementing-tiled-texture-support">Implementing tiled texture support</h2>
 <p><em>2023-12-24</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e190c51f8ecdcb0338a1a4c87b7c7b65d95eacd9">e190c51</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/e190c51f8ecdcb0338a1a4c87b7c7b65d95eacd9">e190c51</a></em></p>
 <p>In the <a href="/post/pathtracer_devlog/#simple-texture-support-">Simple texture support</a> section, an apparent texture issue with the Sponza atrium scene was highlighted. On further investigation, the 3d model&rsquo;s texture coordinates were not contained in the [0, 1] range, which is what my texture sampler assumes. To look correct, the model assumes tiled texture coordinate support in the renderer. The texture coordinate is supposed to wrap around back to zero at a regular interval.</p>
 <p>The issue can be clearly seen in the corners of the model where the texture is displayed correctly once, and then gets stretched out as the texture coordinate fails to wrap around.</p>
 <p><img src="/img/pathtracer_devlog/tiled-texture-artifact.png" alt="tiled-texture-artifact"></p>
@@ -218,7 +267,7 @@ the GL uses only the fractional part, thereby creating a repeating pattern.</li>
 <p><img src="/img/pathtracer_devlog/sponza-fixed.png" alt="sponza-fixed"></p>
 <h2 id="avoiding-triangle-self-intersection">Avoiding triangle self-intersection</h2>
 <p><em>2023-12-17</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/9183d425ebefda1b18e1ea4ed640f5b12c3fbf45">9183d42</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/9183d425ebefda1b18e1ea4ed640f5b12c3fbf45">9183d42</a></em></p>
 <p>It&rsquo;s possible for the ray-triangle intersection point to be below the triangle if one isn&rsquo;t careful, resulting in the next ray self-intersecting the triangle. The method from <em>A Fast and Robust Method for Avoiding Self-Intersection</em>, <em>Ray Tracing Gems</em> is implemented. It contains two parts.</p>
 <p>First, the intersection point should be computed using barycentric coordinates, instead of the ray equation, to avoid precision issues due to the difference in magnitude of the ray origin and the distance.</p>
 <p>Second, the intersection point is offset from the surface of the triangle using the following <code>offsetRay</code> function. It offsets using a conservative estimate of the precision error, accounting for the scale of the intersection point.</p>
@@ -268,7 +317,7 @@ the GL uses only the fractional part, thereby creating a repeating pattern.</li>
 </div>
 </div><h2 id="filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</h2>
 <p><em>2023-12-03</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/37bfce8d9c4c4e838d67e885305fa764be7b6fa2">37bfce8</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/37bfce8d9c4c4e838d67e885305fa764be7b6fa2">37bfce8</a></em></p>
 <p>The <code>expose</code> function from the previous entry was not a very good tonemapping curve and was baked into the raytracing shader.</p>
 <p>The <a href="https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/">ACES filmic tone mapping curve</a> is a curve fit of a complex tone mapping algorithm used in the film industry and looks better than the curve used previously.</p>
 <p>A simple exposure control multiplier is introduced, defined in terms of <em>stops</em>.</p>
@@ -300,7 +349,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/filmic-mapping.png" alt="ACES filmic tonemapping"></p>
 <h2 id="integrating-a-physically-based-sky-model">Integrating a physically-based sky model</h2>
 <p><em>2023-11-20</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/c0403255afe3a7bec244fc51c533ae5e1d7c75e0">c040325</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/c0403255afe3a7bec244fc51c533ae5e1d7c75e0">c040325</a></em></p>
 <p>The Hosek-Wilkie sky model is integrated in the renderer. The model implementation is a straightforward C-port of the <a href="https://github.com/phoekz/hw-skymodel">hw-skymodel</a> Hosek-Wilkie model implementation.</p>
 <p>The model provides physically-based radiance values for any direction in the sky, assuming the viewer is on the ground of the Earth. The model was obtained by doing brute-force simulations of the atmospheric scattering process on Earth, and then fitting the results into a simple model that is much faster to evaluate at runtime.</p>
 <p>The sky model parameters, such as the sun&rsquo;s position, can be updated in real-time. This involves recomputing the values in a look-up table, and uploading them to the GPU. The look-up table values are used to compute the radiance for each ray which scatters towards the sky:</p>
@@ -375,7 +424,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/duck-hw-skymodel.png" alt="duck hw sky"></p>
 <h2 id="even-better-estimator-simple-temporal-accumulation">Even better estimator: simple temporal accumulation</h2>
 <p><em>2023-11-15</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/b10570a058f844032c058bf566e818176118ebea">b10570a</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/b10570a058f844032c058bf566e818176118ebea">b10570a</a></em></p>
 <p>Temporal accumulation is implemented and the sum term is added back to our Monte Carlo estimator:</p>
 <p>$$
 F_n = \frac{1}{n} \sum_{i = 1}^{n} k_{\textrm{albedo}}L_i(\omega_i),
@@ -385,7 +434,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/temporally-accumulated-duck.png" alt="temporally accumulated samples"></p>
 <h2 id="better-estimator-importance-sampling-surface-normal-directions">Better estimator: importance sampling surface normal directions</h2>
 <p><em>2023-11-14</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/4a76335aa527d816d766606e7dab774582ed6f8b">4a76335</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/4a76335aa527d816d766606e7dab774582ed6f8b">4a76335</a></em></p>
 <p>Cosine-weighted hemisphere sampling is implemented. The term \((\omega_i \cdot \mathrm{n})\) in the rendering equation equals \(\cos \theta\), where \(\theta\) is the zenith angle between the surface normal and the incoming ray direction. Directions which are close to perpendicular to the surface normal contribute very little light due to the cosine. It would be better to sample directions close to the surface normal.</p>
 <p>The Monte Carlo estimator for non-uniform random variables \(X_i\) drawn out of probability density function (PDF) \(p(x)\) is</p>
 <p>$$
@@ -527,7 +576,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/cosine-weighted-duck.png" alt="cosine-weighted duck"></p>
 <h2 id="the-first-physically-based-pathtracer">The first physically-based pathtracer</h2>
 <p><em>2023-11-13</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/c83b83e019a44d102a79b2890ffd7897bf0977d0">c83b83e</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/c83b83e019a44d102a79b2890ffd7897bf0977d0">c83b83e</a></em></p>
 <p>A simple physically-based pathtracer is implemented. ✨ The rendering equation is solved using the following <em>Monte Carlo estimator</em>:</p>
 <p>$$
 F_1 = 2 \pi f_r(\mathrm{x_i},\omega_i)L_i(\mathrm{x_i},\omega_i)(\omega_i\cdot\mathrm{n}),
@@ -733,7 +782,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/pathtraced-sponza.png" alt="pathtraced sponza"></p>
 <h2 id="simple-texture-support-">Simple texture support 🖼️</h2>
 <p><em>2023-11-10</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/8062be7f4a44580d6d83937b34ed57d52f4c5b35">8062be7</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/8062be7f4a44580d6d83937b34ed57d52f4c5b35">8062be7</a></em></p>
 <p>Initial textures support is added. The &ldquo;base color texture&rdquo; from the glTF &ldquo;pbr metallic roughness&rdquo; material is loaded and passed over to the GPU. The same storage buffer approach from my <a href="https://nelari.us/post/weekend_raytracing_with_wgpu_2/#adding-texture-support">Weekend raytracing with wgpu, part 2</a> post is used for texture lookup on the GPU.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -818,7 +867,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/uv-coordinate-issue.png" alt="uv coordinate issue"></p>
 <h2 id="interpolated-normals-texture-coordinates-and-gpu-timers">Interpolated normals, texture coordinates, and GPU timers</h2>
 <p><em>2023-11-09</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/82208c19754a5fb6528e587c175af30f523c5649">82208c1</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/82208c19754a5fb6528e587c175af30f523c5649">82208c1</a></em></p>
 <p><strong>GPU timers</strong></p>
 <p>Timing the render pass on the device timeline allows us to keep track of how long rendering the scene actually takes on the GPU, no matter what I do on the CPU side. The timings are displayed in the UI as a moving average.</p>
 <p><img src="/img/pathtracer_devlog/query-timestamps.png" alt="query-timestamps"></p>
@@ -930,7 +979,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/sponza-normal-interpolation.png" alt="sponza-interpolated-normals"></p>
 <h2 id="loading-textures">Loading textures</h2>
 <p><em>2023-11-08</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/170626529372f4c12c6f0d1231a4eacf83588a39">1706265</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/170626529372f4c12c6f0d1231a4eacf83588a39">1706265</a></em></p>
 <p>The glTF model loader now loads textures, and the base color textures are exposed in the model:</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -973,7 +1022,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/base_color_texture_0.jpg" alt="base_color_texture_0"></p>
 <h2 id="camera-and-ui-interaction">Camera and UI interaction</h2>
 <p><em>2023-11-07</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/1593e8a49309cb1a6aa375410253df53d8e7dd5e">1593e8a</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/1593e8a49309cb1a6aa375410253df53d8e7dd5e">1593e8a</a></em></p>
 <p>In order to work with arbitrary 3d models, camera positions and parameters should not be hard-coded. To kickstart scene interaction, two things are implemented:</p>
 <ul>
 <li>A &ldquo;fly camera&rdquo;, which allows you to move around and pan the scene around using the mouse.</li>
@@ -996,7 +1045,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/imgui-camera-interaction.png" alt="camera-imgui-interaction"></p>
 <h2 id="raytracing-triangles-on-the-gpu-">Raytracing triangles on the GPU 🎉</h2>
 <p><em>2023-11-06</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/e950ea8d99b467346a88bc32ca2f69f16e17f3c3">e950ea8</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/e950ea8d99b467346a88bc32ca2f69f16e17f3c3">e950ea8</a></em></p>
 <p>Today&rsquo;s achievement:</p>
 <p><img src="/img/pathtracer_devlog/raytraced-duck-normals.png" alt="raytraced-duck"></p>
 <p>The BVH and all intersection testing functions are ported to the shader. The rays from the previous devlog entry are now directly used against the BVH.</p>
@@ -1063,7 +1112,7 @@ $$</p>
 </div>
 </div><h2 id="raytracing-spheres-on-the-gpu">Raytracing spheres on the GPU</h2>
 <p><em>2023-11-04</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/16f6255df4ebb34589d2541ddb9a67dbdfcf846a">16f6255</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/16f6255df4ebb34589d2541ddb9a67dbdfcf846a">16f6255</a></em></p>
 <p>Before attempting to raytrace triangles on the GPU, first I need to demonstrate that the camera actually works in the shader.</p>
 <p>To do so, a simple raytracing scenario is first implemented. An array of spheres, stored directly in the shader is added. Ray-sphere intersection code is copied over from my <a href="https://github.com/Nelarius/weekend-raytracer-wgpu">weekend-raytracer-wgpu</a> project. The spheres are colored according to their surface normal vector. The spheres are visible and now I know that the camera works!</p>
 <p><img src="/img/pathtracer_devlog/raytraced-spheres.png" alt="raytraced-spheres"></p>
@@ -1112,14 +1161,14 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/renderparams-layout.jpg" alt="renderparams-memory-layout"></p>
 <h2 id="hello-bounding-volume-hierarchies">Hello, bounding volume hierarchies</h2>
 <p><em>2023-11-02</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/624e5ead16424fb75c2fd37cac0c9edd0f113690">624e5ea</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/624e5ead16424fb75c2fd37cac0c9edd0f113690">624e5ea</a></em></p>
 <p>This entry marks the first step towards being able to shoot rays at complex triangle geometry. A bounding volume hierarchy (BVH) is introduced (<code>common/bvh.hpp</code>) and tested.</p>
 <p>The test (<code>tests/bvh.cpp</code>) intersects rays with the BVH, and uses a brute-force test against the full array of triangles as the ground truth. The intersection test result (did intersect or did not) and the intersection point, in the case of intersection, must agree for all camera rays in order for the test to pass.</p>
 <p>As an additional end-to-end sanity check, a new executable target (<code>bvh-visualizer</code>) is introduced. Primary camera rays are generated and the number of BVH nodes visited per ray is visualized as an image.</p>
 <p><img src="/img/pathtracer_devlog/duck-bvh.jpg" alt="duck bvh"></p>
 <h2 id="gpubuffer"><code>GpuBuffer</code></h2>
 <p><em>2023-11-01</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/0a826c4d6e3649c2de906b60d153469f97e20e7e">0a826c4</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/0a826c4d6e3649c2de906b60d153469f97e20e7e">0a826c4</a></em></p>
 <p>Not a lot of visible progress, but <code>GpuBuffer</code> was introduced (in <code>gpu_buffer.hpp</code>) to significantly reduce the amount of boilerplate due to buffers &amp; bind group descriptors:</p>
 <p>Showing 5 changed files with <strong>254 additions</strong> and <strong>275 deletions</strong>.</p>
 <p>On another note, used <em>immediately invoked lambda functions</em> in a constructor initializer for the first time today:</p>
@@ -1158,7 +1207,7 @@ $$</p>
 </div><p>It&rsquo;s busy looking, but it enables you to do actual work in the constructor initializer. Doing all the work in the constructor initializers like this could make move constructors unnecessary.</p>
 <h2 id="gpu-generated-noise">GPU-generated noise</h2>
 <p><em>2023-10-31</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/645c09c377face80354e820875c0be9181a18124">645c09c</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/645c09c377face80354e820875c0be9181a18124">645c09c</a></em></p>
 <p>The major highlights of the day include generating noise on the GPU and displaying it, as well as cleaning up the main function using a new <code>Window</code> abstraction.</p>
 <p><strong><code>Window</code></strong></p>
 <p>A simple <code>Window</code> abstraction is introduced to automate GLFW library and window init and cleanup. <code>main</code> does not yet have an exception handler, but this abstraction is a step closer to ensuring all resources are cleaned up even when exceptions occur.</p>
@@ -1206,7 +1255,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/gpu-noise.png" alt="gpu noise"></p>
 <h2 id="fullscreen-quad">Fullscreen quad</h2>
 <p><em>2023-10-30</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/51387d7b447800b0ffc25e3f2c1526e6fc2bf0f5">51387d7</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/51387d7b447800b0ffc25e3f2c1526e6fc2bf0f5">51387d7</a></em></p>
 <p>After 1000 lines of WebGPU plumbing code, the first <em>pair</em> of triangles is displayed on the screen in the shape of a fullscreen quad, and the UV coordinates are displayed as a color.</p>
 <p>The <code>pt</code> executable contains</p>
 <ul>
@@ -1217,7 +1266,7 @@ $$</p>
 <p><img src="/img/pathtracer_devlog/fullscreen-quad.png" alt="fullscreen quad"></p>
 <h2 id="hello-glfw">Hello, GLFW!</h2>
 <p><em>2023-10-29</em></p>
-<p><em>Commit: <a href="https://github.com/Nelarius/pathtracer-playground/commit/4df39fa7a165f10e7582847c999bf02e60a6ec6a">4df39fa</a></em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/4df39fa7a165f10e7582847c999bf02e60a6ec6a">4df39fa</a></em></p>
 <p>All projects have to start somewhere.</p>
 <ul>
 <li>Defined a <code>pt</code> executable target in CMake. The goal is for this executable to open up a scene and display it by doing pathtracing on the GPU.</li>
@@ -1235,8 +1284,9 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</a></li>
     <li><a href="#quick-color-encoding-fix">Quick color encoding fix</a></li>
-    <li><a href="#adding-sun-light-to-the-scene">Adding sun light to the scene</a></li>
+    <li><a href="#adding-sunlight-to-the-scene">Adding sunlight to the scene</a></li>
     <li><a href="#implementing-tiled-texture-support">Implementing tiled texture support</a></li>
     <li><a href="#avoiding-triangle-self-intersection">Avoiding triangle self-intersection</a></li>
     <li><a href="#filmic-tone-mapping-and-better-tone-mapping-controls">Filmic tone mapping and better tone mapping controls</a></li>
@@ -1337,7 +1387,7 @@ $$</p>
 
             <br/>
         <div id="footer-info" class="inner">
-            &copy; 2023 Johann Muszynski
+            &copy; 2024 Johann Muszynski
         </div>
     </div>
     

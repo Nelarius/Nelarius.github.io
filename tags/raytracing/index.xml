@@ -8,15 +8,16 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 30 Oct 2023 17:19:21 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/raytracing/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Pathtracer Devlog</title>
+      <title>GPU Pathtracer Devlog</title>
       <link>https://nelari.us/post/pathtracer_devlog/</link>
       <pubDate>Mon, 30 Oct 2023 17:19:21 +0200</pubDate>
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
-      <description>This post is a devlog for my pathtracer-playground project. Follow along to see the progress, starting from scratch by opening a simple window.
-Quick color encoding fix 2023-12-30
-Commit: 883ed07
-The renderer contains two issues with color encoding. The model textures typically have a non-linear gamma ramp, and need to be converted to linear values. Non-linear RGB values cannot be mutually added or multiplied, so the color calculations have technically speaking not been correct.</description>
+      <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
+Adding physically-motivated sunlight to the scene ☀️ 2024-01-01
+Commit: 7f69e97
+Physically-motivated sun disk radiance is added to the scene.
+The original sample code from the Sky Dome Appearance Project is added to the pathtracer project. The sky dome model contains a code path for calculating sunlight. The model provides spectral radiance across the sun disk.</description>
     </item>
     
     <item>

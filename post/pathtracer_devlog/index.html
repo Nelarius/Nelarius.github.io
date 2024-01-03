@@ -92,10 +92,10 @@ $$</p>
 <p>C code from the <a href="https://jcgt.org/published/0002/02/01/">Simple Analytic Approximations to the CIE XYZ Color Matching Functions</a> paper was used to implement simple multi-lobe Gaussian fits for the CIE XYZ CMFs.</p>
 <p>The sky dome model is used to generate solar radiances across the entire sun disk at 10 different turbidities. The spectral radiance and CMF product is integrated using the trapezoidal method for each XYZ component.</p>
 <p><img src="/img/pathtracer_devlog/sundisk-radiances.png" alt="sundisk-radiances"></p>
-<p><em>Technical note</em>: the sun disks contain a bright spot, which I didn&rsquo;t bother figuring out. The model implementation appears to be a bit incomplete and therefore some issues might remain. Since averages are computed across the sun disk anyway, the bright spot should not affect the computed radiances very much.</p>
+<p><em>Technical note</em>: the sun disks contain a bright spot, which I didn&rsquo;t spend time on figuring out yet. The model implementation appears to be a bit incomplete and therefore some issues might remain. Since averages are computed across the sun disk anyway, the bright spot does not affect the computed radiance very much.</p>
 <p>For each turbidity, the solar radiance is converted to XYZ, then to sRGB primaries. The XYZ to sRGB conversion matrix was obtained <a href="http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html">here</a>. The mean of the sRGB primaries is computed and used as a proxy of the solar radiance over the sun disk. The <code>hw-skymodel</code> library interpolates between these mean RGB solar radiances to account for the different solar intensities at different atmospheric turbidities.</p>
 <p>The solar radiance can now be generated along with the sky dome radiance.</p>
-<p><img src="/img/pathtracer_devlog/hw-skymodel-with-sundisk.png" alt=""></p>
+<p><img src="/img/pathtracer_devlog/hw-skymodel-with-sundisk.png" alt="hw-skymodel-with-sundisk"></p>
 <p>The earlier, hard-coded <code>lightIntensity</code> value is now replaced with the computed mean RGB solar radiance.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">

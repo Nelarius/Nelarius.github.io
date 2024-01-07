@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Adding physically-motivated sunlight to the scene ☀️ 2024-01-01
-Commit: 7f69e97
-Physically-motivated sun disk radiance is added to the scene.
-The original sample code from the Sky Dome Appearance Project is added to the pathtracer project. The sky dome model contains a code path for calculating sunlight. The model provides spectral radiance across the sun disk.</description>
+Adding atmospheric turbidity controls 2024-01-07
+Commit: e0fe5f4
+The updated sky model interpolates between the different sky and solar radiances at different atmospheric turbidities. A UI control is added to allow the selection of different turbidity values to see their effect on the image.
+A turbidity of 1 corresponds to a very clear sky.</description>
     </item>
     
     <item>

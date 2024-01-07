@@ -72,6 +72,17 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="adding-atmospheric-turbidity-controls">Adding atmospheric turbidity controls</h2>
+<p><em>2024-01-07</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/e0fe5f4f732959d7b24fce75da6c1c7ac56ed49f">e0fe5f4</a></em></p>
+<p>The updated sky model interpolates between the different sky and solar radiances at different atmospheric turbidities. A UI control is added to allow the selection of different turbidity values to see their effect on the image.</p>
+<p>A turbidity of 1 corresponds to a very clear sky. The sun is very bright compared to the sky dome. With a turbidity of 10, a large quantity of light from the sun of all wavelengths is scattered. The sky is less blue as a result, and the sunlight&rsquo;s intensity is much smaller. The effect looks a bit like an overcast day.</p>
+<p>Turbidity 1:</p>
+<p><img src="/img/pathtracer_devlog/turbidity-1.png" alt="turbidity-1"></p>
+<p>Turbidity 7:</p>
+<p><img src="/img/pathtracer_devlog/turbidity-7.png" alt="turbidity-7"></p>
+<p>Turbidity 10:</p>
+<p><img src="/img/pathtracer_devlog/turbidity-10.png" alt="turbidity-10"></p>
 <h2 id="adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</h2>
 <p><em>2024-01-01</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/7f69e97c4403c0a71dbe5f51a25ecacf035b79b4">7f69e97</a></em></p>
@@ -1284,6 +1295,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#adding-atmospheric-turbidity-controls">Adding atmospheric turbidity controls</a></li>
     <li><a href="#adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</a></li>
     <li><a href="#quick-color-encoding-fix">Quick color encoding fix</a></li>
     <li><a href="#adding-sunlight-to-the-scene">Adding sunlight to the scene</a></li>

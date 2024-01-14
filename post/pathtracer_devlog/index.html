@@ -72,6 +72,48 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</h2>
+<p><em>2024-01-14</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/0b77f54941e9ee1ff307c2a13700957f17f458fd">0b77f54</a></em></p>
+<p>The thin lens approximation is implemented. The thin lens approximation models a simple lens with an aperture, allowing generating convincing looking depth of field effects.</p>
+<p>The thin lens approximation uses the following coordinate system. Normally, rays are generated at <em>origin</em>, and point at each pixel on the image plane (the plane with <em>lower left corner</em>). Using the thin lens approximation, rays are generated randomly in a disk about <em>origin</em> with a <em>lens radius</em>. This approximates the behavior of a ray of light passing through a lens aperture through the focal point, just reversed from a real lens; the focal point is in front of the lens, instead of behind it.</p>
+<p><img src="/img/pathtracer_devlog/camera-coordinates.jpg" alt="camera-coordinate-system"></p>
+<p>This is how ray generation works in the shader:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> generateCameraRay(camera: <span style="color:#2b91af">Camera</span>, rngState: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;, u: <span style="color:#2b91af">f32</span>, v: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">Ray</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> randomPointInLens = camera.lensRadius * rngNextVec2InUnitDisk(rngState);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> lensOffset = randomPointInLens.x * camera.right + randomPointInLens.y * camera.up;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> origin = camera.origin + lensOffset;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> direction = normalize(
+</span></span><span style="display:flex;"><span>                            camera.lowerLeftCorner
+</span></span><span style="display:flex;"><span>                            + u * camera.horizontal
+</span></span><span style="display:flex;"><span>                            + v * camera.vertical
+</span></span><span style="display:flex;"><span>                            - origin);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Ray(origin, direction);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>UI controls are added which allow the selection of the lens radius, as well as the focus distance. In order to get accurate focus on e.g. the lion&rsquo;s eye, &ldquo;click to focus&rdquo; is also implemented, which calculates the focus distance to the point under the mouse cursor. This is implemented by retaining the BVH in the CPU program, and doing a ray-BVH intersection test by generating a ray at the mouse coordinates.</p>
+<p><img src="/img/pathtracer_devlog/dof-lion.png" alt="lion with depth of field"></p>
+<p><img src="/img/pathtracer_devlog/dof-atrium.png" alt="sponza atrium with depth of field"></p>
 <h2 id="adding-atmospheric-turbidity-controls">Adding atmospheric turbidity controls</h2>
 <p><em>2024-01-07</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/e0fe5f4f732959d7b24fce75da6c1c7ac56ed49f">e0fe5f4</a></em></p>
@@ -1295,6 +1337,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</a></li>
     <li><a href="#adding-atmospheric-turbidity-controls">Adding atmospheric turbidity controls</a></li>
     <li><a href="#adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</a></li>
     <li><a href="#quick-color-encoding-fix">Quick color encoding fix</a></li>

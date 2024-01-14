@@ -14,10 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Adding atmospheric turbidity controls 2024-01-07
-Commit: e0fe5f4
-The updated sky model interpolates between the different sky and solar radiances at different atmospheric turbidities. A UI control is added to allow the selection of different turbidity values to see their effect on the image.
-A turbidity of 1 corresponds to a very clear sky.</description>
+Depth of field using the thin lens approximation 2024-01-14
+Commit: 0b77f54
+The thin lens approximation is implemented. The thin lens approximation models a simple lens with an aperture, allowing generating convincing looking depth of field effects.
+The thin lens approximation uses the following coordinate system. Normally, rays are generated at origin, and point at each pixel on the image plane (the plane with lower left corner).</description>
     </item>
     
     <item>

@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Depth of field using the thin lens approximation 2024-01-14
-Commit: 0b77f54
-The thin lens approximation is implemented. The thin lens approximation models a simple lens with an aperture, allowing generating convincing looking depth of field effects.
-The thin lens approximation uses the following coordinate system. Normally, rays are generated at origin, and point at each pixel on the image plane (the plane with lower left corner).</description>
+Copying shader source files into a string at build time 2024-03-22
+Commit: a5207ab
+A method for copying WGSL shader source automatically into a C-string is implemented. The shader source files are listed in the main CMakeLists.txt:
+1 2 3 4 5 set(WGSL_SHADER_FILES reference_path_tracer.wgsl texture_blit.wgsl hybrid_renderer_gbuffer_pass.wgsl hybrid_renderer_debug_pass.wgsl) The custom target bake-wgsl copies each source file&amp;rsquo;s content into a string in the pt/shader_source.</description>
     </item>
     
     <item>

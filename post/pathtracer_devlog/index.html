@@ -72,7 +72,51 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</h2>
+<h2 id="copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</h2>
+<p><em>2024-03-22</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/a5207ab4efa3b37af9c4a52f9fa6ebb0bc59977e">a5207ab</a></em></p>
+<p>A method for copying WGSL shader source automatically into a C-string is implemented. The shader source files are listed in the main <code>CMakeLists.txt</code>:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>set(<span style="color:#a31515">WGSL_SHADER_FILES</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">reference_path_tracer.wgsl</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">texture_blit.wgsl</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">hybrid_renderer_gbuffer_pass.wgsl</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">hybrid_renderer_debug_pass.wgsl</span>)<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The custom target <code>bake-wgsl</code> copies each source file&rsquo;s content into a string in the <code>pt/shader_source.hpp</code> header file. The main <code>pt</code> target depends on the <code>bake-wgsl</code> target so that every time a build occurs, <code>shader_source.hpp</code> is updated. This makes it possible to edit shaders in separate source files with the benefits of the wgsl-analyzer plugin.</p>
+<p>The custom target depends on a custom command which outputs the header file. The custom command is implemented as a separate cmake script, so that it can be called from the custom command.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>include(<span style="color:#a31515">cmake/BakeWgslSource.cmake</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>add_custom_command(
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">OUTPUT</span> ${SHADER_SOURCE_HEADER_FILE}
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">COMMAND</span> ${CMAKE_COMMAND} <span style="color:#a31515">-DCALL_BAKE_WGSL_SOURCE=1</span> <span style="color:#a31515">-DOUTPUT_FILE=</span>${SHADER_SOURCE_HEADER_FILE} <span style="color:#a31515">-DWGSL_FILES=</span><span style="color:#a31515">&#34;${WGSL_SHADER_FILES}&#34;</span> <span style="color:#a31515">-P</span> ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/cmake/BakeWgslSource.cmake</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">COMMENT</span> <span style="color:#a31515">&#34;Generating ${SHADER_SOURCE_HEADER_FILE} from .wgsl files&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">WORKING_DIRECTORY</span> ${CMAKE_SOURCE_DIR}
+</span></span><span style="display:flex;"><span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>add_custom_target(<span style="color:#a31515">bake-wgsl</span> <span style="color:#a31515">DEPENDS</span> ${SHADER_SOURCE_HEADER_FILE})<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</h2>
 <p><em>2024-01-14</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/0b77f54941e9ee1ff307c2a13700957f17f458fd">0b77f54</a></em></p>
 <p>The thin lens approximation is implemented. The thin lens approximation models a simple lens with an aperture, allowing generating convincing looking depth of field effects.</p>
@@ -1337,6 +1381,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</a></li>
     <li><a href="#depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</a></li>
     <li><a href="#adding-atmospheric-turbidity-controls">Adding atmospheric turbidity controls</a></li>
     <li><a href="#adding-physically-motivated-sunlight-to-the-scene-">Adding physically-motivated sunlight to the scene ☀️</a></li>

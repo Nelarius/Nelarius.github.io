@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Copying shader source files into a string at build time 2024-03-22
-Commit: a5207ab
-A method for copying WGSL shader source automatically into a C-string is implemented. The shader source files are listed in the main CMakeLists.txt:
-1 2 3 4 5 set(WGSL_SHADER_FILES reference_path_tracer.wgsl texture_blit.wgsl hybrid_renderer_gbuffer_pass.wgsl hybrid_renderer_debug_pass.wgsl) The custom target bake-wgsl copies each source file&amp;rsquo;s content into a string in the pt/shader_source.</description>
+Gallery of failures 2024-03-29
+A small break from the usual progress entries. Instead, two images from unsuccesful attempts to render a 3d model using the regular rasterization pipeline.
+Umm, was I supposed to use an index buffer to access the vertices?
+The model textures are in BGRA8Unorm, not RGBA8Unorm aren&amp;rsquo;t they?</description>
     </item>
     
     <item>

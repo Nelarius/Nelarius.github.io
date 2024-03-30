@@ -72,6 +72,84 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</h2>
+<p><em>2024-03-30</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/3d1c87196b637cf0c78ecbf6ab14dc8f2b0c1884">3d1c871</a></em></p>
+<p>A new deferred renderer, the <code>HybridRenderer</code> class, is added alongside the existing path tracer. The deferred renderer will use path tracing for lighting, but it will replace the primary ray-scene intersection with the output of the rasterization pipeline, which is much faster than using a ray tracing.</p>
+<p>As of now, the renderer uses the rasterization pipeline to render the geometry into the gbuffer textures. The albedo and normal textures are render attachments of the gbuffer render pass. The position doesn&rsquo;t have it&rsquo;s own distinct texture. Instead, the depth buffer can be reused to calculate the world positions of each pixel.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">GbufferOutput</span> {
+</span></span><span style="display:flex;"><span>    @location(0) albedo: <span style="color:#2b91af">vec4</span>&lt;<span style="color:#2b91af">f32</span>&gt;,
+</span></span><span style="display:flex;"><span>    @location(1) normal: <span style="color:#2b91af">vec4</span>&lt;<span style="color:#2b91af">f32</span>&gt;,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@fragment
+</span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> fsMain(<span style="color:#00f">in</span>: <span style="color:#2b91af">VertexOutput</span>) -&gt; <span style="color:#2b91af">GbufferOutput</span> {
+</span></span><span style="display:flex;"><span>    var c = pow(textureSample(texture, textureSampler, <span style="color:#00f">in</span>.texCoord).xyz, vec3(2.2f));
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> GbufferOutput(vec4(c, 1f), vec4(normalize(<span style="color:#00f">in</span>.normal.xyz), 1f));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The locations of the <code>GbufferOutput</code> map to the color attachments array:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">const</span> std::array&lt;WGPURenderPassColorAttachment, 2&gt; colorAttachments{
+</span></span><span style="display:flex;"><span>            WGPURenderPassColorAttachment{
+</span></span><span style="display:flex;"><span>                .nextInChain = <span style="color:#00f">nullptr</span>,
+</span></span><span style="display:flex;"><span>                .view = albedoTextureView,
+</span></span><span style="display:flex;"><span>                .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
+</span></span><span style="display:flex;"><span>                .resolveTarget = <span style="color:#00f">nullptr</span>,
+</span></span><span style="display:flex;"><span>                .loadOp = WGPULoadOp_Clear,
+</span></span><span style="display:flex;"><span>                .storeOp = WGPUStoreOp_Store,
+</span></span><span style="display:flex;"><span>                .clearValue = WGPUColor{0.0, 0.0, 0.0, 1.0},
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            WGPURenderPassColorAttachment{
+</span></span><span style="display:flex;"><span>                .nextInChain = <span style="color:#00f">nullptr</span>,
+</span></span><span style="display:flex;"><span>                .view = normalTextureView,
+</span></span><span style="display:flex;"><span>                .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
+</span></span><span style="display:flex;"><span>                .resolveTarget = <span style="color:#00f">nullptr</span>,
+</span></span><span style="display:flex;"><span>                .loadOp = WGPULoadOp_Clear,
+</span></span><span style="display:flex;"><span>                .storeOp = WGPUStoreOp_Store,
+</span></span><span style="display:flex;"><span>                .clearValue = WGPUColor{0.0, 0.0, 0.0, 1.0},
+</span></span><span style="display:flex;"><span>            }};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>A debug renderer is also added which shows the three buffers side by side. The depth buffer is displayed without actually transforming the coordinates back to world space &ndash; at this stage it&rsquo;s possible to visually assert that the textures are being bound correctly to the shader.</p>
+<p><img src="/img/pathtracer_devlog/gbuffer-debug-view.png" alt="gbuffer debug"></p>
 <h2 id="gallery-of-failures">Gallery of failures</h2>
 <p><em>2024-03-29</em></p>
 <p>A small break from the usual progress entries. Instead, two images from unsuccesful attempts to render a 3d model using the regular rasterization pipeline.</p>
@@ -1388,6 +1466,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</a></li>
     <li><a href="#gallery-of-failures">Gallery of failures</a></li>
     <li><a href="#copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</a></li>
     <li><a href="#depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</a></li>

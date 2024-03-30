@@ -24,10 +24,9 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Gallery of failures 2024-03-29
-A small break from the usual progress entries. Instead, two images from unsuccesful attempts to render a 3d model using the regular rasterization pipeline.
-Umm, was I supposed to use an index buffer to access the vertices?
-The model textures are in BGRA8Unorm, not RGBA8Unorm aren&amp;rsquo;t they?</description>
+First steps towards a deferred renderer 2024-03-30
+Commit: 3d1c871
+A new deferred renderer, the HybridRenderer class, is added alongside the existing path tracer. The deferred renderer will use path tracing for lighting, but it will replace the primary ray-scene intersection with the output of the rasterization pipeline, which is much faster than using a ray tracing.</description>
     </item>
     
     <item>

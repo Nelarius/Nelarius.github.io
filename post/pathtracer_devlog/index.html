@@ -72,6 +72,95 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</h2>
+<p><em>2024-03-31</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/41ee49872d075746d69084ad242f622e37b9e389">41ee498</a></em></p>
+<p>The <code>HybridRenderer</code> is renamed <code>DeferredRenderer</code> as that is a more frequently used term in this log and literature.</p>
+<p>A new deferred <em>lighting pass</em> is introduced. The sky and gbuffer&rsquo;s albedo channel is rendered as a proof of concept.</p>
+<p>The shader renders a full-screen quad to the screen and uses the screen&rsquo;s UV-coordinates to calculate the pixel&rsquo;s camera ray direction as well as the texture index to read a pixel from the albedo texture. The depth buffer value is used to test whether the pixel overlaps geometry or the sky. The sentinel value of <code>1.0</code> is what the depth buffer was cleared with and indicates that the pixel did not contain geometry.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// fragment shader body
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>var color = vec3f(0.0, 0.0, 0.0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> uv = <span style="color:#00f">in</span>.texCoord;
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> idx = vec2u(floor(uv * uniforms.framebufferSize));
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> d = textureLoad(gbufferDepth, idx, 0);
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> d == 1.0 {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> world = worldFromUv(uv);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> v = normalize((world - uniforms.cameraEye).xyz);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> s = skyState.sunDirection;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// This is equivalent to path tracer code
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> theta = acos(v.y);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> gamma = acos(clamp(dot(v, s), -1f, 1f));
+</span></span><span style="display:flex;"><span>    color = vec3f(
+</span></span><span style="display:flex;"><span>        skyRadiance(theta, gamma, CHANNEL_R),
+</span></span><span style="display:flex;"><span>        skyRadiance(theta, gamma, CHANNEL_G),
+</span></span><span style="display:flex;"><span>        skyRadiance(theta, gamma, CHANNEL_B)
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>} <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> albedo = textureLoad(gbufferAlbedo, idx, 0).rgb;
+</span></span><span style="display:flex;"><span>    color = albedo;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The function <code>worldFromUv</code> uses the inverse view projection matrix to calculate near projection plane coordinates from the given UV coordinate. The UV coordinate can be transformed into a normalized device coordinate \(\mathbf{x}_{ndc}\) on the camera frustum&rsquo;s near plane, but it will not contain the \(w\) value used in the divide-by-w step:</p>
+<p>$$
+\begin{bmatrix}
+{x} / {w_0} \\
+{y} / {w_0} \\
+{z} / {w_0} \\
+{1} / {w_0}
+\end{bmatrix}
+= (\mathrm{PV})^{-1} \mathbf{x}_{ndc}
+$$</p>
+<p>We need to divide all values by the vector&rsquo;s <code>w</code> component to obtain the original coordinates before the divide-by-w step.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> worldFromUv(uv: <span style="color:#2b91af">vec2f</span>) -&gt; <span style="color:#2b91af">vec4f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> ndc = vec4(2.0 * vec2(uv.x, 1.0 - uv.y) - vec2(1.0), 0.0, 1.0);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> worldInvW = uniforms.inverseViewProjectionMat * ndc;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> world = worldInvW / worldInvW.w;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> world;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><em>The lighting pass displays just the albedo and looks a bit dull at the moment.</em>
+<img src="/img/pathtracer_devlog/sponza-albedo.png" alt="lighting pass albedo"></p>
+<p><em>The path traced result for reference. Note that the sky is exactly the same is in the deferred pass.</em>
+<img src="/img/pathtracer_devlog/sponza-reference.png" alt="reference path tracer comparison"></p>
 <h2 id="first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</h2>
 <p><em>2024-03-30</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/3d1c87196b637cf0c78ecbf6ab14dc8f2b0c1884">3d1c871</a></em></p>
@@ -153,10 +242,10 @@
 <h2 id="gallery-of-failures">Gallery of failures</h2>
 <p><em>2024-03-29</em></p>
 <p>A small break from the usual progress entries. Instead, two images from unsuccesful attempts to render a 3d model using the regular rasterization pipeline.</p>
-<p><img src="/img/pathtracer_devlog/deconstructed-duck.png" alt="deconstructed model">
-<em>Umm, was I supposed to use an index buffer to access the vertices?</em></p>
-<p><img src="/img/pathtracer_devlog/blue-duck.png" alt="blue model">
-<em>The model textures are in BGRA8Unorm, not RGBA8Unorm aren&rsquo;t they?</em></p>
+<p><em>Umm, was I supposed to use an index buffer to access the vertices?</em>
+<img src="/img/pathtracer_devlog/deconstructed-duck.png" alt="deconstructed model"></p>
+<p><em>The model textures are in BGRA8Unorm, not RGBA8Unorm aren&rsquo;t they?</em>
+<img src="/img/pathtracer_devlog/blue-duck.png" alt="blue model"></p>
 <h2 id="copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</h2>
 <p><em>2024-03-22</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/a5207ab4efa3b37af9c4a52f9fa6ebb0bc59977e">a5207ab</a></em></p>
@@ -1466,6 +1555,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</a></li>
     <li><a href="#first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</a></li>
     <li><a href="#gallery-of-failures">Gallery of failures</a></li>
     <li><a href="#copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</a></li>
@@ -1580,9 +1670,9 @@ $$</p>
     
 
     
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css" integrity="sha384-wITovz90syo1dJWVh32uuETPVEtGigN07tkttEqPv+uR2SE/mbQcG7ATL28aI9H0" crossorigin="anonymous">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js" integrity="sha384-/y1Nn9+QQAipbNQWU65krzJralCnuOasHncUFXGkdwntGeSvQicrYkiUBwsgUqc1" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js" integrity="sha256-ExtbCSBuYA7kq1Pz362ibde9nnsHYPt6JxuxYeZbU+c=" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
         <script>renderMathInElement(document.body);</script>
     
     <script>

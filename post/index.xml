@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Rendering the sky and albedo in a deferred render pass 2024-03-31
-Commit: 41ee498
-The HybridRenderer is renamed DeferredRenderer as that is a more frequently used term in this log and literature.
-A new deferred lighting pass is introduced. The sky and gbuffer&amp;rsquo;s albedo channel is rendered as a proof of concept.</description>
+Deferred direct lighting 2024-04-22
+Commit: 2f59399
+Direct lighting is added to the lighting pass. The primary ray intersection with the scene is reconstructed from the gbuffers using a slightly modified version of the function from the previous entry.
+1 2 3 4 5 6 fn worldFromUv(uv: vec2f, depthSample: f32) -&amp;gt; vec3f { let ndc = vec4(2.</description>
     </item>
     
     <item>

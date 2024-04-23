@@ -72,7 +72,120 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</h2>
+<h2 id="deferred-direct-lighting">Deferred direct lighting</h2>
+<p><em>2024-04-22</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/2f59399c28c27245ec19d247bd638281909ca41b">2f59399</a></em></p>
+<p>Direct lighting is added to the lighting pass. The primary ray intersection with the scene is reconstructed from the gbuffers using a slightly modified version of the function from the previous entry.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> worldFromUv(uv: <span style="color:#2b91af">vec2f</span>, depthSample: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> ndc = vec4(2.0 * vec2(uv.x, 1.0 - uv.y) - vec2(1.0), depthSample, 1.0);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> worldInvW = uniforms.inverseViewReverseZProjectionMat * ndc;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> world = worldInvW / worldInvW.w;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> world.xyz;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The surface normal and the albedo are looked up as-is from their respective buffers.</p>
+<p>The direct lighting contribution for each pixel is obtained by tracing a ray to the sun disk and testing for visibility. This snippet is identical to the direct lighting contribution from the &ldquo;next event estimation&rdquo; contribution in the reference path tracer.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> surfaceColor(rng: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;, pos: <span style="color:#2b91af">vec3f</span>, normal: <span style="color:#2b91af">vec3f</span>, albedo: <span style="color:#2b91af">vec3f</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> lightDirection = sampleSolarDiskDirection(
+</span></span><span style="display:flex;"><span>        SOLAR_COS_THETA_MAX, skyState.sunDirection, rng);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> lightIntensity = vec3(
+</span></span><span style="display:flex;"><span>        skyState.solarRadiances[CHANNEL_R],
+</span></span><span style="display:flex;"><span>        skyState.solarRadiances[CHANNEL_G],
+</span></span><span style="display:flex;"><span>        skyState.solarRadiances[CHANNEL_B]
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> brdf = albedo * FRAC_1_PI;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> reflectance = brdf * dot(normal, lightDirection);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> lightVisibility = shadowRay(Ray(pos, lightDirection), T_MAX);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> lightIntensity * reflectance * lightVisibility * SOLAR_INV_PDF;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This results in the following image with harsh, direct, sun light. Indirect light or sky dome light is not visible since no bounce rays are being traced yet.</p>
+<p><img src="/img/pathtracer_devlog/deferred-direct-light.png" alt="deferred direct light"></p>
+<p><strong>Solving z-fighting issues with the depth buffer</strong></p>
+<p>The direct lighting didn&rsquo;t work completely out of the box. Very visible z-fighting occurred, presumably the sun visibility ray self-intersecting with the scene geometry due to the world space coordinate calculated from the depth buffer lacking precision.</p>
+<p><img src="/img/pathtracer_devlog/self-intersection.png" alt="self-intersection"></p>
+<p>The <a href="https://www.reedbeta.com/blog/depth-precision-visualized/">Depth Precision Visualized</a> is a great visual explanation of depth buffer precision problems.</p>
+<p>There were two ways to solve the problem:</p>
+<ol>
+<li>Choosing a larger near plane value to reduce the steepness of the \(1/z\) asymptote.</li>
+<li>Reversing the near and far plane, i.e. <em>reverse Z projection</em>.</li>
+</ol>
+<p>Moving the near plane a bit further away from zero (from <code>0.1</code> to <code>&gt; 0.5</code>) actually solved the z-fighting issue, but also caused visible clipping when moving around the Sponza scene.</p>
+<p>Reverse Z projection is implemented, in the three steps mentiond in <a href="https://tomhultonharrop.com/mathematics/graphics/2023/08/06/reverse-z.html">this blog post</a> (depth comparison function to greater instead of less, clear the depth buffer with 0 instead of 1, and multiply the projection matrix with the reverse-z matrix to flip the planes).</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>glm::mat4 FlyCameraController::viewReverseZProjectionMatrix() <span style="color:#00f">const</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> glm::mat4 reverseZ = glm::mat4(
+</span></span><span style="display:flex;"><span>                                    1.0f, 0.0f,  0.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                    0.0f, 1.0f,  0.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                    0.0f, 0.0f, -1.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                    0.0f, 0.0f,  1.0f, 1.0f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">float</span>     near = 0.1f;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">float</span>     far = 1000.0f;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> glm::mat4 project =
+</span></span><span style="display:flex;"><span>        glm::perspective(mVfov.asRadians(), aspectRatio(mWindowSize), near, far);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> glm::mat4 view = glm::lookAt(origin, lookAt, up);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> reverseZ * project * view;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</h2>
 <p><em>2024-03-31</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/41ee49872d075746d69084ad242f622e37b9e389">41ee498</a></em></p>
 <p>The <code>HybridRenderer</code> is renamed <code>DeferredRenderer</code> as that is a more frequently used term in this log and literature.</p>
@@ -128,7 +241,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>The function <code>worldFromUv</code> uses the inverse view projection matrix to calculate near projection plane coordinates from the given UV coordinate. The UV coordinate can be transformed into a normalized device coordinate \(\mathbf{x}_{ndc}\) on the camera frustum&rsquo;s near plane, but it will not contain the \(w\) value used in the divide-by-w step:</p>
+</div><p>The function <code>worldFromUv</code> uses the inverse view projection matrix to calculate near projection plane coordinates from the given UV coordinate. The UV coordinate can be transformed into a normalized device coordinate \(\mathbf{x}_{ndc}\) on the camera frustum&rsquo;s near plane, but it will be scaled by \(1 / w\) value from the divide-by-w step:</p>
 <p>$$
 \begin{bmatrix}
 {x} / {w_0} \\
@@ -161,7 +274,7 @@ $$</p>
 <img src="/img/pathtracer_devlog/sponza-albedo.png" alt="lighting pass albedo"></p>
 <p><em>The path traced result for reference. Note that the sky is exactly the same is in the deferred pass.</em>
 <img src="/img/pathtracer_devlog/sponza-reference.png" alt="reference path tracer comparison"></p>
-<h2 id="first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</h2>
+<h2 id="first-steps-towards-a-deferred-renderer-">First steps towards a deferred renderer 👣</h2>
 <p><em>2024-03-30</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/3d1c87196b637cf0c78ecbf6ab14dc8f2b0c1884">3d1c871</a></em></p>
 <p>A new deferred renderer, the <code>HybridRenderer</code> class, is added alongside the existing path tracer. The deferred renderer will use path tracing for lighting, but it will replace the primary ray-scene intersection with the output of the rasterization pipeline, which is much faster than using a ray tracing.</p>
@@ -244,7 +357,7 @@ $$</p>
 <p>A small break from the usual progress entries. Instead, two images from unsuccesful attempts to render a 3d model using the regular rasterization pipeline.</p>
 <p><em>Umm, was I supposed to use an index buffer to access the vertices?</em>
 <img src="/img/pathtracer_devlog/deconstructed-duck.png" alt="deconstructed model"></p>
-<p><em>The model textures are in BGRA8Unorm, not RGBA8Unorm aren&rsquo;t they?</em>
+<p><em>The model textures are BGRA8Unorm, not RGBA8Unorm, aren&rsquo;t they?</em>
 <img src="/img/pathtracer_devlog/blue-duck.png" alt="blue model"></p>
 <h2 id="copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</h2>
 <p><em>2024-03-22</em></p>
@@ -1555,8 +1668,9 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#deferred-direct-lighting">Deferred direct lighting</a></li>
     <li><a href="#rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</a></li>
-    <li><a href="#first-steps-towards-a-deferred-renderer">First steps towards a deferred renderer</a></li>
+    <li><a href="#first-steps-towards-a-deferred-renderer-">First steps towards a deferred renderer 👣</a></li>
     <li><a href="#gallery-of-failures">Gallery of failures</a></li>
     <li><a href="#copying-shader-source-files-into-a-string-at-build-time">Copying shader source files into a string at build time</a></li>
     <li><a href="#depth-of-field-using-the-thin-lens-approximation">Depth of field using the thin lens approximation</a></li>

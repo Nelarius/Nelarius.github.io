@@ -14,10 +14,10 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Deferred direct lighting 2024-04-22
-Commit: 2f59399
-Direct lighting is added to the lighting pass. The primary ray intersection with the scene is reconstructed from the gbuffers using a slightly modified version of the function from the previous entry.
-1 2 3 4 5 6 fn worldFromUv(uv: vec2f, depthSample: f32) -&amp;gt; vec3f { let ndc = vec4(2.</description>
+Support for larger scenes 2024-04-27
+Commit: 26030ac
+A number of changes have been made over the last few weeks to support the loading and rendering of additional, larger, scenes.
+Make positionOffset more conservative to help with larger scenes. In order to fight some remaining z-fighting which occurs in the distance of large open spaces, the position offset from the intersected geometry is made more conservative than before.</description>
     </item>
     
     <item>

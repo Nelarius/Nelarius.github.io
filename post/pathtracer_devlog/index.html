@@ -72,6 +72,25 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="support-for-larger-scenes">Support for larger scenes</h2>
+<p><em>2024-04-27</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/26030ac0490c801c5cc1898714e50443da93fee6">26030ac</a></em></p>
+<p>A number of changes have been made over the last few weeks to support the loading and rendering of additional, larger, scenes.</p>
+<ul>
+<li><a href="https://github.com/Nelarius/rayfinder/commit/26030ac0490c801c5cc1898714e50443da93fee6">Make positionOffset more conservative to help with larger scenes</a>. In order to fight some remaining z-fighting which occurs in the distance of large open spaces, the position offset from the intersected geometry is made more conservative than before.</li>
+<li><a href="https://github.com/Nelarius/rayfinder/commit/a27f10c8c8f5ab20d17bdeb194e3fdd8d2f85ecf">Load single pixel textures</a>. The San Miguel courtyard scene contains single pixel textures, stored in the <code>&quot;baseColorFactor&quot;</code> field in glTF.</li>
+<li><a href="https://github.com/Nelarius/rayfinder/commit/221884f03d90e5ae6d1e0c172c1f78392002ba6a">Increase GPU limits to unconstrain size of resources that can be used</a>. The San Miguel and Rungholt minecraft scene both contain close to a gigabyte of geometry and textures. The GPU adapter limits are increased to accommodate the new scene sizes.
+<ul>
+<li>Related: <a href="https://github.com/Nelarius/rayfinder/commit/4389072d350746e14c6eb075963c85db2024b90d">Throw exception when gpu buffer fails to map on creation</a>. Improved error reporting when a memory map request occurs over the device limit buffer size limit.</li>
+</ul>
+</li>
+<li><a href="https://github.com/Nelarius/rayfinder/commit/d6351d0b4035bd4273eb1f7c7f9a11c999e1d4f6">Bump dawn to chromium/6385</a>. The latest version of Dawn fixes some Vulkan allocator OOM errors which occur when creating buffers within the new, larger, limits.</li>
+</ul>
+<p>New scenes: <a href="https://github.com/nelarius/rayfinder-assets">rayfinder-assets</a>.</p>
+<p><em>san-miguel-low-poly.glb</em></p>
+<p><img src="/img/pathtracer_devlog/san-miguel-low-poly.png" alt="san-miguel-low-poly"></p>
+<p><em>rungholt.glb</em></p>
+<p><img src="/img/pathtracer_devlog/rungholt.png" alt="rungholt"></p>
 <h2 id="deferred-direct-lighting">Deferred direct lighting</h2>
 <p><em>2024-04-22</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/2f59399c28c27245ec19d247bd638281909ca41b">2f59399</a></em></p>
@@ -1668,6 +1687,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#support-for-larger-scenes">Support for larger scenes</a></li>
     <li><a href="#deferred-direct-lighting">Deferred direct lighting</a></li>
     <li><a href="#rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</a></li>
     <li><a href="#first-steps-towards-a-deferred-renderer-">First steps towards a deferred renderer 👣</a></li>

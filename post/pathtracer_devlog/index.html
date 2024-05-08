@@ -72,7 +72,105 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="support-for-larger-scenes">Support for larger scenes</h2>
+<h2 id="deferred-bounced-lighting">Deferred bounced lighting</h2>
+<p><em>2024-04-28</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/7526265cf50cb6b7be5a61eb0ac6a64d89bc1394">7526265</a></em></p>
+<p>Bounced lighting is added to the deferred render pipeline. The <code>surfaceColor</code> function now contains an identical diffuse sampling step as the reference path tracer. Output is identical to the reference path tracer without any accumulation.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>@must_use
+</span></span><span style="display:flex;"><span> <span style="color:#00f">fn</span> surfaceColor(rng: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;, primaryPos: <span style="color:#2b91af">vec3f</span>, primaryNormal: <span style="color:#2b91af">vec3f</span>, primaryAlbedo: <span style="color:#2b91af">vec3f</span>) -&gt; <span style="color:#2b91af">vec3f</span> {
+</span></span><span style="display:flex;"><span>     var position = primaryPos;
+</span></span><span style="display:flex;"><span>     var normal = primaryNormal;
+</span></span><span style="display:flex;"><span>     var albedo = primaryAlbedo;
+</span></span><span style="display:flex;"><span>     var radiance = vec3(0f);
+</span></span><span style="display:flex;"><span>     var throughput = vec3(1f);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>     radiance += throughput * lightSample(rng, position, normal, albedo);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>     <span style="color:#00f">for</span> (var bounce = 1; bounce &lt; NUM_BOUNCES; bounce += 1) {
+</span></span><span style="display:flex;"><span>         <span style="color:#00f">let</span> wi = evalImplicitLambertian(normal, rng);
+</span></span><span style="display:flex;"><span>         <span style="color:#00f">let</span> ray = Ray(position, wi);
+</span></span><span style="display:flex;"><span>         throughput *= albedo;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>         var hit: <span style="color:#2b91af">Intersection</span>;
+</span></span><span style="display:flex;"><span>         <span style="color:#00f">if</span> rayIntersectBvh(ray, T_MAX, &amp;hit) {
+</span></span><span style="display:flex;"><span>             position = hit.p;
+</span></span><span style="display:flex;"><span>             normal = hit.n;
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> uv = hit.uv;
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> textureDescriptorIdx = hit.textureDescriptorIdx;
+</span></span><span style="display:flex;"><span>             albedo = evalTexture(textureDescriptorIdx, uv);
+</span></span><span style="display:flex;"><span>         } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> v = ray.direction;
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> s = skyState.sunDirection;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> theta = acos(v.y);
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> gamma = acos(clamp(dot(v, s), -1f, 1f));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">let</span> skyRadiance = vec3f(
+</span></span><span style="display:flex;"><span>                 skyRadiance(theta, gamma, CHANNEL_R),
+</span></span><span style="display:flex;"><span>                 skyRadiance(theta, gamma, CHANNEL_G),
+</span></span><span style="display:flex;"><span>                 skyRadiance(theta, gamma, CHANNEL_B)
+</span></span><span style="display:flex;"><span>             );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>             radiance += throughput * skyRadiance;
+</span></span><span style="display:flex;"><span>             <span style="color:#00f">break</span>;
+</span></span><span style="display:flex;"><span>         }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>         radiance += throughput * lightSample(rng, position, normal, albedo);
+</span></span><span style="display:flex;"><span>     }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>     <span style="color:#00f">return</span> radiance;
+</span></span><span style="display:flex;"><span> }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="support-for-larger-scenes">Support for larger scenes</h2>
 <p><em>2024-04-27</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/26030ac0490c801c5cc1898714e50443da93fee6">26030ac</a></em></p>
 <p>A number of changes have been made over the last few weeks to support the loading and rendering of additional, larger, scenes.</p>
@@ -81,10 +179,10 @@
 <li><a href="https://github.com/Nelarius/rayfinder/commit/a27f10c8c8f5ab20d17bdeb194e3fdd8d2f85ecf">Load single pixel textures</a>. The San Miguel courtyard scene contains single pixel textures, stored in the <code>&quot;baseColorFactor&quot;</code> field in glTF.</li>
 <li><a href="https://github.com/Nelarius/rayfinder/commit/221884f03d90e5ae6d1e0c172c1f78392002ba6a">Increase GPU limits to unconstrain size of resources that can be used</a>. The San Miguel and Rungholt minecraft scene both contain close to a gigabyte of geometry and textures. The GPU adapter limits are increased to accommodate the new scene sizes.
 <ul>
-<li>Related: <a href="https://github.com/Nelarius/rayfinder/commit/4389072d350746e14c6eb075963c85db2024b90d">Throw exception when gpu buffer fails to map on creation</a>. Improved error reporting when a memory map request occurs over the device limit buffer size limit.</li>
+<li>Related: <a href="https://github.com/Nelarius/rayfinder/commit/4389072d350746e14c6eb075963c85db2024b90d">Throw exception when gpu buffer fails to map on creation</a>. Improved error reporting when a memory map request occurs over the device buffer size limit.</li>
 </ul>
 </li>
-<li><a href="https://github.com/Nelarius/rayfinder/commit/d6351d0b4035bd4273eb1f7c7f9a11c999e1d4f6">Bump dawn to chromium/6385</a>. The latest version of Dawn fixes some Vulkan allocator OOM errors which occur when creating buffers within the new, larger, limits.</li>
+<li><a href="https://github.com/Nelarius/rayfinder/commit/d6351d0b4035bd4273eb1f7c7f9a11c999e1d4f6">Bump dawn to chromium/6385</a>. The latest version of Dawn fixes some Vulkan allocator OOM errors which occur when creating buffers within the new, larger, device limits.</li>
 </ul>
 <p>New scenes: <a href="https://github.com/nelarius/rayfinder-assets">rayfinder-assets</a>.</p>
 <p><em>san-miguel-low-poly.glb</em></p>
@@ -1687,6 +1785,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#deferred-bounced-lighting">Deferred bounced lighting</a></li>
     <li><a href="#support-for-larger-scenes">Support for larger scenes</a></li>
     <li><a href="#deferred-direct-lighting">Deferred direct lighting</a></li>
     <li><a href="#rendering-the-sky-and-albedo-in-a-deferred-render-pass">Rendering the sky and albedo in a deferred render pass</a></li>

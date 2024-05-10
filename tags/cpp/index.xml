@@ -24,10 +24,10 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Deferred bounced lighting 2024-04-28
-Commit: 7526265
-Bounced lighting is added to the deferred render pipeline. The surfaceColor function now contains an identical diffuse sampling step as the reference path tracer. Output is identical to the reference path tracer without any accumulation.
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 @must_use fn surfaceColor(rng: ptr&amp;lt;function, u32&amp;gt;, primaryPos: vec3f, primaryNormal: vec3f, primaryAlbedo: vec3f) -&amp;gt; vec3f { var position = primaryPos; var normal = primaryNormal; var albedo = primaryAlbedo; var radiance = vec3(0f); var throughput = vec3(1f); radiance += throughput * lightSample(rng, position, normal, albedo); for (var bounce = 1; bounce &amp;lt; NUM_BOUNCES; bounce += 1) { let wi = evalImplicitLambertian(normal, rng); let ray = Ray(position, wi); throughput *= albedo; var hit: Intersection; if rayIntersectBvh(ray, T_MAX, &amp;amp;hit) { position = hit.</description>
+Spatiotemporal blue noise 2024-05-11
+Commit: 18f5dbb
+An improved sampling noise distribution is implemented.
+The type of noise used to produce the random numbers used to sample the light and surface normal has an impact on the final image. The pathtracer has been using &amp;ldquo;white noise&amp;rdquo; so far, so-called because it contains both high and low-frequency jitters.</description>
     </item>
     
   </channel>

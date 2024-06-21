@@ -72,7 +72,58 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
-<h2 id="spatiotemporal-blue-noise">Spatiotemporal blue noise</h2>
+<h2 id="raytracing-in-a-compute-pipeline">Raytracing in a compute pipeline</h2>
+<p><em>2024-06-21</em></p>
+<p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/d06c8c93c160da3f48369666d95e369a167c3932">d06c8c9</a></em></p>
+<p>Raytracing is moved from the fragment shader to a compute shader. The compute shader outputs the color into a storage buffer. A new render pass, the <em>resolve pass</em>, is introduced. It renders a fullscreen quad, and outputs the color from the storage buffer as the fragment color. The modification is fairly straightforward, except for one gotcha.</p>
+<p>Previously, the depth buffer was sampled using a <code>textureIdx</code> calculated from the UV coordinate from the vertex shader.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> uv = <span style="color:#00f">in</span>.texCoord;
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> textureIdx = vec2u(floor(uv * uniforms.framebufferSize));
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> depthSample = textureLoad(gbufferDepth, textureIdx, 0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> depthSample == 0.0 {
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> world = worldFromUv(uv, depthSample);
+</span></span><span style="display:flex;"><span><span style="color:#008000">// ...
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The UV coordinate from the vertex shader is located at the center of the pixel, and is exactly where the depth sample is located.</p>
+<p>In the compute shader, texture index and the UV coordinate is calculated the other way around. In the compute shader, we dispatch one job per pixel, and we can treat the global shader invocation id as a texture index. We compute the UV based on the texture index. This is the naive way of doing it:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> textureIdx = globalInvocationId.xy;
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> uv = vec2f(globalInvocationId.xy) / uniforms.framebufferSize;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This will result in completely broken rendering (ask me how I know!).</p>
+<p><img src="/img/pathtracer_devlog/broken-inverse-projection.png" alt="broken-inverse-projection"></p>
+<p>The depth sample at <code>textureIdx</code> and the UV coordinate don&rsquo;t align. The world space position we calculate from these two values is incorrect, resulting in ray self-intersection issues. The correct way to proceed is to place the UV coordinate <strong>at the center of the pixel</strong>, so that it matches the place where the depth sample was taken:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">let</span> textureIdx = globalInvocationId.xy;
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> uv = (vec2f(globalInvocationId.xy) + vec2f(0.5)) / uniforms.framebufferSize;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>With this in place, raytracing in the compute shader produces identical result to before.</p>
+<h2 id="animated-blue-noise">Animated blue noise</h2>
 <p><em>2024-05-11</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/18f5dbb515a48ae4df7fc64cc457052de2e457e4">18f5dbb</a></em></p>
 <p>An improved sampling noise distribution is implemented.</p>
@@ -90,7 +141,7 @@ def r2(n):
 <p><img src="/img/pathtracer_devlog/circle-distribution.png" alt="circle-distribution"></p>
 <p><img src="/img/pathtracer_devlog/cosine-hemisphere-distribution.png" alt="cone-distribution"></p>
 <p>For each frame, you get a different value with very low spatial discrepancy. Unfortunately, the R2 sequence alone can&rsquo;t be used to sample directions in the raytracing shader. Since each pixel has the same frame count, each pixel would be using the exact same sequence of &ldquo;random numbers&rdquo;. This results in visual artifacts, such as jittery shadows with bands.</p>
-<p>Inspired by the article on <a href="https://link.springer.com/chapter/10.1007/978-1-4842-7185-8_24">Using Blue Noise for Ray Traced Soft Shadows</a>, spatial decorrelation is added to the R2 sequence in the form of blue noise. Blue noise is explained in depth in the article, and is well worth a read. Unlike in the article, where a single channel of blue noise is used, and animated using a 1-dimensional R-sequence, I found it easier to work with two-dimensional blue noise and the R2 sequence. That way, I had no issues with the noise even over very large frame counts (<em>n</em>) for both soft shadows as well as sampling the cosine hemispheres.</p>
+<p>Inspired by the article on <a href="https://link.springer.com/chapter/10.1007/978-1-4842-7185-8_24">Using Blue Noise for Ray Traced Soft Shadows</a>, spatial decorrelation is added to the R2 sequence in the form of <strong>blue noise</strong>. Blue noise is explained in depth in the article, and is well worth a read. Unlike in the article, where a single channel of blue noise is used, and animated using a 1-dimensional R-sequence, I found it easier to work with two-dimensional blue noise and the R2 sequence. That way, I had no issues with the noise even over very large frame counts (<em>n</em>) for both soft shadows as well as sampling the cosine hemispheres.</p>
 <p>To recap, the animated noise function has a spatial component (blue noise) and a temporal component (R2 sequence driven by the frame count).</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
@@ -112,13 +163,13 @@ def r2(n):
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> animatedBlueNoise(coord: <span style="color:#2b91af">vec2u</span>, frameIdx: <span style="color:#2b91af">u32</span>, totalSampleCount: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">vec2f</span> {
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> animatedBlueNoise(coord: <span style="color:#2b91af">vec2u</span>, frameIdx: <span style="color:#2b91af">u32</span>, frameIdxCycleLen: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">vec2f</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// The spatial component
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> idx = (coord.y % blueNoise.height) * blueNoise.width + (coord.x % blueNoise.width);
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> blueNoise = blueNoise.data[idx];
 </span></span><span style="display:flex;"><span>    
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// The temporal component
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> n = frameIdx % totalSampleCount;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> n = frameIdx % frameIdxCycleLen;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> a1 = 0.7548776662466927f;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> a2 = 0.5698402909980532f;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> r2Seq = fract(vec2(
@@ -1858,7 +1909,8 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
-    <li><a href="#spatiotemporal-blue-noise">Spatiotemporal blue noise</a></li>
+    <li><a href="#raytracing-in-a-compute-pipeline">Raytracing in a compute pipeline</a></li>
+    <li><a href="#animated-blue-noise">Animated blue noise</a></li>
     <li><a href="#deferred-bounced-lighting">Deferred bounced lighting</a></li>
     <li><a href="#support-for-larger-scenes">Support for larger scenes</a></li>
     <li><a href="#deferred-direct-lighting">Deferred direct lighting</a></li>

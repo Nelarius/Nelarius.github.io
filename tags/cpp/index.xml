@@ -24,10 +24,9 @@ I reviewed some of the details of initialization, and developed some guidelines 
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Spatiotemporal blue noise 2024-05-11
-Commit: 18f5dbb
-An improved sampling noise distribution is implemented.
-The type of noise used to produce the random numbers used to sample the light and surface normal has an impact on the final image. The pathtracer has been using &amp;ldquo;white noise&amp;rdquo; so far, so-called because it contains both high and low-frequency jitters.</description>
+Raytracing in a compute pipeline 2024-06-21
+Commit: d06c8c9
+Raytracing is moved from the fragment shader to a compute shader. The compute shader outputs the color into a storage buffer. A new render pass, the resolve pass, is introduced. It renders a fullscreen quad, and outputs the color from the storage buffer as the fragment color.</description>
     </item>
     
   </channel>

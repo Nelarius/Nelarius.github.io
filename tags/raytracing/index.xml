@@ -14,9 +14,9 @@
       
       <guid>https://nelari.us/post/pathtracer_devlog/</guid>
       <description>This post is a devlog for my rayfinder project. Follow along to see the progress, starting from scratch by opening a simple window.
-Raytracing in a compute pipeline 2024-06-21
-Commit: d06c8c9
-Raytracing is moved from the fragment shader to a compute shader. The compute shader outputs the color into a storage buffer. A new render pass, the resolve pass, is introduced. It renders a fullscreen quad, and outputs the color from the storage buffer as the fragment color.</description>
+First step towards temporal filtering: simple accumulation 2024-06-24
+Commit: 29eebc8
+The first step towards temporal accumulation with a moving camera is implemented. The reference path tracer previously implemented temporal accumulation, but only when the camera was stationary. When the camera was moved, the render was invalidated and started from scratch.</description>
     </item>
     
     <item>

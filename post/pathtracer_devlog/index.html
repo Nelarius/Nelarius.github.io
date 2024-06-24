@@ -72,6 +72,66 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>This post is a devlog for my <a href="https://github.com/Nelarius/rayfinder">rayfinder</a> project. Follow along to see the progress, starting from scratch by opening a simple window.</p>
+<h2 id="first-step-towards-temporal-filtering-simple-accumulation">First step towards temporal filtering: simple accumulation</h2>
+<p><em>2024-06-24</em></p>
+<p><em>Commit</em>: <a href="https://github.com/Nelarius/rayfinder/commit/29eebc8aad7df205ec35dda4bd1e4eca4b0e4ac9">29eebc8</a></p>
+<p>The first step towards temporal accumulation with a moving camera is implemented. The reference path tracer previously implemented temporal accumulation, but only when the camera was stationary. When the camera was moved, the render was invalidated and started from scratch.</p>
+<p>The temporal accumulation is inspired by the <a href="https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/">Temporal AA and the Quest for the holy Trail</a> blog post. The first two steps, jitter and resolve, are implemented here.</p>
+<p>The jitter matrix offsets the image by a random subpixel amount each from, along the x and y axis. I used the <a href="https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/">2-dimensional golden ratio sequence</a> as a source of low-discrepancy values, just like previously in the animated blue noise section.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>glm::mat4       jitterMat = glm::mat4(1.0f);
+</span></span><span style="display:flex;"><span><span style="color:#00f">const</span> glm::vec2 j = r2Sequence(frameCount, 1 &lt;&lt; 20);
+</span></span><span style="display:flex;"><span>jitterMat[3][0] = (j.x - 0.5f) / framebufferSize.x;
+</span></span><span style="display:flex;"><span>jitterMat[3][1] = (j.y - 0.5f) / framebufferSize.y;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The view projection matrix is replaced with the view projection matrix multiplied by this jitter matrix. The image jitters slightly, yielding samples from different parts of the pixel over time.</p>
+<p>Next, in the resolve pass, the pixel&rsquo;s final color is computed based on the current and previous frame&rsquo;s sample. The current color sample is computed in the lighting pass. The image no longer jitters after this accumulation step as the samples from the different parts of the pixel are averaged together to produce a stable pixel value.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#008000">// The storage buffer populated by the raytracing compute shader.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>@group(1) @binding(0) var&lt;storage, read_write&gt; sampleBuffer: <span style="color:#2b91af">array</span>&lt;array&lt;<span style="color:#2b91af">f32</span>, 3&gt;&gt;;
+</span></span><span style="display:flex;"><span><span style="color:#008000">// The storage buffer for persisting the previous samples.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>@group(1) @binding(1) var&lt;storage, read_write&gt; accumulationBuffer: <span style="color:#2b91af">array</span>&lt;array&lt;<span style="color:#2b91af">f32</span>, 3&gt;&gt;;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// elsewhere in code...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> sample = sampleBuffer[sampleBufferIdx];
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> currentColor = vec3f(sample[0], sample[1], sample[2]);
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> previousSample = accumulationBuffer[sampleBufferIdx];
+</span></span><span style="display:flex;"><span><span style="color:#00f">let</span> previousColor = vec3f(previousSample[0], previousSample[1], previousSample[2]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>color = 0.1 * currentColor + 0.9 * previousColor;
+</span></span><span style="display:flex;"><span>accumulationBuffer[sampleBufferIdx] = array&lt;<span style="color:#2b91af">f32</span>, 3&gt;(color.r, color.g, color.b);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>This simple sample accumulation produces an image with much less noise than before. However, the moving average alone does not account for the moving camera and results in ghosting artifacts due to camera motion.</p>
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
+<p><img src="/img/pathtracer_devlog/duck-camera-ghosting.mp4" alt="camera-ghosting"></p>
 <h2 id="raytracing-in-a-compute-pipeline">Raytracing in a compute pipeline</h2>
 <p><em>2024-06-21</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/d06c8c93c160da3f48369666d95e369a167c3932">d06c8c9</a></em></p>
@@ -163,13 +223,13 @@ def r2(n):
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> animatedBlueNoise(coord: <span style="color:#2b91af">vec2u</span>, frameIdx: <span style="color:#2b91af">u32</span>, frameIdxCycleLen: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">vec2f</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#008000">// The spatial component
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> animatedBlueNoise(coord: <span style="color:#2b91af">vec2u</span>, frameCount: <span style="color:#2b91af">u32</span>, frameCountCycle: <span style="color:#2b91af">u32</span>) -&gt; <span style="color:#2b91af">vec2f</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Spatial component
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> idx = (coord.y % blueNoise.height) * blueNoise.width + (coord.x % blueNoise.width);
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> blueNoise = blueNoise.data[idx];
-</span></span><span style="display:flex;"><span>    
-</span></span><span style="display:flex;"><span>    <span style="color:#008000">// The temporal component
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> n = frameIdx % frameIdxCycleLen;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Temporal component
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> n = frameCount % frameCountCycle;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> a1 = 0.7548776662466927f;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> a2 = 0.5698402909980532f;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> r2Seq = fract(vec2(
@@ -1909,6 +1969,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#first-step-towards-temporal-filtering-simple-accumulation">First step towards temporal filtering: simple accumulation</a></li>
     <li><a href="#raytracing-in-a-compute-pipeline">Raytracing in a compute pipeline</a></li>
     <li><a href="#animated-blue-noise">Animated blue noise</a></li>
     <li><a href="#deferred-bounced-lighting">Deferred bounced lighting</a></li>

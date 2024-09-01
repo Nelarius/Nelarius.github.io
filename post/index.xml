@@ -6,7 +6,17 @@
     <description>Recent content in Posts on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 16 Nov 2023 08:03:00 +0200</lastBuildDate><atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 01 Sep 2024 07:22:51 +0300</lastBuildDate><atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A quick look at Apple Silicon&#39;s hardware accelerated ray tracing performance</title>
+      <link>https://nelari.us/post/metal-raytracing-performance/</link>
+      <pubDate>Sun, 01 Sep 2024 07:22:51 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/metal-raytracing-performance/</guid>
+      <description>To develop my main ray tracing renderer project, I have been working on a Macbook Air with an M2 chip. The renderer&amp;rsquo;s performance on the laptop has not been great, with frame rates in the decimals at fullscreen resolutions.
+The M3 chip was introduced fairly recently (half a year ago at the time of writing) with support for ray tracing in the hardware. Anectodally, I have seen reports of 100 % improvements in performance.</description>
+    </item>
+    
     <item>
       <title>Notes on C&#43;&#43; initialization</title>
       <link>https://nelari.us/post/cpp_initialization_notes/</link>

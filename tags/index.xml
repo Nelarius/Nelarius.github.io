@@ -6,22 +6,31 @@
     <description>Recent content in Tags on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 16 Nov 2023 08:03:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 01 Sep 2024 07:22:51 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>cpp</title>
-      <link>https://nelari.us/tags/cpp/</link>
-      <pubDate>Thu, 16 Nov 2023 08:03:00 +0200</pubDate>
+      <title>metal</title>
+      <link>https://nelari.us/tags/metal/</link>
+      <pubDate>Sun, 01 Sep 2024 07:22:51 +0300</pubDate>
       
-      <guid>https://nelari.us/tags/cpp/</guid>
+      <guid>https://nelari.us/tags/metal/</guid>
       <description></description>
     </item>
     
     <item>
       <title>raytracing</title>
       <link>https://nelari.us/tags/raytracing/</link>
-      <pubDate>Mon, 30 Oct 2023 17:19:21 +0200</pubDate>
+      <pubDate>Sun, 01 Sep 2024 07:22:51 +0300</pubDate>
       
       <guid>https://nelari.us/tags/raytracing/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>cpp</title>
+      <link>https://nelari.us/tags/cpp/</link>
+      <pubDate>Thu, 16 Nov 2023 08:03:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/cpp/</guid>
       <description></description>
     </item>
     

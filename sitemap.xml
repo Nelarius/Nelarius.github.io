@@ -2,25 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://nelari.us/tags/cpp/</loc>
-    <lastmod>2023-11-16T08:03:00+02:00</lastmod>
+    <loc>https://nelari.us/post/metal-raytracing-performance/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/metal/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
   </url><url>
     <loc>https://nelari.us/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/raytracing/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/</loc>
+    <lastmod>2024-09-01T07:22:51+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/cpp/</loc>
     <lastmod>2023-11-16T08:03:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/cpp_initialization_notes/</loc>
     <lastmod>2023-11-16T08:03:00+02:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/post/</loc>
-    <lastmod>2023-11-16T08:03:00+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/</loc>
-    <lastmod>2023-11-16T08:03:00+02:00</lastmod>
-  </url><url>
     <loc>https://nelari.us/post/pathtracer_devlog/</loc>
-    <lastmod>2023-10-30T17:19:21+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/raytracing/</loc>
     <lastmod>2023-10-30T17:19:21+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/webgpu/</loc>

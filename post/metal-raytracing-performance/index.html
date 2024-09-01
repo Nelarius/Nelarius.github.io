@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>A quick look at Apple Silicon&#39;s hardware accelerated ray tracing performance // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="A simple test case measures how much of a boost can be obtained with hardware accelerated raytracing on Apple Silicon.">
+    
+
+        <meta property="og:title" content="A quick look at Apple Silicon&#39;s hardware accelerated ray tracing performance" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/metal-raytracing-performance/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.119.0">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">A quick look at Apple Silicon&#39;s hardware accelerated ray tracing performance</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/metal-raytracing-performance/" class="article-date">
+                <time datetime='2024-09-01T07:22:51.000&#43;03:00' itemprop="datePublished">2024-09-01</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>To develop my main <a href="https://github.com/nelarius/rayfinder">ray tracing renderer project</a>, I have been working on a Macbook Air with an M2 chip. The renderer&rsquo;s performance on the laptop has not been great, with frame rates in the decimals at fullscreen resolutions.</p>
+<p>The M3 chip was introduced fairly recently (half a year ago at the time of writing) with support for ray tracing in the hardware. Anectodally, I have seen <a href="https://www.reddit.com/r/macgaming/comments/17u9jd0/what_are_the_benefits_m3_hardware_raytracing/">reports of 100 % improvements</a> in performance. In this post, a simple ray tracing shader is executed on 4 different Macbooks to gauge what sort of ray tracing performance boost can be obtained in a home-made renderer.</p>
+<h2 id="the-benchmark">The benchmark</h2>
+<p><strong>Shader</strong></p>
+<p>To try to isolate the ray tracing activity, the <a href="https://github.com/Nelarius/metal-raytracer">benchmark program</a> is a simple Metal renderer which only casts one ray per pixel per frame. The render pass renders a fullscreen quad to the screen, and for each pixel, casts a single ray into the scene. The albedo texture color of the ray&rsquo;s intersection with the scene is used as the color output. All the textures are stored in a single buffer, and the texture lookup reads a single pixel from the texture at the UV coordinate without any filtering.</p>
+<p>Here is the gist of the fragment shader.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;metal_stdlib&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;metal_geometric&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;metal_raytracing&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">using</span> <span style="color:#00f">namespace</span> metal;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// Each triangle is associated with a `PrimitiveData` entry.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// These can be looked up using the intersection&#39;s `primitive_id`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">struct</span> <span style="color:#2b91af">PrimitiveData</span> {
+</span></span><span style="display:flex;"><span>    float2 uv0;
+</span></span><span style="display:flex;"><span>    float2 uv1;
+</span></span><span style="display:flex;"><span>    float2 uv2;
+</span></span><span style="display:flex;"><span>    TextureDescriptor textureDescriptor;
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>half4 fragment fragmentMain( VertexOutput in [[stage_in]],
+</span></span><span style="display:flex;"><span>                    constant <span style="color:#00f">const</span> Uniforms&amp; uniforms [[buffer(0)]],
+</span></span><span style="display:flex;"><span>                    raytracing::acceleration_structure&lt;&gt; accelerationStructure [[buffer(1)]],
+</span></span><span style="display:flex;"><span>                    device <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span>* textureData [[buffer(2)]],
+</span></span><span style="display:flex;"><span>                    device <span style="color:#00f">const</span> PrimitiveData* primitiveData [[buffer(3)]] )
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    half4 color = half4(0.0, 0.0, 0.0, 1.0);
+</span></span><span style="display:flex;"><span>    raytracing::intersector&lt;raytracing::triangle_data&gt; intersector;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> raytracing::ray ray = generateCameraRay(uniforms.camera, in.uv.x, 1.0 - in.uv.y);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">typename</span> raytracing::intersector&lt;raytracing::triangle_data&gt;::result_type
+</span></span><span style="display:flex;"><span>                                        intersection = intersector.intersect(ray, accelerationStructure);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (intersection.type == raytracing::intersection_type::triangle) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> <span style="color:#2b91af">uint32_t</span> primitiveIdx = intersection.primitive_id;
+</span></span><span style="display:flex;"><span>        device <span style="color:#00f">const</span> PrimitiveData&amp; primitive = primitiveData[primitiveIdx];
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> float2 uv0 = primitive.uv0;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> float2 uv1 = primitive.uv1;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> float2 uv2 = primitive.uv2;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> float2 barycentricCoord = intersection.triangle_barycentric_coord;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> float2 uv = uv0 * (1.0 - barycentricCoord.x - barycentricCoord.y) +
+</span></span><span style="display:flex;"><span>                                              uv1 * barycentricCoord.x +
+</span></span><span style="display:flex;"><span>                                              uv2 * barycentricCoord.y;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">const</span> half3 rgb = textureLookup(textureData, primitive.textureDescriptor, uv);
+</span></span><span style="display:flex;"><span>        color = half4(rgb, 1.0);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> color;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Measurement</strong></p>
+<p>The fragment stage duration is measured in milliseconds using GPU counters. The method described in <a href="https://developer.apple.com/documentation/metal/gpu_counters_and_counter_sample_buffers/converting_gpu_timestamps_into_cpu_time?language=objc">&ldquo;Converting GPU Timestamps into CPU Time&rdquo;</a> is used to normalize the GPU timestamps into CPU time.</p>
+<p>The median fragment stage time from the latest 100 frames is displayed in the UI.</p>
+<p><strong>Scene</strong></p>
+<p>The benchmark scene in use is the well-known Crytek Sponza scene, with 262267 triangles. The glTF model was sourced from the <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza">Khronos Group&rsquo;s glTF sample assets</a> repository.</p>
+<p><img src="/img/metal-raytracing-performance/m2-results.png" alt="m2-benchmark"></p>
+<h2 id="results">Results</h2>
+<p>Occasional spikes in fragment stage duration were observed. The number was read from the UI once the frame rate had settled for roughly 100 frames.</p>
+<table>
+<thead>
+<tr>
+<th>Hardware</th>
+<th>Median fragment stage duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M2</td>
+<td>25.20 ms (36.69 FPS)</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>12.66 ms (79.01 FPS)</td>
+</tr>
+<tr>
+<td>M1 Pro</td>
+<td>17.56 ms (56.93 FPS)</td>
+</tr>
+<tr>
+<td>M3 Pro</td>
+<td>10 ms - 5 ms (100 - 200 FPS)</td>
+</tr>
+</tbody>
+</table>
+<p>The fragment stage duration never settled to a stable number on the M3 Pro, and the results reported for the last 100 frames was difficult to read. The range reported is roughly equal to the lowest and highest frame rate that was visible. The benchmark ran on a colleagues computer, and there may have been something running in the background. Alternatively, the normalization of the GPU timestamps may not have been working exactly correctly and fluctuations in core frequency might yield inaccurate time stamps. Nevertheless, the upper limit of the fragment stage duration on the M3 Pro (10 ms) is a similar multiple (~2x) away from the baseline M2 performance. The 5 ms duration should probably be taken with a grain of salt.</p>
+<p>In summary, it seems that the anecdotal evidence was accurate! 2x performance gains can be reaped by switching to an M3 chip, assuming that the ray tracer is not running divergent workloads in a loop in the shader.</p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#the-benchmark">The benchmark</a></li>
+    <li><a href="#results">Results</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/metal">metal
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/cpp_initialization_notes/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Notes on C&#43;&#43; initialization&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2024 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

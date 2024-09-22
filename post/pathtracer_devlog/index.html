@@ -1916,21 +1916,22 @@ $$</p>
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextFloat(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) -&gt; <span style="color:#2b91af">f32</span> {
-</span></span><span style="display:flex;"><span>    rngNextInt(state);
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#2b91af">f32</span>(*state) / <span style="color:#2b91af">f32</span>(0xffffffffu);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> x = rngNextInt(state);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#2b91af">f32</span>(x) / <span style="color:#2b91af">f32</span>(0xffffffffu);
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#00f">fn</span> rngNextInt(state: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;) {
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// PCG random number generator
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Based on https://www.shadertoy.com/view/XlGcRh
-</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> oldState = *state + 747796405u + 2891336453u;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> word = ((oldState &gt;&gt; ((oldState &gt;&gt; 28u) + 4u)) ^ oldState) * 277803737u;
-</span></span><span style="display:flex;"><span>    *state = (word &gt;&gt; 22u) ^ word;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">let</span> newState = *state * 747796405u + 2891336453u;
+</span></span><span style="display:flex;"><span>    *state = newState;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> word = ((newState &gt;&gt; ((newState &gt;&gt; 28u) + 4u)) ^ newState) * 277803737u;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (word &gt;&gt; 22u) ^ word;
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>Each frame,</p>
+</div><p>NOTE: A reader pointed out that the implementation contained in the linked commit is incorrect. The functions listed above are the correct implementation of a PCG random number generator.</p>
+<p>Each frame,</p>
 <ol>
 <li><code>rngNextFloat</code> is used in a compute shader to generate RGB values</li>
 <li>RGB values are stored in a pixel buffer</li>

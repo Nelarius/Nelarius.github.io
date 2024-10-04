@@ -129,9 +129,10 @@
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p>This simple sample accumulation produces an image with much less noise than before. However, the moving average alone does not account for the moving camera and results in ghosting artifacts due to camera motion.</p>
-<!-- raw HTML omitted -->
-<!-- raw HTML omitted -->
-<p><img src="/img/pathtracer_devlog/duck-camera-ghosting.mp4" alt="camera-ghosting"></p>
+<video controls preload="auto" width="100%"  autoplay playsinline class="html-video">
+    <source src="/post/pathtracer_devlog/duck-camera-ghosting.mp4" type="video/mp4">
+  <span></span>
+</video>
 <h2 id="raytracing-in-a-compute-pipeline">Raytracing in a compute pipeline</h2>
 <p><em>2024-06-21</em></p>
 <p><em>Commit: <a href="https://github.com/Nelarius/rayfinder/commit/d06c8c93c160da3f48369666d95e369a167c3932">d06c8c9</a></em></p>
@@ -462,18 +463,16 @@ def r2(n):
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>glm::mat4 FlyCameraController::viewReverseZProjectionMatrix() <span style="color:#00f">const</span>
 </span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> glm::mat4 reverseZ = glm::mat4(
-</span></span><span style="display:flex;"><span>                                    1.0f, 0.0f,  0.0f, 0.0f,
-</span></span><span style="display:flex;"><span>                                    0.0f, 1.0f,  0.0f, 0.0f,
-</span></span><span style="display:flex;"><span>                                    0.0f, 0.0f, -1.0f, 0.0f,
-</span></span><span style="display:flex;"><span>                                    0.0f, 0.0f,  1.0f, 1.0f);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> glm::mat4 reverseZ = glm::mat4(1.0f, 0.0f,  0.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                         0.0f, 1.0f,  0.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                         0.0f, 0.0f, -1.0f, 0.0f,
+</span></span><span style="display:flex;"><span>                                         0.0f, 0.0f,  1.0f, 1.0f);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">float</span>     near = 0.1f;
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">float</span>     far = 1000.0f;
@@ -725,7 +724,6 @@ $$</p>
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#00f">fn</span> generateCameraRay(camera: <span style="color:#2b91af">Camera</span>, rngState: <span style="color:#2b91af">ptr</span>&lt;function, <span style="color:#2b91af">u32</span>&gt;, u: <span style="color:#2b91af">f32</span>, v: <span style="color:#2b91af">f32</span>) -&gt; <span style="color:#2b91af">Ray</span> {
@@ -733,11 +731,10 @@ $$</p>
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> lensOffset = randomPointInLens.x * camera.right + randomPointInLens.y * camera.up;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> origin = camera.origin + lensOffset;
-</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> direction = normalize(
-</span></span><span style="display:flex;"><span>                            camera.lowerLeftCorner
-</span></span><span style="display:flex;"><span>                            + u * camera.horizontal
-</span></span><span style="display:flex;"><span>                            + v * camera.vertical
-</span></span><span style="display:flex;"><span>                            - origin);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">let</span> direction = normalize(camera.lowerLeftCorner
+</span></span><span style="display:flex;"><span>                              + u * camera.horizontal
+</span></span><span style="display:flex;"><span>                              + v * camera.vertical
+</span></span><span style="display:flex;"><span>                              - origin);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> Ray(origin, direction);
 </span></span><span style="display:flex;"><span>}
@@ -1764,7 +1761,7 @@ $$</p>
 </span></span><span style="display:flex;"><span>-    union
 </span></span><span style="display:flex;"><span>-    {
 </span></span><span style="display:flex;"><span>-        std::uint32_t trianglesOffset;
-</span></span><span style="display:flex;"><span>-         std::uint32_t secondChildOffset;
+</span></span><span style="display:flex;"><span>-        std::uint32_t secondChildOffset;
 </span></span><span style="display:flex;"><span>-    };                           // offset: 24, size: 4
 </span></span><span style="display:flex;"><span>-    std::uint16_t triangleCount; // offset: 28, size: 2
 </span></span><span style="display:flex;"><span>-    std::uint16_t splitAxis;     // offset: 30, size: 2
@@ -1829,16 +1826,16 @@ $$</p>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">FrameData</span> {
-</span></span><span style="display:flex;"><span>    dimensions: <span style="color:#2b91af">vec2u</span>,
-</span></span><span style="display:flex;"><span>    frameCount: <span style="color:#2b91af">u32</span>,
+</span></span><span style="display:flex;"><span>  dimensions: <span style="color:#2b91af">vec2u</span>,
+</span></span><span style="display:flex;"><span>  frameCount: <span style="color:#2b91af">u32</span>,
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#00f">struct</span> <span style="color:#2b91af">Camera</span> {
-</span></span><span style="display:flex;"><span>    eye: <span style="color:#2b91af">vec3f</span>,
-</span></span><span style="display:flex;"><span>    lowerLeftCorner: <span style="color:#2b91af">vec3f</span>,
-</span></span><span style="display:flex;"><span>    horizontal: <span style="color:#2b91af">vec3f</span>,
-</span></span><span style="display:flex;"><span>    vertical: <span style="color:#2b91af">vec3f</span>,
-</span></span><span style="display:flex;"><span>    lensRadius: <span style="color:#2b91af">f32</span>,
+</span></span><span style="display:flex;"><span>  eye: <span style="color:#2b91af">vec3f</span>,
+</span></span><span style="display:flex;"><span>  lowerLeftCorner: <span style="color:#2b91af">vec3f</span>,
+</span></span><span style="display:flex;"><span>  horizontal: <span style="color:#2b91af">vec3f</span>,
+</span></span><span style="display:flex;"><span>  vertical: <span style="color:#2b91af">vec3f</span>,
+</span></span><span style="display:flex;"><span>  lensRadius: <span style="color:#2b91af">f32</span>,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></td></tr></table>
 </div>

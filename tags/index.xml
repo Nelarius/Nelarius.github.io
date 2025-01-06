@@ -6,7 +6,25 @@
     <description>Recent content in Tags on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 01 Sep 2024 07:22:51 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 04 Jan 2025 16:11:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>C</title>
+      <link>https://nelari.us/tags/c/</link>
+      <pubDate>Sat, 04 Jan 2025 16:11:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/c/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>CMake</title>
+      <link>https://nelari.us/tags/cmake/</link>
+      <pubDate>Sat, 04 Jan 2025 16:11:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/cmake/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>metal</title>
       <link>https://nelari.us/tags/metal/</link>

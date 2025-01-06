@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Embed data into C byte arrays at build time // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="Set up a build workflow to effortlessly embed data into your executable at build time.">
+    
+
+        <meta property="og:title" content="Embed data into C byte arrays at build time" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/embedding_data_into_byte_arrays/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.119.0">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Embed data into C byte arrays at build time</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/embedding_data_into_byte_arrays/" class="article-date">
+                <time datetime='2025-01-04T16:11:00.000&#43;02:00' itemprop="datePublished">2025-01-04</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>Not having to deal with loading data from a bunch of small files makes it easier to work with your executable. You can forget about the working directory, just run your app or tests or benchmarks! Alternatively, if you need to ship a library which needs to access stored data, this is also one way of distributing the data with the library.</p>
+<p>This post contains notes about embedding arbitrary data, such as images or compiled shaders, into a C or C++ program at build time. Doing this isn&rsquo;t hard, but it can be tedious setting everything up with your build system of choice. Hopefully this saves someone time when integrating an embedding scheme in their build system of choice!</p>
+<p>I am using CMake as a build system, and so embedding data is going to be driven by CMake. Ideally, no other tools than your build system should be required for this. It&rsquo;s always painful when additional tools need to be installed and set up in order to build something.</p>
+<p>As an aside, embedding data will not require any build tools in the future. Once our compilers implement C23, the easiest way of embedding data will be to simply call <code>#embed</code> and call it a day.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">const</span> <span style="color:#2b91af">uint8_t</span> image_data[] = {
+</span></span><span style="display:flex;"><span><span style="color:#00f">#embed &#34;image.png&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>But at the time of writing, <code>#embed</code> is not yet available and we must do it ourselves.</p>
+<h2 id="c-program-for-embedding-a-file">C program for embedding a file</h2>
+<p>First, we need a small C program, called <code>embed-file</code>. Given a single file to be embedded, and a C header and source file, it will embed the input file as a single byte array.</p>
+<p>Calling the program like this</p>
+<pre tabindex="0"><code>$ embed-file assets/image.png embedded_data.h embedded_data.c
+</code></pre><p>will output the following declarations into the header file,</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">extern</span> <span style="color:#2b91af">char</span> <span style="color:#00f">const</span> IMAGE_PNG_BYTES[];
+</span></span><span style="display:flex;"><span><span style="color:#00f">extern</span> <span style="color:#2b91af">size_t</span> <span style="color:#00f">const</span> IMAGE_PNG_LENGTH;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>and the following definitions into the source file.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#2b91af">char</span> <span style="color:#00f">const</span> IMAGE_PNG_BYTES[] = {
+</span></span><span style="display:flex;"><span>    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 
+</span></span><span style="display:flex;"><span>    0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80, 0x08, 0x06, 0x00, 0x00, 0x00, 0xc3, 0x3e, 0x61, 
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>};
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">size_t</span> <span style="color:#00f">const</span> IMAGE_PNG_LENGTH = <span style="color:#00f">sizeof</span>(IMAGE_PNG_BYTES);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The C source is straightforward, and has the following assumptions or limitations:</p>
+<ul>
+<li>Only one file name extentions is supported. Files like <code>data.foo.bar</code> will yield broken variable names.</li>
+<li>File names must start with letters.</li>
+<li>Files without extentions will yield functioning code, but the variable name will look strange. The name <code>binary_file</code> will result in <code>BINARY_FILE__BYTES[]</code> being generated.</li>
+</ul>
+<p>These limitations could be solved, but since I currently only have files with <code>filename.ext</code> this is good enough.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">  9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 70
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 71
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 72
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 73
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 74
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 75
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 76
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 77
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 78
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 79
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 80
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 81
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 82
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 83
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 84
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 85
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 86
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 87
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 88
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 89
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 90
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 91
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 92
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 93
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 94
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 95
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 96
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 97
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 98
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 99
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">100
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">101
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">102
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">103
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">104
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">105
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">106
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">107
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">108
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">109
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">110
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">111
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">112
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">113
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">114
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">115
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">116
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">117
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">118
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">119
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">120
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">121
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">122
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">123
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">124
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">125
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">126
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">127
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">128
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">129
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">130
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">131
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">132
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">133
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">134
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">135
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;assert.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;ctype.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdio.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;stdlib.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f">#include</span> <span style="color:#00f">&lt;string.h&gt;</span><span style="color:#00f">
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">#define BUFFER_SIZE 256
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span> main(<span style="color:#2b91af">int</span> argc, <span style="color:#2b91af">char</span>** argv)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (argc != 4)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        fprintf(stderr, <span style="color:#a31515">&#34;Usage: %s &lt;input_binary_file&gt; &lt;output_h_file&gt; &lt;output_c_file&gt;</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, argv[0]);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">char</span> <span style="color:#00f">const</span>* <span style="color:#00f">const</span> input_binary_path = argv[1];
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">char</span> <span style="color:#00f">const</span>* <span style="color:#00f">const</span> output_h_path = argv[2];
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">char</span> <span style="color:#00f">const</span>* <span style="color:#00f">const</span> output_c_path = argv[3];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Open input binary file
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    FILE* <span style="color:#00f">const</span> input_file = fopen(input_binary_path, <span style="color:#a31515">&#34;rb&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!input_file)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        fprintf(stderr, <span style="color:#a31515">&#34;Failed to open input file: %s</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, input_binary_path);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    fseek(input_file, 0, SEEK_END);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">long</span> <span style="color:#00f">const</span> file_size = ftell(input_file);
+</span></span><span style="display:flex;"><span>    fseek(input_file, 0, SEEK_SET);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Read into buffer
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">unsigned</span> <span style="color:#2b91af">char</span>* <span style="color:#00f">const</span> buffer = malloc(file_size);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!buffer)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        fprintf(stderr, <span style="color:#a31515">&#34;Failed to allocate memory for file buffer</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>);
+</span></span><span style="display:flex;"><span>        fclose(input_file);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    fread(buffer, 1, file_size, input_file);
+</span></span><span style="display:flex;"><span>    fclose(input_file);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Extract file name and extension, in upper-case
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    assert(strlen(input_binary_path) &lt; BUFFER_SIZE - 1);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">char</span> file_name_upper[BUFFER_SIZE];
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">char</span> file_ext_upper[BUFFER_SIZE];
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">char</span>* input_path_copy = strdup(input_binary_path);
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// NOTE: `strrchr` returns last occurrence
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#2b91af">char</span>* base_name = strrchr(input_path_copy, <span style="color:#a31515">&#39;/&#39;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">char</span>* file_name = base_name ? base_name + 1 : input_path_copy;
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">char</span>* file_ext = strrchr(file_name, <span style="color:#a31515">&#39;.&#39;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (file_ext)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            *file_ext = <span style="color:#a31515">&#39;\0&#39;</span>;
+</span></span><span style="display:flex;"><span>            file_ext++;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            file_ext = <span style="color:#a31515">&#34;&#34;</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">char</span>* c = file_name; *c; ++c)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            *c = toupper(*c);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">char</span>* c = file_ext; *c; ++c)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            *c = toupper(*c);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        snprintf(file_name_upper, <span style="color:#00f">sizeof</span>(file_name_upper), <span style="color:#a31515">&#34;%s&#34;</span>, file_name);
+</span></span><span style="display:flex;"><span>        snprintf(file_ext_upper, <span style="color:#00f">sizeof</span>(file_ext_upper), <span style="color:#a31515">&#34;%s&#34;</span>, file_ext);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        free(input_path_copy);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">// Write to output files
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        FILE* <span style="color:#00f">const</span> h_file = fopen(output_h_path, <span style="color:#a31515">&#34;a&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (!h_file)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            fprintf(stderr, <span style="color:#a31515">&#34;Failed to open output file: %s</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, output_h_path);
+</span></span><span style="display:flex;"><span>            free(buffer);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        FILE* <span style="color:#00f">const</span> c_file = fopen(output_c_path, <span style="color:#a31515">&#34;a&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (!c_file)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            fprintf(stderr, <span style="color:#a31515">&#34;Failed to open output file: %s</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, output_c_path);
+</span></span><span style="display:flex;"><span>            fclose(h_file);
+</span></span><span style="display:flex;"><span>            free(buffer);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        fprintf(h_file, <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">extern char const %s_%s_BYTES[];</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, file_name_upper, file_ext_upper);
+</span></span><span style="display:flex;"><span>        fprintf(h_file, <span style="color:#a31515">&#34;extern size_t const %s_%s_LENGTH;</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, file_name_upper, file_ext_upper);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        fprintf(c_file, <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">char const %s_%s_BYTES[] = {</span><span style="color:#a31515">\n</span><span style="color:#a31515">    &#34;</span>, file_name_upper, file_ext_upper);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">long</span> i = 0; i &lt; file_size; ++i)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            fprintf(c_file, <span style="color:#a31515">&#34;0x%02x, &#34;</span>, buffer[i]);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> ((i + 1) % 16 == 0)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                fprintf(c_file, <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">    &#34;</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        fprintf(c_file, <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">};</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>);
+</span></span><span style="display:flex;"><span>        fprintf(
+</span></span><span style="display:flex;"><span>            c_file, <span style="color:#a31515">&#34;</span><span style="color:#a31515">\n</span><span style="color:#a31515">size_t const %s_%s_LENGTH = sizeof(%s_%s_BYTES);</span><span style="color:#a31515">\n</span><span style="color:#a31515">&#34;</span>, file_name_upper,
+</span></span><span style="display:flex;"><span>            file_ext_upper, file_name_upper, file_ext_upper);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        fclose(c_file);
+</span></span><span style="display:flex;"><span>        fclose(h_file);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    free(buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> EXIT_SUCCESS;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="cmake-wrapper-script-for-embedding-files">CMake wrapper script for embedding files</h2>
+<p>A CMake script is required for iterating through a list of files and calling <code>embed-file</code> on them. This script is called <code>embed_data.cmake</code> and I usually place these sorts of scripts in a <code>cmake</code> subdirectory in all my projects. A number of oddities are apparent in this script.</p>
+<ul>
+<li><code>EMBED_FILE_EXE</code> the location of the executable is passed as a parameter. This script is executed as an external script, and the usual CMake variables like <code>CMAKE_BINARY_DIR</code> are blank.</li>
+<li><code>INPUT_FILES_LIST_STR</code> Lists in CMake sre strings separated by the <code>';'</code> character.</li>
+</ul>
+<p>Note that the CMake script initializes the header and source file with the necessary pragmas, includes, and comments, and <code>embed-file</code> appends the variables containing the file content.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span><span style="color:#008000"># embed_data.cmake
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>function(<span style="color:#a31515">embed_data</span> <span style="color:#a31515">EMBED_FILE_EXE</span> <span style="color:#a31515">INPUT_FILES_LIST_STR</span> <span style="color:#a31515">H_FILE</span> <span style="color:#a31515">C_FILE</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    file(<span style="color:#a31515">WRITE</span> ${H_FILE} <span style="color:#a31515">&#34;\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">// This file is generated by CMake. Do not manually edit this file!\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">#pragma once\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">#include &lt;stddef.h&gt;\n&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    get_filename_component(<span style="color:#a31515">H_FILENAME_COMPONENT</span> ${H_FILE} <span style="color:#a31515">NAME</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    file(<span style="color:#a31515">WRITE</span> ${C_FILE} <span style="color:#a31515">&#34;\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">// This file is generated by CMake. Do not manually edit this file!\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">\n\
+</span></span></span><span style="display:flex;"><span><span style="color:#a31515">#include \&#34;</span>${H_FILENAME_COMPONENT}<span style="color:#a31515">\&#34;\n&#34;)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a31515">a</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">string(REPLACE</span> <span style="color:#a31515">&#34; &#34;</span> <span style="color:#a31515">&#34;;&#34;</span> <span style="color:#a31515">BINARY_FILES</span> ${INPUT_FILES_LIST_STR})<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    foreach(<span style="color:#a31515">BINARY_FILE</span> <span style="color:#a31515">IN</span> <span style="color:#a31515">LISTS</span> <span style="color:#a31515">BINARY_FILES</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        <span style="color:#008000"># `embed-file` called here
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        execute_process(
+</span></span><span style="display:flex;"><span>            <span style="color:#a31515">COMMAND</span> ${EMBED_FILE_EXE} ${BINARY_FILE} ${H_FILE} ${C_FILE}
+</span></span><span style="display:flex;"><span>            <span style="color:#a31515">RESULT_VARIABLE</span> <span style="color:#a31515">RESULT</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a31515">OUTPUT_VARIABLE</span> <span style="color:#a31515">OUTPUT</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a31515">ERROR_VARIABLE</span> <span style="color:#a31515">ERROR</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a31515">COMMAND_ECHO</span> <span style="color:#a31515">STDOUT</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        if(<span style="color:#a31515">NOT</span> ${RESULT} <span style="color:#a31515">EQUAL</span> <span style="color:#a31515">0</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>            message(<span style="color:#a31515">FATAL_ERROR</span> <span style="color:#a31515">&#34;Failed to embed ${BINARY_FILE}: ${ERROR}&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        endif()<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    endforeach()<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>endfunction()<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>embed_data(<span style="color:#a31515">&#34;${EMBED_FILE_EXE}&#34;</span> <span style="color:#a31515">&#34;${INPUT_FILES}&#34;</span> <span style="color:#a31515">&#34;${OUTPUT_H_FILE}&#34;</span> <span style="color:#a31515">&#34;${OUTPUT_C_FILE}&#34;</span>)<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="putting-everything-together-in-cmakeliststxt">Putting everything together in CMakeLists.txt</h2>
+<p>Finally, we need to generate a target which call the script for the files we want to embed. First, <code>embed-file</code> needs to be built.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span><span style="color:#008000"># embed-file
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>add_executable(<span style="color:#a31515">embed-file</span> <span style="color:#a31515">src/embed_file/main.c</span>)<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>We now have everything we need to define a custom command which will embed the files we list into source code at build time.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>set(<span style="color:#a31515">EMBED_DATA_SOURCE_FILES</span>
+</span></span><span style="display:flex;"><span>    ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/assets/image1.png</span>
+</span></span><span style="display:flex;"><span>    ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/assets/image2.png</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>set(<span style="color:#a31515">EMBEDDED_DATA_H</span> ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/src/embedded_data.h</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>set(<span style="color:#a31515">EMBEDDED_DATA_C</span> ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/src/embedded_data.c</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>add_custom_command(
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">OUTPUT</span> ${EMBEDDED_DATA_H} ${EMBEDDED_DATA_C}
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">COMMAND</span> ${CMAKE_COMMAND} <span style="color:#a31515">-DEMBED_FILE_EXE=</span><span style="color:#a31515">&#34;$&lt;TARGET_FILE:embed-file&gt;&#34;</span> 
+</span></span><span style="display:flex;"><span>                             <span style="color:#a31515">-DINPUT_FILES=</span><span style="color:#a31515">&#34;${EMBED_DATA_SOURCE_FILES}&#34;</span>
+</span></span><span style="display:flex;"><span>                             <span style="color:#a31515">-DOUTPUT_H_FILE=</span>${EMBEDDED_DATA_H}
+</span></span><span style="display:flex;"><span>                             <span style="color:#a31515">-DOUTPUT_C_FILE=</span>${EMBEDDED_DATA_C}
+</span></span><span style="display:flex;"><span>                             <span style="color:#a31515">-P</span> ${CMAKE_SOURCE_DIR}<span style="color:#a31515">/cmake/embed_data.cmake</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">COMMENT</span> <span style="color:#a31515">&#34;Embedding data&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">WORKING_DIRECTORY</span> ${CMAKE_SOURCE_DIR}
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">DEPENDS</span> ${EMBED_DATA_SOURCE_FILES}) <span style="color:#008000"># If input unchanged, the command is not executed
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>The location of the <code>embed-file</code> executable is given by <code>-DEMBED_FILE_EXE=&quot;$&lt;TARGET_FILE:embed-file&gt;&quot;</code>. But we need to ensure that we actually build it before this custom command is executed. To do so, a custom target is created which will depend on the output source code of our command.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>add_custom_target(<span style="color:#a31515">embed-data</span> <span style="color:#a31515">DEPENDS</span> ${EMBEDDED_DATA_C})<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>We can now add <code>embed-file</code> as a dependency of <code>embed-data</code>.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>add_dependencies(<span style="color:#a31515">embed-data</span> <span style="color:#a31515">embed-file</span>)<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>embed-data</code> can now be used as a dependency in executable targets. Any changes to the input files or file list will result in the files being re-embedded at build time.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>add_dependencies(<span style="color:#a31515">my-app</span> <span style="color:#a31515">embed-data</span>)<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>If you need to retrigger the embedding command without the input files changing, you can remove the dependency <code>DEPENDS ${EMBED_DATA_SOURCE_FILES}</code> from the command, or you can touch the files.</p>
+<pre tabindex="0"><code>$ touch assets/image1.png
+</code></pre><h2 id="masochism-implementing-embed-file-in-cmake">Masochism: implementing <code>embed-file</code> in CMake</h2>
+<p>If, for some reason, you want a pure-CMake solution, it is possible to embed data with a CMake script. This approach is orders of magnitude slower, and will start to result in flow-breaking slow build times when the file sizes exceed 50 kiB. But writing this sort of functionality in CMake makes for an interesting, if painful, exercise. Note that the following code was written in the middle of the night with a heavy dose of AI assistance.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmake" data-lang="cmake"><span style="display:flex;"><span>function(<span style="color:#a31515">binary_file_to_c_array</span> <span style="color:#a31515">INPUT_BINARY_FILE</span> <span style="color:#a31515">OUTPUT_H_FILE</span> <span style="color:#a31515">OUTPUT_C_FILE</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    file(<span style="color:#a31515">READ</span> ${INPUT_BINARY_FILE} <span style="color:#a31515">HEX_CONTENT</span> <span style="color:#a31515">CONTENT</span> <span style="color:#a31515">HEX</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    <span style="color:#008000"># Split the hex string into a list of two bytes each.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    string(<span style="color:#a31515">REGEX</span> <span style="color:#a31515">MATCHALL</span> <span style="color:#a31515">&#34;([A-Fa-f0-9][A-Fa-f0-9])&#34;</span> <span style="color:#a31515">SPLIT_HEX</span> ${HEX_CONTENT})<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    <span style="color:#008000"># https://cmake.org/cmake/help/latest/command/get_filename_component.html
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    get_filename_component(<span style="color:#a31515">FILE_NAME_WE</span> ${INPUT_BINARY_FILE} <span style="color:#a31515">NAME_WE</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    get_filename_component(<span style="color:#a31515">FILE_EXT</span> ${INPUT_BINARY_FILE} <span style="color:#a31515">LAST_EXT</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">SUBSTRING</span> ${FILE_EXT} <span style="color:#a31515">1</span> <span style="color:#a31515">-1</span> <span style="color:#a31515">FILE_EXT</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">TOUPPER</span> ${FILE_NAME_WE} <span style="color:#a31515">FILE_NAME_UPPER</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">TOUPPER</span> ${FILE_EXT} <span style="color:#a31515">FILE_EXT_UPPER</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    set(<span style="color:#a31515">H_OUTPUT</span> <span style="color:#a31515">&#34;\nextern char const ${FILE_NAME_UPPER}_${FILE_EXT_UPPER}_BYTES[]\;\n&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">APPEND</span> <span style="color:#a31515">H_OUTPUT</span> <span style="color:#a31515">&#34;extern size_t const ${FILE_NAME_UPPER}_${FILE_EXT_UPPER}_LENGTH\;\n&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    set(<span style="color:#a31515">C_OUTPUT</span> <span style="color:#a31515">&#34;\nchar const ${FILE_NAME_UPPER}_${FILE_EXT_UPPER}_BYTES[] = {\n    &#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    set(<span style="color:#a31515">COUNTER</span> <span style="color:#a31515">1</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    set(<span style="color:#a31515">SPLIT_HEX_IDX</span> <span style="color:#a31515">0</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    list(<span style="color:#a31515">LENGTH</span> <span style="color:#a31515">SPLIT_HEX</span> <span style="color:#a31515">SPLIT_HEX_LENGTH</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    foreach(<span style="color:#a31515">HEX</span> <span style="color:#a31515">IN</span> <span style="color:#a31515">LISTS</span> <span style="color:#a31515">SPLIT_HEX</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        string(<span style="color:#a31515">APPEND</span> <span style="color:#a31515">C_OUTPUT</span> <span style="color:#a31515">&#34;0x${HEX}, &#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        math(<span style="color:#a31515">EXPR</span> <span style="color:#a31515">COUNTER</span> <span style="color:#a31515">&#34;${COUNTER} + 1&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        math(<span style="color:#a31515">EXPR</span> <span style="color:#a31515">SPLIT_HEX_IDX</span> <span style="color:#a31515">&#34;${SPLIT_HEX_IDX} + 1&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        if(<span style="color:#a31515">SPLIT_HEX_IDX</span> <span style="color:#a31515">LESS</span> <span style="color:#a31515">SPLIT_HEX_LENGTH</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>            if(<span style="color:#a31515">COUNTER</span> <span style="color:#a31515">GREATER</span> <span style="color:#a31515">16</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>                string(<span style="color:#a31515">APPEND</span> <span style="color:#a31515">C_OUTPUT</span> <span style="color:#a31515">&#34;\n    &#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>                set(<span style="color:#a31515">COUNTER</span> <span style="color:#a31515">1</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>            endif()<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>        endif()<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    endforeach()<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">APPEND</span> <span style="color:#a31515">C_OUTPUT</span> <span style="color:#a31515">&#34;\n}\;\n&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    string(<span style="color:#a31515">APPEND</span> <span style="color:#a31515">C_OUTPUT</span> <span style="color:#a31515">&#34;\nsize_t const ${FILE_NAME_UPPER}_${FILE_EXT_UPPER}_LENGTH = sizeof(${FILE_NAME_UPPER}_${FILE_EXT_UPPER}_BYTES)\;\n&#34;</span>)<span style="">
+</span></span></span><span style="display:flex;"><span><span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    file(<span style="color:#a31515">APPEND</span> ${OUTPUT_H_FILE} ${H_OUTPUT})<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>    file(<span style="color:#a31515">APPEND</span> ${OUTPUT_C_FILE} ${C_OUTPUT})<span style="">
+</span></span></span><span style="display:flex;"><span><span style=""></span>endfunction()<span style="">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div>
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#c-program-for-embedding-a-file">C program for embedding a file</a></li>
+    <li><a href="#cmake-wrapper-script-for-embedding-files">CMake wrapper script for embedding files</a></li>
+    <li><a href="#putting-everything-together-in-cmakeliststxt">Putting everything together in CMakeLists.txt</a></li>
+    <li><a href="#masochism-implementing-embed-file-in-cmake">Masochism: implementing <code>embed-file</code> in CMake</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/c">C
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/cmake">CMake
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/metal-raytracing-performance/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">A quick look at Apple Silicon&#39;s hardware accelerated ray tracing performance&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2025 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

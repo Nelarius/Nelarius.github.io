@@ -6,7 +6,17 @@
     <description>Recent content on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 04 Jan 2025 16:11:00 +0200</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 12 Jan 2025 14:46:00 +0200</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pathtracing tidbits: integrating animated blue noise</title>
+      <link>https://nelari.us/post/animated-blue-noise/</link>
+      <pubDate>Sun, 12 Jan 2025 14:46:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/post/animated-blue-noise/</guid>
+      <description>Alan Wolfe&amp;rsquo;s paper, &amp;ldquo;Using Blue Noise for Ray Traced Soft Shadows&amp;rdquo;, presents a great method for reducing the perceived noise in soft shadows. It can be readily adapted to a path tracer as well, where it will yield images with better clarity, even with only a few samples.
+Take a look at an image rendered with regular RNG white noise in the left half, and blue noise in the right half:</description>
+    </item>
+    
     <item>
       <title>Embed data into C byte arrays at build time</title>
       <link>https://nelari.us/post/embedding_data_into_byte_arrays/</link>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pathtracing tidbits: integrating animated blue noise // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="The method from the paper Using Blue Noise for Ray Traced Soft Shadows can be readily adapted to a path tracer to yield images with better clarity than white noise.">
+    
+
+        <meta property="og:title" content="Pathtracing tidbits: integrating animated blue noise" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/animated-blue-noise/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.119.0">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Pathtracing tidbits: integrating animated blue noise</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/animated-blue-noise/" class="article-date">
+                <time datetime='2025-01-12T14:46:00.000&#43;02:00' itemprop="datePublished">2025-01-12</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>Alan Wolfe&rsquo;s paper, &ldquo;<a href="https://link.springer.com/chapter/10.1007/978-1-4842-7185-8_24">Using Blue Noise for Ray Traced Soft Shadows</a>&rdquo;, presents a great method for reducing the perceived noise in soft shadows. It can be readily adapted to a path tracer as well, where it will yield images with better clarity, even with only a few samples.</p>
+<p>Take a look at an image rendered with regular RNG white noise in the left half, and blue noise in the right half:</p>
+<p><img src="/img/animated-blue-noise/noise-combined.jpg" alt="white-noise-and-blue-noise-compared"></p>
+<p>Using blue noise results in much better clarity even though a lot of noise is still present in this 1spp image!</p>
+<p>Adapting the method for a path tracer requires a small modification in order to avoid strange-looking spatial correlations in the noise pattern.</p>
+<h2 id="path-tracer-adaptations">Path tracer adaptations</h2>
+<p>The method presented in the paper uses a golden ratio low-discrepancy sequence in place of a random number for each frame. Neighboring pixels are spatially decorrelated by adding blue noise to each golden ratio sequence value, to prevent pixels from having an identical noise value each frame.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#2b91af">float</span> AnimatedBlueNoise(in <span style="color:#2b91af">float</span> blueNoise, in <span style="color:#2b91af">int</span> frameIndex)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> fract(blueNoise + <span style="color:#2b91af">float</span>(frameIndex % 32) + 0.61803399);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="2d-sequences-and-noise">2D sequences and noise</h3>
+<p>Unlike the paper, 2D noise is used here in order to randomly sample a hemisphere. Various golden ratio sequence can be obtained from &ldquo;<a href="https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/">The Unreasonable Effectiveness of Quasirandom Sequences</a>&rdquo;. The pseudocode for the <em>n</em> th term of a 2D golden ratio sequence is defined as</p>
+<pre tabindex="0"><code>g = 1.32471795724474602596
+a1 = 1.0/g
+a2 = 1.0/(g*g)
+x[n] = (0.5+a1*n) %1 
+y[n] = (0.5+a2*n) %1 
+</code></pre><p>The very regular pattern of this sequence (called the &ldquo;R2 sequence&rdquo; in the plot below) can be seen by plotting <em>N</em> values and comparing to white noise.</p>
+<p><img src="/img/animated-blue-noise/cartesian-noise.png" alt="2d-golden-ratio-vs-white-noise"></p>
+<p>Using the 2D golden ratio sequences values in place of random numbers when sampling a cosine-weighted hemisphere results in a very regular distribution about the hemisphere.</p>
+<p><img src="/img/animated-blue-noise/cosine-hemisphere-distribution.png" alt="golden-ratio-cosine-weighted-hemisphere"></p>
+<p>Pre-calculated blue noise values can be downloaded from <a href="https://momentsingraphics.de/BlueNoise.html">Moments in Graphics</a>. These blue noise mask textures are tileable, and I found that a 128x128 mask was enough to render images without tiling artifacts.</p>
+<p>Putting these together by naively following the paper (i.e. plugging 2D blue noise and the R2 sequence into an equivalent <code>AnimatedBlueNoise</code> function) results in images with a strange unmotivated shadow.</p>
+<p><img src="/img/animated-blue-noise/animated-blue-noise-per-frame.png" alt="directional-shadows"></p>
+<h3 id="animating-blue-noise-per-bounce">Animating blue noise per bounce</h3>
+<p>On each ray bounce, a new direction needs to be computed. If the animated blue noise is computed per-frame, per-pixel, we end up reusing the same animated blue noise on each bounce, and thus keep generating the same hemisphere direction for each vertex along the path.</p>
+<p>One way of solving this issue is to increment the frame index counter each time <code>animated_blue_noise</code> function is called.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f">struct</span> noise_state
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    float2 value;
+</span></span><span style="display:flex;"><span>    uint   frame_idx;
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>float2 animated_blue_noise(<span style="color:#00f">thread</span> noise_state&amp; noise)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  n = noise.frame_idx++;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  a1 = 0.7548776662466927f;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  a2 = 0.5698402909980532f;
+</span></span><span style="display:flex;"><span>    float2 <span style="color:#00f">const</span> r2 = float2(n * a1, n * a2);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> fract(noise.value + r2);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>In this scheme, each bounce consumes a new value in the golden ratio sequence. To prevent consecutive frames from using overlapping golden ratio sequence values, we can initialize the frame index as a multiple of the number of bounces:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>float2 <span style="color:#00f">const</span> noise_value = <span style="color:#008000">// texture lookup...
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>uint <span style="color:#00f">const</span>   noise_frame = (uniforms.frame_idx % 128U) * NUM_BOUNCES;
+</span></span><span style="display:flex;"><span>noise_state  noise = {noise_value, noise_frame};
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>With these changes in place, the spatially correlated black pixels vanish from the basic 1spp render of cubes:</p>
+<p><img src="/img/animated-blue-noise/animated-blue-noise-per-bounce.png" alt="final-render"></p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#path-tracer-adaptations">Path tracer adaptations</a>
+      <ul>
+        <li><a href="#2d-sequences-and-noise">2D sequences and noise</a></li>
+        <li><a href="#animating-blue-noise-per-bounce">Animating blue noise per bounce</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/blue-noise">blue noise
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/embedding_data_into_byte_arrays/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Embed data into C byte arrays at build time&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2025 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

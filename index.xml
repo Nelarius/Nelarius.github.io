@@ -129,9 +129,9 @@ The two languages that I spent most of my time daydreaming about writing code in
       
       <guid>https://nelari.us/projects/</guid>
       <description>Here is an overview of some of the software projects I&amp;rsquo;ve worked on in my free time.
-imnodes A small, dependency-free node editor extension for dear imgui. It features a small immediate-mode API similar to dear imgui itself.
-Find it on github.
-Wren++ 1 2 3 4 5 6 7 8 9 10 11 wrenpp::VM vm; vm.beginModule( &amp;#34;math&amp;#34; ) .beginClass( &amp;#34;Math&amp;#34; ) .bindFunction&amp;lt; decltype(&amp;amp;cos), &amp;amp;cos &amp;gt;( true, &amp;#34;cos(_)&amp;#34; ) .bindFunction&amp;lt; decltype(&amp;amp;sin), &amp;amp;sin &amp;gt;( true, &amp;#34;sin(_)&amp;#34; ) .</description>
+Unnamed voxel project A small, simple voxel editor written in C. The goal is to bolt ray tracing into the editor eventually. I&amp;rsquo;m posting about it on bluesky occasionally: https://bsky.app/profile/nelarius.bsky.social.
+rayfinder An interactive WebGPU pathtracer, implemented for desktop platforms using the Dawn renderer.
+The goal was to learn how to implement path tracing for triangle meshes.</description>
     </item>
     
     <item>
@@ -149,8 +149,8 @@ Wren++ 1 2 3 4 5 6 7 8 9 10 11 wrenpp::VM vm; vm.beginModule( &amp;#34;math&amp;
       <pubDate>Tue, 18 Sep 2018 00:00:00 +0000</pubDate>
       
       <guid>https://nelari.us/about/</guid>
-      <description>Hi there! I&amp;rsquo;m a software engineer living in Helsinki, Finland. I&amp;rsquo;m currently working on the courier routing algorithms at Wolt. I&amp;rsquo;ve previously worked on computer graphics middleware, as well as AR &amp;amp; VR app development, at Umbra.
-I enjoy writing all kinds of software, but I usually gravitate towards writing graphics and system stuff in C++.</description>
+      <description>Hi there! I&amp;rsquo;m a software engineer based in Helsinki, Finland. I&amp;rsquo;m currently working on map rendering topics at Mapbox. I&amp;rsquo;ve previously worked on courier routing algorithms at Wolt, as well as computer graphics middleware at Umbra.
+I&amp;rsquo;m currently interested in ray tracing and C programming. Checkout some of my projects here or on Github!</description>
     </item>
     
     <item>

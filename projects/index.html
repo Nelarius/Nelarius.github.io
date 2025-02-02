@@ -72,7 +72,19 @@
         </div>
         <div class="article-entry" itemprop="articleBody">
             <p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
-<h2 id="imnodes">imnodes</h2>
+<h2 id="unnamed-voxel-project">Unnamed voxel project</h2>
+<p>A small, simple voxel editor written in C. The goal is to bolt ray tracing into the editor eventually. I&rsquo;m posting about it on bluesky occasionally: <a href="https://bsky.app/profile/nelarius.bsky.social">https://bsky.app/profile/nelarius.bsky.social</a>.</p>
+<h2 id="rayfinder"><code>rayfinder</code></h2>
+<p><img src="/img/pathtracer_devlog/sponza-pbs-1.png" alt="path-traced-sponza"></p>
+<p>An interactive WebGPU pathtracer, implemented for desktop platforms using the <a href="https://dawn.googlesource.com/dawn">Dawn</a> renderer.</p>
+<p>The goal was to learn how to implement path tracing for triangle meshes. The project contains</p>
+<ul>
+<li>next event estimation for sampling the sun disk</li>
+<li>a physically based sky model</li>
+<li>using animated blue noise as sampling distributions</li>
+<li>simple lambertian diffuse material</li>
+</ul>
+<h2 id="imnodes"><code>imnodes</code></h2>
 <p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes"></p>
 <p>A small, dependency-free node editor extension for <a href="https://github.com/ocornut/imgui">dear imgui</a>. It features a small immediate-mode API similar to <code>dear imgui</code> itself.</p>
 <p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
@@ -108,10 +120,6 @@
 </div><p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
 <p>I wrote a small tutorial on its usage <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
 <p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
-<h2 id="vscode-wren">vscode-wren</h2>
-<p><img src="https://raw.githubusercontent.com/Nelarius/vscode-wren/master/images/syntax-highlighting.png?token=ADH_jKJ5SJcQi5Rp3pUv6DtkvqlAmMfPks5XboouwA%3D%3D" alt="Syntax highlighting"></p>
-<p>A Visual Studio Code extension for the Wren programming language. Currently the extension provides snippets and syntax highlighting for most language features.</p>
-<p>Find it on <a href="https://github.com/Nelarius/vscode-wren">github</a> and the vscode <a href="https://marketplace.visualstudio.com/items?itemName=nelarius.vscode-wren">marketplace</a>.</p>
 
         </div>
 
@@ -121,9 +129,10 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
-    <li><a href="#imnodes">imnodes</a></li>
+    <li><a href="#unnamed-voxel-project">Unnamed voxel project</a></li>
+    <li><a href="#rayfinder"><code>rayfinder</code></a></li>
+    <li><a href="#imnodes"><code>imnodes</code></a></li>
     <li><a href="#wren">Wren++</a></li>
-    <li><a href="#vscode-wren">vscode-wren</a></li>
   </ul>
 </nav>
         </div>

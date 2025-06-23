@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Testing wavefront ray tracing across Apple&#39;s M-series // My thought repository</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    
+    <meta name="description" content="Books, articles, and blog posts tout the wavefront renderer architecture as a way to improve ray tracing performance on GPUs. How well does it perform in practice on M1, M2, and M3 chips? Should you write a wavefront renderer for your hobby project?">
+    
+
+        <meta property="og:title" content="Testing wavefront ray tracing across Apple&#39;s M-series" />
+    <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://nelari.us/post/wavefront-ray-tracing/" />
+    
+
+    <link rel="shortcut icon" href="/favicon.ico">
+
+    <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
+    <link href="https://nelari.us/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/brands.css" integrity="sha384-BKw0P+CQz9xmby+uplDwp82Py8x1xtYPK3ORn/ZSoe6Dk3ETP59WCDnX+fI1XCKK" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css" integrity="sha384-4aon80D8rXCGx9ayDt85LbyUHeMWd3UiBaWliBlJ53yzm9hqN21A+o1pqoyK04h+" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://nelari.us/css/style.css">
+    
+
+    <meta name="generator" content="Hugo 0.119.0">
+</head>
+
+
+<body>
+<div id="container">
+    <header id="header">
+    <div id="header-outer" class="outer">
+        <div id="header-inner" class="inner">
+            <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
+            <a id="logo" class="logo-text" href="https://nelari.us/">My thought repository</a>
+            <nav id="main-nav">
+                
+                <a class="main-nav-link" href="/about/">About me</a>
+                
+                <a class="main-nav-link" href="/projects/">Projects</a>
+                
+            </nav>
+            <nav id="sub-nav">
+                <div id="search-form-wrap">
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+    <section id="main" class="outer">
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Testing wavefront ray tracing across Apple&#39;s M-series</h1>
+        </header>
+        
+        <div class="article-meta">
+            <a href="/post/wavefront-ray-tracing/" class="article-date">
+                <time datetime='2025-06-12T08:30:16.000&#43;03:00' itemprop="datePublished">2025-06-12</time>
+            </a>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <p>Books, articles, and blog posts present the <em>wavefront renderer architecture</em> as a way to improve ray tracing performance on GPUs. In practice, it&rsquo;s difficult to find information on whether I should expect performance improvements for my simple, monolithic kernel hobby renderer on Apple&rsquo;s M1, M2, or M3 chips—the latter having hardware-accelerated ray tracing. On Apple hardware, would switching to a wavefront architecture yield better performance?</p>
+<p>There&rsquo;s only one way to find out whether the wavefront architecture helps: write both a monolithic and a wavefront ray tracer with identical features and measure their performance across different devices. The results were unexpected: the wavefront renderer isn&rsquo;t a clear winner, and performance varies significantly between chips. It turns out that for simple rendering use cases, a monolithic renderer is actually a better choice on the latest Apple hardware.</p>
+<h2 id="what-is-a-wavefront-ray-tracer">What is a wavefront ray tracer?</h2>
+<p>A monolithic ray tracer uses a for-loop to calculate the path light takes through a scene, bouncing off multiple surfaces. The following pseudocode summarizes my monolithic ray tracer, which is simple—it supports just one material (with Lambertian reflectance) and samples only one light source: the Sun.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#00f">def</span> path_trace(primary_ray, scene_geometry, sky_model, sun_direction):
+</span></span><span style="display:flex;"><span>    radiance = 0.0
+</span></span><span style="display:flex;"><span>    throughput = 1.0
+</span></span><span style="display:flex;"><span>    current_ray = primary_ray
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> bounce <span style="color:#00f">in</span> range(MAX_BOUNCES):
+</span></span><span style="display:flex;"><span>        intersection = intersect(current_ray, scene_geometry)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> intersection.hit:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000"># Intersection data</span>
+</span></span><span style="display:flex;"><span>            surface_point = intersection.position
+</span></span><span style="display:flex;"><span>            surface_normal = intersection.normal
+</span></span><span style="display:flex;"><span>            albedo = intersection.color
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000"># Direct lighting (sun sampling)</span>
+</span></span><span style="display:flex;"><span>            light_direction = sample_sun_disk(sun_direction, SOLAR_RADIUS)
+</span></span><span style="display:flex;"><span>            cosine = dot(surface_normal, light_direction)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> cosine &gt; 0 <span style="color:#00f">and</span> is_shadow_ray_clear(surface_point, light_direction):
+</span></span><span style="display:flex;"><span>                sun_radiance = evaluate_sky_model(light_direction, sun_direction)
+</span></span><span style="display:flex;"><span>                reflectance = cosine * albedo / π
+</span></span><span style="display:flex;"><span>                pdf = pdf_sun_disk(light_direction)
+</span></span><span style="display:flex;"><span>                      + pdf_cosine_hemisphere(light_direction)
+</span></span><span style="display:flex;"><span>                radiance += throughput * sun_radiance * reflectance / pdf
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000"># Indirect lighting (sampling lambertian reflectance)</span>
+</span></span><span style="display:flex;"><span>            new_direction = sample_cosine_hemisphere(surface_normal)
+</span></span><span style="display:flex;"><span>            current_ray = Ray(surface_point, new_direction)
+</span></span><span style="display:flex;"><span>            cosine = dot(surface_normal, new_direction)
+</span></span><span style="display:flex;"><span>            reflectance = cosine * albedo / π
+</span></span><span style="display:flex;"><span>            pdf = pdf_sun_disk(new_direction) + pdf_cosine_hemisphere(new_direction)
+</span></span><span style="display:flex;"><span>            throughput *= reflectance / pdf
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#008000"># Ray hits sky</span>
+</span></span><span style="display:flex;"><span>            sky_radiance = evaluate_sky_model(current_ray.direction, sun_direction)
+</span></span><span style="display:flex;"><span>            radiance += throughput * sky_radiance
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">break</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> radiance
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>On a GPU, this for-loop combined with branching execution during intersection testing, lighting, and material evaluation can result in very inefficient execution. <a href="https://www.pbr-book.org/4ed/Wavefront_Rendering_on_GPUs">Physically Based Rendering</a> provides an excellent overview of GPU architecture and the challenges of running a naive monolithic kernel on a GPU.</p>
+<p>In a wavefront architecture, the monolithic ray tracer&rsquo;s loop body becomes its own kernel. Instead of containing a loop, the wavefront kernel is invoked from within a loop. The branches for material and light evaluation can be moved into separate kernels as well. State is transferred between shader invocations by reading and writing to buffers. <a href="https://jacco.ompf2.com/2019/07/18/wavefront-path-tracing/">Jacco Bikker&rsquo;s article</a> provides a great overview of implementing a wavefront renderer.</p>
+<p>The wavefront renderer used in this post is an interpretation of the renderer presented in Bikker&rsquo;s article, using this subset of phases:</p>
+<ol>
+<li>Ray generation
+<ul>
+<li>Appends primary rays into the ray buffer</li>
+</ul>
+</li>
+<li>Extension
+<ul>
+<li>Intersects the rays with the scene. My adaptation: appends the next ray into the ray buffer</li>
+</ul>
+</li>
+<li>Connection
+<ul>
+<li>Intersects the shadow ray with the scene</li>
+</ul>
+</li>
+</ol>
+<p>Material queues are skipped since the renderer supports only one material. Shading is moved into the extension phase to reduce memory transfers.</p>
+<p>Here&rsquo;s pseudocode for the ray extension and connection shaders. The ray generation shader isn&rsquo;t shown in pseudocode, as it simply appends primary rays to a buffer.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># Extension phase</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">def</span> extend_rays(input_ray,
+</span></span><span style="display:flex;"><span>                scene_geometry,
+</span></span><span style="display:flex;"><span>                sky_model,
+</span></span><span style="display:flex;"><span>                sun_direction,
+</span></span><span style="display:flex;"><span>                output_rays,
+</span></span><span style="display:flex;"><span>                shadow_rays,
+</span></span><span style="display:flex;"><span>                paths):
+</span></span><span style="display:flex;"><span>    path = paths[input_ray.path_index]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    intersection = intersect(input_ray, scene_geometry)
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> intersection.hit:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Intersection data</span>
+</span></span><span style="display:flex;"><span>        surface_point = intersection.position
+</span></span><span style="display:flex;"><span>        surface_normal = intersection.normal
+</span></span><span style="display:flex;"><span>        albedo = intersection.material.color
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Generate shadow ray for direct lighting</span>
+</span></span><span style="display:flex;"><span>        light_direction = sample_sun_disk(sun_direction, SOLAR_RADIUS)
+</span></span><span style="display:flex;"><span>        cosine = dot(surface_normal, light_direction)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> cosine &gt; 0:
+</span></span><span style="display:flex;"><span>            reflectance = cosine * albedo / π
+</span></span><span style="display:flex;"><span>            sun_radiance = evaluate_sky_model(light_direction, sun_direction)          
+</span></span><span style="display:flex;"><span>            pdf = pdf_sun_disk(light_direction) + pdf_cosine_hemisphere(light_direction)
+</span></span><span style="display:flex;"><span>            shadow_rays.append(ShadowRay(
+</span></span><span style="display:flex;"><span>                surface_point,
+</span></span><span style="display:flex;"><span>                light_direction,
+</span></span><span style="display:flex;"><span>                path.throughput * reflectance * sun_radiance / pdf,
+</span></span><span style="display:flex;"><span>                input_ray.path_index
+</span></span><span style="display:flex;"><span>            ))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Generate indirect ray</span>
+</span></span><span style="display:flex;"><span>        new_direction = sample_cosine_hemisphere(surface_normal)
+</span></span><span style="display:flex;"><span>        cosine = dot(surface_normal, new_direction)
+</span></span><span style="display:flex;"><span>        reflectance = cosine * albedo / π
+</span></span><span style="display:flex;"><span>        pdf = pdf_sun_disk(new_direction) + pdf_cosine_hemisphere(new_direction)
+</span></span><span style="display:flex;"><span>        path.throughput *= reflectance / pdf
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>        output_rays.append(Ray(
+</span></span><span style="display:flex;"><span>            surface_point,
+</span></span><span style="display:flex;"><span>            new_direction,
+</span></span><span style="display:flex;"><span>            input_ray.path_index
+</span></span><span style="display:flex;"><span>        ))            
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Ray hits sky - accumulate radiance and terminate path</span>
+</span></span><span style="display:flex;"><span>        sky_radiance = evaluate_sky_model(ray.direction, sun_direction)
+</span></span><span style="display:flex;"><span>        path.radiance += path.throughput * sky_radiance
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># Connection phase</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">def</span> connect_shadow_rays(shadow_ray, scene_geometry, paths):
+</span></span><span style="display:flex;"><span>    origin = shadow_ray.origin
+</span></span><span style="display:flex;"><span>    direction = shadow_ray.direction
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> is_shadow_ray_clear(scene_geometry, origin, direction):
+</span></span><span style="display:flex;"><span>        paths[shadow_ray.path_index].radiance += shadow_ray.radiance
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="time-measurements">Time measurements</h2>
+<p>Both the monolithic and wavefront renderers execute on the GPU using compute shaders. One sample per pixel is gathered in a single compute pass. GPU execution time is measured using Metal&rsquo;s timestamp counter, sampling at the beginning and end of the compute pass:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>compute_sample_buffer_attachment.sampleBuffer = mtl-&gt;compute_timestamp_sample_buffer;
+</span></span><span style="display:flex;"><span>compute_sample_buffer_attachment.startOfEncoderSampleIndex = 0;
+</span></span><span style="display:flex;"><span>compute_sample_buffer_attachment.endOfEncoderSampleIndex = 1;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Compute execution timings are gathered by rendering the following image at a fixed resolution across different devices:</p>
+<p><img src="/img/wavefront-ray-tracing/cornell-box.png" alt="cornell box"></p>
+<p>The Cornell box scene consists of 128 × 128 × 128 voxels. The generated mesh is not optimized, making the scene a reasonably complex test case despite its simple appearance.</p>
+<h2 id="performance">Performance</h2>
+<p>Performance was measured on the following devices:</p>
+<ul>
+<li><strong>M1 Pro</strong> (MacBook Pro)</li>
+<li><strong>M2</strong> (MacBook Air)</li>
+<li><strong>M3</strong> (iPad Air)</li>
+</ul>
+<p>Here are the timings (lower is better):</p>
+<div style="width: 100%; max-width: 900px; height: 600px; margin: 20px auto;">
+    <canvas id="timingChart"></canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+// Parse the timing data
+const data = {
+    datasets: [
+        {
+            label: 'M3 Monolithic',
+            data: [38.5038338, 38.4370003, 38.4860001, 38.7915001, 38.7564545, 38.4044151, 39.1295433, 38.7434998, 38.8486252, 38.8389168, 38.789959, 38.8521233, 38.8616676, 38.5514565, 38.8824577, 38.7752914, 38.7902489, 49.2523346, 38.6542931, 38.8287086, 38.6518745, 38.9393768, 38.583416, 38.5693321, 38.5173302, 38.4277534, 38.3238754, 38.5162086, 38.649456, 38.2126236, 38.4306641, 38.5].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            pointRadius: 6
+        },
+        {
+            label: 'M3 Wavefront',
+            data: [71.6837082, 72.1233367, 71.8537521, 71.9879608, 71.9927902, 71.8955002, 71.5807952, 71.8076629, 71.9687881, 72.0566635, 71.9567947, 72.2863388, 71.9099578, 71.6807938, 71.9166259, 71.8914185, 72.1979599, 71.9722061, 72.0279236, 71.6601257, 72.0079193, 72.3810425, 71.7905807, 72.0439987, 71.8997498, 71.7212066, 71.7655029, 71.8477554, 71.9713745, 71.923294, 72.3292465, 72.0222473].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+            borderColor: 'rgba(255, 99, 132, 0.8)',
+            pointRadius: 6
+        },
+        {
+            label: 'M1 Pro Monolithic',
+            data: [168.022263, 166.97258, 170.145462, 167.751709, 168.82663, 168.673584, 167.588547, 165.683014, 171.243164, 168.061371, 166.115005, 165.320709, 165.751953, 165.421417, 166.379242, 166.127625, 166.099014, 166.685715, 165.2005, 167.036758, 167.758133, 165.657669, 168.612076, 168.654953, 168.280502, 170.023453, 169.627426, 169.600677, 176.38855, 171.702789, 167.47229, 168.478882].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            pointRadius: 6
+        },
+        {
+            label: 'M1 Pro Wavefront',
+            data: [141.32016, 141.976044, 141.416, 141.60025, 141.58046, 142.0047, 141.383743, 141.475204, 141.463379, 142.196503, 141.796051, 141.836258, 141.637833, 141.934906, 140.861252, 141.698212, 148.74353, 151.453247, 152.255707, 152.776825, 157.661377, 156.489716, 156.40416, 146.371994, 141.434906, 141.776962, 142.424362, 142.417633, 141.959045, 144.277252, 142.278748, 141.654541].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            borderColor: 'rgba(54, 162, 235, 0.8)',
+            pointRadius: 6
+        },
+        {
+            label: 'M2 Monolithic',
+            data: [239.114777, 257.854126, 258.949799, 259.322113, 246.431793, 243.091629, 236.845795, 236.421997, 236.682007, 229.42099, 235.375793, 236.115372, 235.322952, 233.165115, 230.732132, 235.118668, 235.652573, 236.74408, 235.657867, 228.259369, 236.152573, 235.844666, 235.800873, 234.99942, 234.101746, 233.175323, 241.967422, 240.904495, 236.177994, 236.630905, 228.567291, 235.170547].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            pointRadius: 6
+        },
+        {
+            label: 'M2 Wavefront',
+            data: [177.18663, 175.932877, 176.299011, 176.963089, 176.747421, 176.551208, 174.943924, 177.214417, 176.527298, 177.021637, 176.706757, 180.833115, 215.064621, 229.871658, 229.606003, 218.63855, 210.365738, 176.767334, 176.864166, 175.160873, 174.776779, 175.913788, 176.628998, 174.873291, 174.957581, 176.461243, 175.899506, 176.73204, 176.499008, 176.689529, 176.048782, 174.264252].map((y, x) => ({x: x, y: y})),
+            backgroundColor: 'rgba(75, 192, 192, 0.4)',
+            borderColor: 'rgba(75, 192, 192, 0.8)',
+            pointRadius: 6
+        }
+    ]
+};
+
+const config = {
+    type: 'scatter',
+    data: data,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Path tracing timings on M1 Pro, M2, and M3',
+                font: {
+                    size: 16
+                }
+            },
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            x: {
+                type: 'linear',
+                position: 'bottom',
+                title: {
+                    display: true,
+                    text: 'Sample Index'
+                },
+                beginAtZero: true,
+                max: 35
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Time (ms)'
+                },
+                beginAtZero: true,
+                max: 280
+            }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'point'
+        }
+    }
+};
+
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('timingChart').getContext('2d');
+    new Chart(ctx, config);
+});
+</script>
+<p>The plot shows distinct performance clusters for each M-series processor:</p>
+<ol>
+<li><strong>M3</strong>: Fastest overall—monolithic (~38ms) beats wavefront (~72ms)</li>
+<li><strong>M1 Pro</strong>: Wavefront (~141ms) outperforms monolithic (~167ms)</li>
+<li><strong>M2</strong>: Slowest overall, with wavefront significantly faster than monolithic</li>
+</ol>
+<p>It&rsquo;s remarkable that an iPad beats a MacBook Pro. However, the M3&rsquo;s strong performance isn&rsquo;t entirely surprising given its hardware-accelerated ray tracing capabilities.</p>
+<p>One way to understand why the wavefront renderer may outperform the monolithic renderer is by examining GPU traces.</p>
+<p><em>GPU trace of monolithic execution on the M2</em></p>
+<p><img src="/img/wavefront-ray-tracing/m2_monolithic_trace.png" alt="m2 monolithic kernel trace"></p>
+<p><em>GPU trace of wavefront execution on the M2</em></p>
+<p><img src="/img/wavefront-ray-tracing/m2_wavefront_trace.png" alt="m2 wavefront kernel trace"></p>
+<p>Two metrics from the GPU performance traces stand out:</p>
+<ul>
+<li><strong>Kernel ALU Inefficiency</strong>: Percentage of ALU instructions predicated out due to divergent control flow or partial SIMD groups (when threadgroup size isn&rsquo;t a multiple of SIMDgroup size)</li>
+<li><strong>Kernel Arithmetic Intensity</strong>: ALU operations per byte of memory traffic</li>
+</ul>
+<p>On the M2:</p>
+<ul>
+<li><strong>Monolithic kernel</strong>: Higher ALU inefficiency but better arithmetic intensity</li>
+<li><strong>Wavefront kernel</strong>: Lower ALU inefficiency but reduced arithmetic intensity</li>
+</ul>
+<p>These numbers are expected. The ALU inefficiency increases for the monolithic kernel as more loop iterations execute and each thread&rsquo;s state diverges from its neighbors. In turn, each wavefront kernel iteration must read its inputs from memory and write intermediate results back to memory, reducing ALU intensity. Reading from and writing to memory doesn&rsquo;t necessarily hurt performance if there are plenty of threads to schedule, but on mobile hardware, excessive memory I/O drains battery.</p>
+<p>Performance counter comparison with the M3 processor would be interesting, but unfortunately the GPU trace for the M3 appears broken. ALU intensity was nowhere to be found, and ALU inefficiency was zero across all captured traces. I&rsquo;m not sure whether this is user error or if these metrics can&rsquo;t be captured from an iPad.</p>
+<p>Without matching numbers, it&rsquo;s difficult to say why the monolithic renderer outperforms wavefront on the M3, but it&rsquo;s clear that hardware-accelerated ray tracing is significantly reducing the impact that intersection testing has on the monolithic kernel.</p>
+<h2 id="which-renderer-to-choose">Which renderer to choose?</h2>
+<p>For my hobby renderer, the choice is clear. The renderer is intended to run only on Apple&rsquo;s M-series processors, and when an M1 or M2 chip is detected, the wavefront renderer is chosen. Otherwise, the monolithic renderer is used.</p>
+<p>A renderer with the feature set presented here appears to be on the borderline of benefiting from a wavefront architecture. The more features added to the renderer, the more divergence will occur during execution, giving an increasing edge to the wavefront renderer. When more materials and lights are added in the future, it will be necessary to re-evaluate performance again.</p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#what-is-a-wavefront-ray-tracer">What is a wavefront ray tracer?</a></li>
+    <li><a href="#time-measurements">Time measurements</a></li>
+    <li><a href="#performance">Performance</a></li>
+    <li><a href="#which-renderer-to-choose">Which renderer to choose?</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
+        
+
+
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/metal">metal
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/post/animated-blue-noise/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Pathtracing tidbits: integrating animated blue noise&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
+    </section>
+    <footer id="footer">
+    <div class="outer">
+            <section class="footer-social">
+      
+      <a href="//twitter.com/nelarius" target="_blank" title="Twitter"><i class="fab fa-2x fa-fw fa-twitter"></i></a>&nbsp;
+      
+      
+      <a href="//www.linkedin.com/in/nelarius" target="_blank" title="linkedIn"><i class="fab fa-2x fa-fw fa-linkedin"></i></a>&nbsp;
+      
+      
+      
+      
+      
+      <a href="//github.com/Nelarius" target="_blank" title="GitHub"><i class="fab fa-2x fa-fw fa-github"></i></a>&nbsp;
+      
+      
+      
+</section>
+
+            <br/>
+        <div id="footer-info" class="inner">
+            &copy; 2025 Johann Muszynski
+        </div>
+    </div>
+    
+
+    
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+        <script>renderMathInElement(document.body);</script>
+    
+    <script>
+        document.getElementById('main-nav-toggle').addEventListener('click', function () {
+            var header = document.getElementById('header');
+            if (header.classList.contains('mobile-on')) {
+                header.classList.remove('mobile-on');
+            } else {
+                header.classList.add('mobile-on');
+            }
+        });
+    </script>
+</footer>
+
+</div>
+</body>
+</html>

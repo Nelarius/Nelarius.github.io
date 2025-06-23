@@ -79,8 +79,10 @@
 <p>$$
 F(x) = \int f(x) dx
 $$</p>
-<!-- raw HTML omitted -->
-<!-- raw HTML omitted -->
+<!-- Let's start with a simple experimental observation of normally distributed random numbers.
+
+Let's start with a simple density function, the uniform density function *U* in the interval \\([0, 1]\\). The probability density is constant everywhere in the interval:
+ -->
 <p>We can use this to calculate the CDF of a simple function, the uniform density function <em>U</em> in the interval \([0,1]\). In <em>U</em>, the probability density is constant everywhere in the interval:</p>
 <p>$$
 F_U(x) = \int cdx = cx+d
@@ -123,7 +125,7 @@ $$</p>
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p><img src="/img/inverse_transform_sampling/hist1.png" alt="normal distribution"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Histogram of normally distributed random numbers.</i></p>
 <p>From the histogram we can see that \(F_N(N)\) yields nice uniformly distributed values between 0 and 1.</p>
 <p>Using the definition of the CDF,</p>
 <p>$$
@@ -177,10 +179,10 @@ $$</p>
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p><img src="/img/inverse_transform_sampling/hist2.png" alt="power distribution"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Histogram of random numbers sampled from the inverse of \\(x^2\\).</i></p>
 <p>To confirm that everything works, we can look at a plot of \(x^2\).</p>
 <p><img src="/img/inverse_transform_sampling/curve.png" alt="curve"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>\\(x^2\\) as a curve.</i></p>
 <h2 id="inverse-transform-sampling-using-normally-distributed-random-numbers">Inverse transform sampling using normally distributed random numbers</h2>
 <p>The fact that evaluating a uniform distribution function yields uniformly distributed values means that we can actually plug in random numbers from <em>any</em> distribution into \(F^{-1}\)! Given that two CDFs \(F(X)\) and \(G(Y)\) have the exact same uniform distribution, we can apply the inverse of \(F^{-1}\) like we did before to find the mapping between \(X\) and \(Y\):</p>
 <p>$$
@@ -203,7 +205,7 @@ $$</p>
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p><img src="/img/inverse_transform_sampling/hist3.png" alt="curve"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Histogram of random numbers sampled from the inverse of \\(x^2\\), using normally distributed random numbers.</i></p>
 <p>And again, looks like a graph of \(x^2\)!</p>
 <p>I&rsquo;m not sure why you would want to generate random numbers in a given distribution in such a contrived way, but it&rsquo;s nice to know that it is possible.</p>
 

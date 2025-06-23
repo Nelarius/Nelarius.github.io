@@ -6,22 +6,31 @@
     <description>Recent content in Tags on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jan 2025 14:46:00 +0200</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 12 Jun 2025 08:30:16 +0300</lastBuildDate><atom:link href="https://nelari.us/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>blue noise</title>
-      <link>https://nelari.us/tags/blue-noise/</link>
-      <pubDate>Sun, 12 Jan 2025 14:46:00 +0200</pubDate>
+      <title>metal</title>
+      <link>https://nelari.us/tags/metal/</link>
+      <pubDate>Thu, 12 Jun 2025 08:30:16 +0300</pubDate>
       
-      <guid>https://nelari.us/tags/blue-noise/</guid>
+      <guid>https://nelari.us/tags/metal/</guid>
       <description></description>
     </item>
     
     <item>
       <title>raytracing</title>
       <link>https://nelari.us/tags/raytracing/</link>
-      <pubDate>Sun, 12 Jan 2025 14:46:00 +0200</pubDate>
+      <pubDate>Thu, 12 Jun 2025 08:30:16 +0300</pubDate>
       
       <guid>https://nelari.us/tags/raytracing/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>blue noise</title>
+      <link>https://nelari.us/tags/blue-noise/</link>
+      <pubDate>Sun, 12 Jan 2025 14:46:00 +0200</pubDate>
+      
+      <guid>https://nelari.us/tags/blue-noise/</guid>
       <description></description>
     </item>
     
@@ -40,15 +49,6 @@
       <pubDate>Sat, 04 Jan 2025 16:11:00 +0200</pubDate>
       
       <guid>https://nelari.us/tags/cmake/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>metal</title>
-      <link>https://nelari.us/tags/metal/</link>
-      <pubDate>Sun, 01 Sep 2024 07:22:51 +0300</pubDate>
-      
-      <guid>https://nelari.us/tags/metal/</guid>
       <description></description>
     </item>
     

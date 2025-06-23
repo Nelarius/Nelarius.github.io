@@ -80,7 +80,7 @@
 <h2 id="rendering-the-first-pixels">Rendering the first pixels</h2>
 <p>To kick the project off, a way to display images is required. I wanted to render the image directly to an open window, instead of outputting the image to an image file, like the book does. So, to start this project off, I had to open a window and display some colored pixels on the screen.</p>
 <p><img src="/img/rust_and_zig/initial_pixels.png" alt="initial pixels"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>The goal of this section: open a small window and add some colors to the pixel buffer.</i></p>
 <h3 id="rust">Rust</h3>
 <p>In the C/C++ ecosystem, I&rsquo;m most familiar with using the SDL media library for providing a window to use for rendering. Of course, you can use SDL in Rust as well. But Rusts&rsquo;s main package registry, crates.io, actually had something better: the <code>minifb</code> crate (crates are Rust parlance for packages). It does one thing well &ndash; it lets you open a window and set its pixel buffer. No complex setup required, perfect!</p>
 <p>Adding the crate was as easy as adding one line to <code>Cargo.toml</code>.</p>
@@ -125,14 +125,14 @@
 <h2 id="implementing-the-ray-tracer">Implementing the ray tracer</h2>
 <p>Rendering images in the ray tracing book involves writing definitions for ray-sphere collision testing as well as writing definitions for how the ray interacts with the surface of a sphere once it collides.</p>
 <p><img src="/img/rust_and_zig/albedo_render.png" alt="albedo render"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Testing whether my ray-sphere collision tests work: the scene rendered using just the color value of the object.</i></p>
 <p><img src="/img/rust_and_zig/normal_render.png" alt="normal map render"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>More tests: the scene rendered using the surface normal vector as a color.</i></p>
 <p>Controlling how the ray interacts with the sphere&rsquo;s surface is implemented using a number of different material objects, which define how the ray <em>scatters</em> from the sphere&rsquo;s surface. The materials the book implements are lambertian (paper, marble), metal, and dielectric (glass).</p>
 <p><img src="/img/rust_and_zig/depth_render.png" alt="depth render"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>A render showing the number of times a ray has bounced off of a surface for each pixel. The brighter the pixel, the more bounces occurred.</i></p>
 <p><img src="/img/rust_and_zig/final_render.png" alt="final image"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>The final image containing a glass, lambertian, and metallic sphere. This is what we're trying to accomplish in this section.</i></p>
 <h3 id="rust-1">Rust</h3>
 <h4 id="program-structure">Program structure</h4>
 <p><em>Ray Tracing in One Weekend</em> adheres to a more old-fashioned style of C++, where relations between types are often modeled using inheritance. I opted to leave polymoprhism on the table and go for a very simple approach.</p>

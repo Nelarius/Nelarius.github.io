@@ -84,10 +84,17 @@
 <p>We would like to quantize an image to just black and white. The quantization algorithm is simple. We will convert each pixel value to black or white by comparing the original pixel to a threshold value. The threshold value is what determines whether the pixel will be black or white.</p>
 <p>To start, we need the original image.</p>
 <p><img src="/img/quick_and_dirty_dithering/landscape.jpg" alt="source image"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>
+    A picture of freezing Helsinki, taken from the ice covered sea.
+</i></p>
 <p>Next, we need a signal which we will quantize. We can use the image’s <em>luma</em>, \(l\), which is a weighed sum of the image’s \(R\), \(G\), \(B\) components. This signal is typically associated with the “black and whiteness” of an image. Even though the original image is already black and white, the pixels still contain all three RGB values. Using luma in our code enables us to also use color images as input for our dithering algorithm, and still produce sensible output images.</p>
 <p>Finally, we need a threshold value, a number which chooses whether a luma value is converted into black (0.0) or white (1.0). Choosing 0.5, we obtain the following step function for each pixel \(p_{x,y}\).</p>
-<!-- raw HTML omitted -->
+<div>$$
+p_{x,y} = \begin{cases}
+   0.0 &\text{if}\ l_{x,y} \leq 0.5 \\
+   1.0 &\text{if}\ l_{x,y} > 0.5
+\end{cases}
+$$</div>
 <p>Running our image through this function with using gives us the following result.</p>
 <p><img src="/img/quick_and_dirty_dithering/notebook_quantized.png" alt="naive quantization"></p>
 <p>Not a very good looking result. Luckily, we already know that we can do better than this!</p>
@@ -95,23 +102,35 @@
 <p>The dithering algorithm is based on the quantization algorithm above and requires just one modification to it: it <em>adds noise</em> to the threshold values. This has the effect of distributing the harsh boundaries between black and white in the quantized image. The classical way of distributing noise is by using Bayer matrices.</p>
 <h2 id="bayer-matrices">Bayer matrices</h2>
 <p>A Bayer matrix, \(M\), looks like this.</p>
-<!-- raw HTML omitted -->
+<div>$$
+\mathbf{M}_{4}=\frac{1}{16}\times\begin{bmatrix}0 & 8 & 2 & 10 \\ 12 & 4 & 14 & 6 \\ 3 & 11 & 1 & 9 \\ 15 & 7 & 13 & 5\end{bmatrix}
+$$</div>
 <p>The matrix is square and is characterized by its side length \(N\) which in this case is 4. The matrix consists of elements \((0,;1,;\ldots,;N^2-1/N^2)\)  which are distributed in such a way that the distance between elements of the sequence is as large and as even as possible across the matrix. We can generate a Bayer matrix for side length 2, 8, or 16 as well. The last section of this post contains notes on how you can generate your own Bayer matrix.</p>
 <p>For any given pixel coordinate \((x,,y)\) in our image, we can map the pixel coordinate to the Bayer matrix element \((i,,j)\) using the modulo operator: \((i,,j)=(y,\text{mod},N,;x,\text{mod},N)\). The idea is to use the matching Bayer matrix element as the threshold value while doing quantization, instead of just a single number like 0.5. Inserting the Bayer matrix element into the previous step function, we obtain</p>
-<!-- raw HTML omitted -->
+<div>$$
+p_{x,y} = \begin{cases}
+   0.0 &\text{if}\ l_{x,y} \leq \mathbf{M}_{i,j} \\
+   1.0 &\text{if}\ l_{x,y} > \mathbf{M}_{i,j}
+\end{cases}
+$$</div>
 <p>Running our image through this function using \(N=4\), we obtain the following result.</p>
 <p><img src="/img/quick_and_dirty_dithering/landscape-bayer4.png" alt="m4_landscape"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>The landscape dithered with a \\(\mathbf{M}_4\\) matrix.</i></p>
 <p>The details of the original image are now clearly visible, although we do have a visible grid-like pattern. We can dither with Bayer matrices using \(N=2,8,16\) as well.</p>
 <p><img src="/img/quick_and_dirty_dithering/snow_m2_m8_m16.jpeg" alt="Snow detail with M2, M8, M16"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Snow detail with \\(N=2,8,16\\) respectively.</i></p>
 <p><img src="/img/quick_and_dirty_dithering/sky_m2_m8_m16.jpeg" alt="Sky detail with M2, M8, M16"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Sky detail with \\(N=2,8,16\\), respectively.</i></p>
 <p>Looking at the image dithered using \(N=2\), we can still see detail resembling the original images in places of finer detail, such as the snow banks. But in places where finer gradients exist, such as the sky, the result is closer to the original naive quantization. There is almost no perceptible difference between the images dithered using  \(N=8\) and \(N=16\). Comparing the sky using \(N=4\) and \(N=8\), you can see that there is clearly more detail using \(N=8\). That is where the sweet-spot between detail and matrix size seems to lie.</p>
 <p>Although the results using larger Bayer matrices look good, there is just no way of getting rid of the slight crosshatch artifact, arising from the deterministic way the values are distributed. Our next two dithering methods will attempt to get rid of the pattern, by introducing randomness.</p>
 <h2 id="random-noise">Random noise</h2>
 <p>The simplest way to add some randomness to the threshold value is to replace the Bayer matrix lookup with a call to a uniform random number generator.</p>
-<!-- raw HTML omitted -->
+<div>$$
+p_{x,y} = \begin{cases}
+   0.0 &\text{if}\ l_{x,y} \leq \texttt{rand(0,1)} \\
+   1.0 &\text{if}\ l_{x,y} > \texttt{rand(0,1)}
+\end{cases}
+$$</div>
 <p><img src="/img/quick_and_dirty_dithering/landscape-random.png" alt="Random noise dithered landscape"></p>
 <p>While we no longer have any visible crosshatch artifacts, the image has even less detail than in the previous section. Unlike the Bayer matrix, where neighboring values are guaranteed to be distributed evenly about the matrix, we can obtain multiple similarly valued uniform random numbers in sequence. As a result, our image loses detail due to the clustering of black and white. Nowhere is this more visible than when comparing the white plume from the smokestack with the images dithered with a Bayer matrix.</p>
 <p><img src="/img/quick_and_dirty_dithering/random_bayer_building.png" alt="Random noise and Bayer comparison"></p>
@@ -127,7 +146,7 @@
 <p>Looking at the sky and snow detail, we are able to resolve far more detail than before, by simply adjusting the spatial distribution of our black and white pixels.</p>
 <p><img src="/img/quick_and_dirty_dithering/blue_random_snow.png" alt="blue noise vs. random noise snow detail"></p>
 <p><img src="/img/quick_and_dirty_dithering/blue_random_horizon.png" alt="blue noise vs. random noise horizon detail"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Blue noise on the left, random noise on the right.</i></p>
 <h1 id="implementation-notes">Implementation notes</h1>
 <p>Using the  <a href="https://crates.io/crates/image">https://crates.io/crates/image</a> crate, it’s remarkably easy to load, transform and output images. You can obtain a black and white image with two lines of code.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">

@@ -130,7 +130,7 @@
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p>The code creates an editor workspace along with a simple node, with only an input and output attribute.</p>
-<!-- raw HTML omitted -->
+<!-- see this post on where to put static content: https://github.com/kakawait/hugo-tranquilpeak-theme/issues/268 -->
 <p><img src="/img/imnodes/api-at-a-glance-2.png" alt="simple"></p>
 <p>In the sample code above, it is apparent that the <code>BeginNode</code> and <code>BeginInputAttribute</code> / <code>BeginOutputAttribute</code> calls require an integral id. Unlike <code>dear imgui</code>, where UI elements are identified by names (which are then internally converted to integer ids), <code>imnodes</code> uses integer ids directly. For a node UI, we want to have multiple nodes with the same name, so it makes more sense to just have a user-provided id to differentiate between nodes.</p>
 <p>The immediate benefit of an immediate mode API is how easy it is to change the UI layout. A collection of nodes will require a collection of node ids, and it&rsquo;s only natural to store them in a container of some kind. Nodes can then be rendered by looping over the container.</p>

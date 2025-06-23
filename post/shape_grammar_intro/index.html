@@ -75,7 +75,7 @@
 <p>I have done my fair share of playing around with Blender, but I wanted to play around with a 3d editor which works a bit more immediately, like Photoshop or Affinity Photo. In those programs, any changes you make are non-destructive &ndash; you don&rsquo;t need hit <code>Ctrl + Z</code> multiple times to rewind back through the edits you made. Instead, all edits are retained in a stack, and any changes you make to the edit stack rerenders the resulting picture in full.</p>
 <p>This kind of workflow is particularly suitable for procedural modeling methods, as the current set of rules can be re-evaluated from scratch to regenerate the model for the user. In this post, I will focus on implementing this sort of workflow using shape grammars, which are a procedural modeling method suitable for constructing 3d models of buildings. There are lots of existing papers and work around text-based shape grammars available. One of my goals in this post, however, was to take one of the existing text-based systems and build a node graph editor around the grammar.</p>
 <p><img src="/img/shape_grammar_intro/overview.png" alt="editor_overview"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>The node graph editor for manipulating shape grammars. The tool looks admittedly quite "homemade", but it works!</i></p>
 <p>Let&rsquo;s start by diving in to shape grammars.</p>
 <h1 id="shape-grammars">Shape grammars</h1>
 <p>A shape grammar is a hierarchy of named 3d shapes, known as <em>symbols</em>, and the operations that produce them, known as <em>production rules</em>. In a shape grammar, 3d shapes, referred to by symbols such as <em>floor</em> and <em>window</em>, are created by applying production rules, such as <em>repeat split</em>, on a symbol, replacing that symbol with a new one, known as a successor. A shape grammar is a hierarchy, because it starts with a coarse, high-level shape, such as a cube, and refines it, by applying successive production rules on the successor shapes to produce the final model.</p>
@@ -96,7 +96,7 @@ noun        -&gt; &#34;C++&#34; | &#34;code&#34;
 <pre tabindex="0"><code>quad -&gt; repeat_split(Y, 4) { rectangles }
 rectangles -&gt; repeat_split(X, 4) { tiles }
 </code></pre><p><img src="/img/shape_grammar_intro/tiling_result.png" alt="tiling result"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Before and after tiling a quad along the vertical and horizontal axes.</i></p>
 <p>As the shape grammar is evaluated, a <em>shape grammar configuration</em> is used to retain the current state of the grammar. For instance, when a predecessor shape is replaced by successor shape, the predecessor is marked as inactive in the configuration, rather than being outright deleted. Likewise, each new successor shape is marked as active in the configuration. Thus, the full construction history of the final 3d shape is available in the configuration. The configuration can be used later on for contextual queries during the editing process.</p>
 <h1 id="non-destructive-node-graph-editor">Non-destructive node graph editor</h1>
 <p>Now that we have an overview of how shape grammars work, let&rsquo;s build a UI and a responsive editor on top of them.</p>
@@ -104,7 +104,7 @@ rectangles -&gt; repeat_split(X, 4) { tiles }
 <p>It is quite common in most 3d editors to use node graphs for editing the scene and material configuration. Node graphs are used since they have some advantages over textual configuration. Not only are visual tools easier to play around with, they can also prevent some classes of errors which happen in a textual configuration language, for programmers and non-programmers alike.</p>
 <p>Let&rsquo;s take a look at one possible graphical representation of a shape grammar, using the already mentioned <em>repeat split</em> production rule. It takes a predecessor shape, splits it <em>n</em> times along the user-specified axis, and produces <em>n + 1</em> successor shapes. We can express this operation as a simple graph:</p>
 <p><img src="/img/shape_grammar_intro/graph_repeat_split.png" alt="repeat split graph representation"></p>
-<!-- raw HTML omitted -->
+<p align="center"><i>Hooray for beautifully hand-drawn graph diagrams.</i></p>
 <p>Converting our earlier tiling grammar example into a graph consists of chaining our repeat split graph nodes:</p>
 <p><img src="/img/shape_grammar_intro/graph_tiling.png" alt="tiling graph representation"></p>
 <p>In the graph-based representation, we can actually leave the named symbol nodes completely out, and let the shapes &ldquo;flow&rdquo; along the edges between the predecessor and successor nodes. This node-based UI is a representation of the tiling example shape flow.</p>

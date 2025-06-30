@@ -6,7 +6,17 @@
     <description>Recent content in Posts on My thought repository</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jan 2025 14:46:00 +0200</lastBuildDate><atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 12 Jun 2025 08:30:16 +0300</lastBuildDate><atom:link href="https://nelari.us/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Experiments with wavefront ray tracing on Apple silicon</title>
+      <link>https://nelari.us/post/wavefront-ray-tracing/</link>
+      <pubDate>Thu, 12 Jun 2025 08:30:16 +0300</pubDate>
+      
+      <guid>https://nelari.us/post/wavefront-ray-tracing/</guid>
+      <description>Books, articles, and blog posts present the wavefront renderer architecture as a way to improve ray tracing performance on GPUs. In practice, it&amp;rsquo;s difficult to find information on whether I should expect performance improvements for my monolithic kernel hobby renderer on Apple&amp;rsquo;s M1, M2, or M3 chips—the latter having hardware-accelerated ray tracing. On Apple hardware, would switching to a wavefront architecture be a silver bullet yielding better performance?
+There&amp;rsquo;s only one way to find out: write both a monolithic and a wavefront ray tracer with identical features and measure their performance across different devices.</description>
+    </item>
+    
     <item>
       <title>Pathtracing tidbits: integrating animated blue noise</title>
       <link>https://nelari.us/post/animated-blue-noise/</link>

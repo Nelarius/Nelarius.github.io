@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Testing wavefront ray tracing across Apple&#39;s M-series // My thought repository</title>
+    <title>Experiments with wavefront ray tracing on Apple silicon // My thought repository</title>
 
     <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -10,7 +10,7 @@
     <meta name="description" content="Books, articles, and blog posts tout the wavefront renderer architecture as a way to improve ray tracing performance on GPUs. How well does it perform in practice on M1, M2, and M3 chips? Should you write a wavefront renderer for your hobby project?">
     
 
-        <meta property="og:title" content="Testing wavefront ray tracing across Apple&#39;s M-series" />
+        <meta property="og:title" content="Experiments with wavefront ray tracing on Apple silicon" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en" />
@@ -59,7 +59,7 @@
     <div class="article-inner">
         
         <header class="article-header">
-            <h1 class="article-title" itemprop="name">Testing wavefront ray tracing across Apple&#39;s M-series</h1>
+            <h1 class="article-title" itemprop="name">Experiments with wavefront ray tracing on Apple silicon</h1>
         </header>
         
         <div class="article-meta">
@@ -71,10 +71,11 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <p>Books, articles, and blog posts present the <em>wavefront renderer architecture</em> as a way to improve ray tracing performance on GPUs. In practice, it&rsquo;s difficult to find information on whether I should expect performance improvements for my simple, monolithic kernel hobby renderer on Apple&rsquo;s M1, M2, or M3 chips—the latter having hardware-accelerated ray tracing. On Apple hardware, would switching to a wavefront architecture yield better performance?</p>
-<p>There&rsquo;s only one way to find out whether the wavefront architecture helps: write both a monolithic and a wavefront ray tracer with identical features and measure their performance across different devices. The results were unexpected: the wavefront renderer isn&rsquo;t a clear winner, and performance varies significantly between chips. It turns out that for simple rendering use cases, a monolithic renderer is actually a better choice on the latest Apple hardware.</p>
+            <p>Books, articles, and blog posts present the <em>wavefront renderer architecture</em> as a way to improve ray tracing performance on GPUs. In practice, it&rsquo;s difficult to find information on whether I should expect performance improvements for my monolithic kernel hobby renderer on Apple&rsquo;s M1, M2, or M3 chips—the latter having hardware-accelerated ray tracing. On Apple hardware, would switching to a wavefront architecture be a silver bullet yielding better performance?</p>
+<p>There&rsquo;s only one way to find out: write both a monolithic and a wavefront ray tracer with identical features and measure their performance across different devices. The results were contrary to what I expected: the wavefront renderer isn&rsquo;t a clear winner, and performance varies significantly between chips. For simple renderers, a monolithic renderer appears to be a better choice on the latest Apple hardware.</p>
 <h2 id="what-is-a-wavefront-ray-tracer">What is a wavefront ray tracer?</h2>
-<p>A monolithic ray tracer uses a for-loop to calculate the path light takes through a scene, bouncing off multiple surfaces. The following pseudocode summarizes my monolithic ray tracer, which is simple—it supports just one material (with Lambertian reflectance) and samples only one light source: the Sun.</p>
+<h3 id="the-monolithic-ray-tracer">The monolithic ray tracer</h3>
+<p>A monolithic ray tracer uses a for-loop to calculate the path light takes through a scene, bouncing off multiple surfaces. The following pseudocode summarizes my monolithic ray tracer, which is simple—it supports just one material (with Lambertian reflectance) and samples only one light source: the Sun. The material is a solid color, not a texture, and material evaluation is pure arithmetic.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
@@ -157,28 +158,29 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> radiance
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>On a GPU, this for-loop combined with branching execution during intersection testing, lighting, and material evaluation can result in very inefficient execution. <a href="https://www.pbr-book.org/4ed/Wavefront_Rendering_on_GPUs">Physically Based Rendering</a> provides an excellent overview of GPU architecture and the challenges of running a naive monolithic kernel on a GPU.</p>
-<p>In a wavefront architecture, the monolithic ray tracer&rsquo;s loop body becomes its own kernel. Instead of containing a loop, the wavefront kernel is invoked from within a loop. The branches for material and light evaluation can be moved into separate kernels as well. State is transferred between shader invocations by reading and writing to buffers. <a href="https://jacco.ompf2.com/2019/07/18/wavefront-path-tracing/">Jacco Bikker&rsquo;s article</a> provides a great overview of implementing a wavefront renderer.</p>
-<p>The wavefront renderer used in this post is an interpretation of the renderer presented in Bikker&rsquo;s article, using this subset of phases:</p>
+</div><p>On a GPU, the for-loop combined with branching execution during intersection testing, lighting, and material evaluation can result in inefficient execution. <a href="https://www.pbr-book.org/4ed/Wavefront_Rendering_on_GPUs">Physically Based Rendering</a> provides an excellent overview of GPU architecture and the challenges of running a naive monolithic kernel on a GPU.</p>
+<p>Is this particular ray tracer inefficient? Looking at a single frame&rsquo;s GPU trace reveals these concerning metrics:</p>
+<ul>
+<li><strong>Kernel ALU Inefficiency</strong>: 69.5% (percentage of ALU instructions predicated out due to divergent control flow or partial SIMD groups)</li>
+<li><strong>Kernel Occupancy</strong>: 20.4% (percentage of shader core resources occupied by the compute kernel)</li>
+</ul>
+<p>From the kernel&rsquo;s compiler statistics:</p>
+<ul>
+<li><strong>Temporary Registers</strong>: 80</li>
+<li><strong>Max Theoretical Occupancy</strong>: 41.7%</li>
+</ul>
+<p>Based on <a href="https://interplayoflight.wordpress.com/2020/11/11/what-is-shader-occupancy-and-why-do-we-care-about-it/">this blog post</a>, a register allocation of 80 is high on the GCN platform. It&rsquo;s a high allocation on ARM as well. Given the theoretical occupancy &lt; 50%, this shader consumes substantial shader core resources on Apple&rsquo;s hardware too.</p>
+<p>The monolithic renderer contains a huge batch of work being predicated out due to branching control flow. Can a wavefront architecture reduce the register allocation, yielding better occupancy? Could it improve ALU efficiency?</p>
+<h3 id="the-wavefront-ray-tracer">The wavefront ray tracer</h3>
+<p>In a wavefront architecture, the monolithic ray tracer&rsquo;s loop body is split into its own kernel. Instead of containing a loop, the wavefront kernel is invoked from within a loop. The branches for material and light evaluation can be moved into separate kernels. State transfers between shader invocations by reading and writing to buffers. <a href="https://jacco.ompf2.com/2019/07/18/wavefront-path-tracing/">Jacco Bikker&rsquo;s article</a> provides a great overview of the tradeoffs in implementing a wavefront renderer.</p>
+<p>The wavefront renderer used in this post adapts the renderer from Bikker&rsquo;s article with these phases:</p>
 <ol>
-<li>Ray generation
-<ul>
-<li>Appends primary rays into the ray buffer</li>
-</ul>
-</li>
-<li>Extension
-<ul>
-<li>Intersects the rays with the scene. My adaptation: appends the next ray into the ray buffer</li>
-</ul>
-</li>
-<li>Connection
-<ul>
-<li>Intersects the shadow ray with the scene</li>
-</ul>
-</li>
+<li><strong>Generate</strong>: Appends primary rays into the ray buffer</li>
+<li><strong>Extend and Shade</strong>: Intersects rays with the scene, generates the next ray, and generates a shadow ray. Combines phases 2 (extend) and 3 (shade) from the article</li>
+<li><strong>Connect</strong>: Intersects the shadow ray with the scene</li>
 </ol>
-<p>Material queues are skipped since the renderer supports only one material. Shading is moved into the extension phase to reduce memory transfers.</p>
-<p>Here&rsquo;s pseudocode for the ray extension and connection shaders. The ray generation shader isn&rsquo;t shown in pseudocode, as it simply appends primary rays to a buffer.</p>
+<p>Phases 2 and 3 from the article were merged since it yielded better performance than 4 separate kernels. With just one material type and no texture sampling, the increased memory traffic of 4 kernels wasn&rsquo;t worthwhile. The more granular &ldquo;Extend&rdquo; kernel also didn&rsquo;t significantly reduce register allocation, yielding similar occupancy numbers.</p>
+<p>Here&rsquo;s pseudocode for the ray extension and connection shaders. The ray generation shader simply appends primary rays to a buffer.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
@@ -226,22 +228,16 @@
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># Extension phase</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#00f">def</span> extend_rays(input_ray,
-</span></span><span style="display:flex;"><span>                scene_geometry,
-</span></span><span style="display:flex;"><span>                sky_model,
-</span></span><span style="display:flex;"><span>                sun_direction,
-</span></span><span style="display:flex;"><span>                output_rays,
-</span></span><span style="display:flex;"><span>                shadow_rays,
-</span></span><span style="display:flex;"><span>                paths):
-</span></span><span style="display:flex;"><span>    path = paths[input_ray.path_index]
-</span></span><span style="display:flex;"><span>
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#00f">def</span> extend_and_shade(input_ray,
+</span></span><span style="display:flex;"><span>                     scene_geometry,
+</span></span><span style="display:flex;"><span>                     sky_model,
+</span></span><span style="display:flex;"><span>                     sun_direction,
+</span></span><span style="display:flex;"><span>                     output_rays,
+</span></span><span style="display:flex;"><span>                     shadow_rays,
+</span></span><span style="display:flex;"><span>                     path_throughput,
+</span></span><span style="display:flex;"><span>                     path_radiance):
 </span></span><span style="display:flex;"><span>    intersection = intersect(input_ray, scene_geometry)
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> intersection.hit:
 </span></span><span style="display:flex;"><span>        <span style="color:#008000"># Intersection data</span>
@@ -249,7 +245,7 @@
 </span></span><span style="display:flex;"><span>        surface_normal = intersection.normal
 </span></span><span style="display:flex;"><span>        albedo = intersection.material.color
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Generate shadow ray for direct lighting</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Evaluate light</span>
 </span></span><span style="display:flex;"><span>        light_direction = sample_sun_disk(sun_direction, SOLAR_RADIUS)
 </span></span><span style="display:flex;"><span>        cosine = dot(surface_normal, light_direction)
 </span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> cosine &gt; 0:
@@ -259,16 +255,16 @@
 </span></span><span style="display:flex;"><span>            shadow_rays.append(ShadowRay(
 </span></span><span style="display:flex;"><span>                surface_point,
 </span></span><span style="display:flex;"><span>                light_direction,
-</span></span><span style="display:flex;"><span>                path.throughput * reflectance * sun_radiance / pdf,
+</span></span><span style="display:flex;"><span>                path_throughput[input_ray.path_index] * reflectance * sun_radiance / pdf,
 </span></span><span style="display:flex;"><span>                input_ray.path_index
 </span></span><span style="display:flex;"><span>            ))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Generate indirect ray</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Evaluate material</span>
 </span></span><span style="display:flex;"><span>        new_direction = sample_cosine_hemisphere(surface_normal)
 </span></span><span style="display:flex;"><span>        cosine = dot(surface_normal, new_direction)
 </span></span><span style="display:flex;"><span>        reflectance = cosine * albedo / π
 </span></span><span style="display:flex;"><span>        pdf = pdf_sun_disk(new_direction) + pdf_cosine_hemisphere(new_direction)
-</span></span><span style="display:flex;"><span>        path.throughput *= reflectance / pdf
+</span></span><span style="display:flex;"><span>        path_throughput[input_ray.path_index] *= reflectance / pdf
 </span></span><span style="display:flex;"><span>  
 </span></span><span style="display:flex;"><span>        output_rays.append(Ray(
 </span></span><span style="display:flex;"><span>            surface_point,
@@ -276,9 +272,9 @@
 </span></span><span style="display:flex;"><span>            input_ray.path_index
 </span></span><span style="display:flex;"><span>        ))            
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>:
-</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Ray hits sky - accumulate radiance and terminate path</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000"># Shade ray miss</span>
 </span></span><span style="display:flex;"><span>        sky_radiance = evaluate_sky_model(ray.direction, sun_direction)
-</span></span><span style="display:flex;"><span>        path.radiance += path.throughput * sky_radiance
+</span></span><span style="display:flex;"><span>        path_radiance[input_ray.path_index] += path.throughput * sky_radiance
 </span></span></code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
@@ -289,13 +285,9 @@
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
-</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># Connection phase</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#00f">def</span> connect_shadow_rays(shadow_ray, scene_geometry, paths):
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#00f">def</span> connect(shadow_ray, scene_geometry, paths):
 </span></span><span style="display:flex;"><span>    origin = shadow_ray.origin
 </span></span><span style="display:flex;"><span>    direction = shadow_ray.direction
 </span></span><span style="display:flex;"><span>
@@ -304,7 +296,7 @@
 </span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="time-measurements">Time measurements</h2>
-<p>Both the monolithic and wavefront renderers execute on the GPU using compute shaders. One sample per pixel is gathered in a single compute pass. GPU execution time is measured using Metal&rsquo;s timestamp counter, sampling at the beginning and end of the compute pass:</p>
+<p>Both renderers execute on the GPU using compute shaders. One sample per pixel is gathered in a single compute pass. GPU execution time is measured using Metal&rsquo;s timestamp counter, sampling at the beginning and end of the compute pass:</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
@@ -319,9 +311,9 @@
 </div>
 </div><p>Compute execution timings are gathered by rendering the following image at a fixed resolution across different devices:</p>
 <p><img src="/img/wavefront-ray-tracing/cornell-box.png" alt="cornell box"></p>
-<p>The Cornell box scene consists of 128 × 128 × 128 voxels. The generated mesh is not optimized, making the scene a reasonably complex test case despite its simple appearance.</p>
+<p>The scene consists of \(128^3\) voxels. The generated mesh is not optimized, making it a reasonably complex test case despite its simple appearance.</p>
 <h2 id="performance">Performance</h2>
-<p>Performance was measured on the following devices:</p>
+<p>Performance was measured on:</p>
 <ul>
 <li><strong>M1 Pro</strong> (MacBook Pro)</li>
 <li><strong>M2</strong> (MacBook Air)</li>
@@ -439,28 +431,71 @@ document.addEventListener('DOMContentLoaded', function() {
 <li><strong>M1 Pro</strong>: Wavefront (~141ms) outperforms monolithic (~167ms)</li>
 <li><strong>M2</strong>: Slowest overall, with wavefront significantly faster than monolithic</li>
 </ol>
-<p>It&rsquo;s remarkable that an iPad beats a MacBook Pro. However, the M3&rsquo;s strong performance isn&rsquo;t entirely surprising given its hardware-accelerated ray tracing capabilities.</p>
-<p>One way to understand why the wavefront renderer may outperform the monolithic renderer is by examining GPU traces.</p>
-<p><em>GPU trace of monolithic execution on the M2</em></p>
-<p><img src="/img/wavefront-ray-tracing/m2_monolithic_trace.png" alt="m2 monolithic kernel trace"></p>
-<p><em>GPU trace of wavefront execution on the M2</em></p>
-<p><img src="/img/wavefront-ray-tracing/m2_wavefront_trace.png" alt="m2 wavefront kernel trace"></p>
-<p>Two metrics from the GPU performance traces stand out:</p>
+<p>It&rsquo;s remarkable that an iPad beats a MacBook Pro. What a time to be alive. However, the M3 iPad&rsquo;s strong performance isn&rsquo;t entirely surprising given its hardware-accelerated ray tracing capabilities.</p>
+<p>The wavefront renderer on the M2 shows slightly better efficiency and occupancy compared to the monolithic renderer:</p>
 <ul>
-<li><strong>Kernel ALU Inefficiency</strong>: Percentage of ALU instructions predicated out due to divergent control flow or partial SIMD groups (when threadgroup size isn&rsquo;t a multiple of SIMDgroup size)</li>
-<li><strong>Kernel Arithmetic Intensity</strong>: ALU operations per byte of memory traffic</li>
+<li><strong>Kernel ALU Inefficiency</strong>: 60.5%</li>
+<li><strong>Kernel Occupancy</strong>: 25.4%</li>
 </ul>
-<p>On the M2:</p>
+<p>In the GPU timeline, most time is spent in the Extend + Shade phase. The compiler statistics indicate the kernel is smaller than the monolithic kernel, but not significantly so. Other kernels, like &ldquo;Connect,&rdquo; have similar register counts.</p>
 <ul>
-<li><strong>Monolithic kernel</strong>: Higher ALU inefficiency but better arithmetic intensity</li>
-<li><strong>Wavefront kernel</strong>: Lower ALU inefficiency but reduced arithmetic intensity</li>
+<li><strong>Temporary Registers</strong>: 68</li>
+<li><strong>Max Theoretical Occupancy</strong>: 48.8%</li>
 </ul>
-<p>These numbers are expected. The ALU inefficiency increases for the monolithic kernel as more loop iterations execute and each thread&rsquo;s state diverges from its neighbors. In turn, each wavefront kernel iteration must read its inputs from memory and write intermediate results back to memory, reducing ALU intensity. Reading from and writing to memory doesn&rsquo;t necessarily hurt performance if there are plenty of threads to schedule, but on mobile hardware, excessive memory I/O drains battery.</p>
-<p>Performance counter comparison with the M3 processor would be interesting, but unfortunately the GPU trace for the M3 appears broken. ALU intensity was nowhere to be found, and ALU inefficiency was zero across all captured traces. I&rsquo;m not sure whether this is user error or if these metrics can&rsquo;t be captured from an iPad.</p>
-<p>Without matching numbers, it&rsquo;s difficult to say why the monolithic renderer outperforms wavefront on the M3, but it&rsquo;s clear that hardware-accelerated ray tracing is significantly reducing the impact that intersection testing has on the monolithic kernel.</p>
+<p>For the M3, Xcode reports different counters. We can compare the top performance limiters (% of max throughput) across M2 and M3:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>M2 monolithic</th>
+<th>M2 wavefront</th>
+<th>M3 monolithic</th>
+<th>M3 wavefront</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Top performance limiter</td>
+<td>ALU limiter 53.9%</td>
+<td>ALU limiter 51.2%</td>
+<td>Last level cache limiter 42.8%</td>
+<td>Last level cache limiter 49.2%</td>
+</tr>
+<tr>
+<td>Registers</td>
+<td>80</td>
+<td>68 (extend + shade)</td>
+<td>54</td>
+<td>39 (extend + shade)</td>
+</tr>
+<tr>
+<td>Runtime occupancy</td>
+<td>20.4%</td>
+<td>25.4%</td>
+<td>30.6%</td>
+<td>33.9%</td>
+</tr>
+<tr>
+<td>Runtime ALU instructions</td>
+<td>192B</td>
+<td>129B</td>
+<td>23.0B</td>
+<td>21.1B</td>
+</tr>
+</tbody>
+</table>
+<p>At a high level, ray tracing is compute-bound on the M2 and memory-bound on the M3. On the M2, bounding volume hierarchy traversal results in large, ALU-instruction-heavy shaders. The M3 does significantly less work—the ALU instruction count is almost one-tenth of the M2&rsquo;s—as much work gets offloaded to the ray tracing cores. Interestingly, based on the table, the wavefront renderer on the M3 should be the best performer. But it&rsquo;s more memory-limited than the monolithic renderer, with a higher memory unit limiter score.</p>
+<p>On a final note: the shaders could be better optimized. The geometry data (triangle positions and normals) uses 32-bit floats naively. This data could be significantly compressed, which may improve M3 performance.</p>
 <h2 id="which-renderer-to-choose">Which renderer to choose?</h2>
-<p>For my hobby renderer, the choice is clear. The renderer is intended to run only on Apple&rsquo;s M-series processors, and when an M1 or M2 chip is detected, the wavefront renderer is chosen. Otherwise, the monolithic renderer is used.</p>
-<p>A renderer with the feature set presented here appears to be on the borderline of benefiting from a wavefront architecture. The more features added to the renderer, the more divergence will occur during execution, giving an increasing edge to the wavefront renderer. When more materials and lights are added in the future, it will be necessary to re-evaluate performance again.</p>
+<p>For my hobby renderer, the choice is clear. Since the renderer targets only Apple&rsquo;s M-series processors, the wavefront code path is launched when an M1 or M2 chip is detected. Otherwise, the monolithic renderer is used.</p>
+<p>A renderer with this feature set appears to be on the borderline of benefiting from a wavefront architecture. More features will introduce more divergence during execution, giving an increasing edge to the wavefront renderer. When more materials and lights are added in the future, it will be necessary to re-evaluate performance.</p>
+<h2 id="references-and-further-reading">References and further reading</h2>
+<ul>
+<li><a href="https://www.pbr-book.org/4ed/Wavefront_Rendering_on_GPUs">Wavefront Rendering on GPUs</a></li>
+<li><a href="https://jacco.ompf2.com/2019/07/18/wavefront-path-tracing/">Wavefront Path Tracing</a></li>
+<li><a href="https://interplayoflight.wordpress.com/2020/11/11/what-is-shader-occupancy-and-why-do-we-care-about-it/">What is shader occupancy and why do we care about it?</a></li>
+<li><a href="https://damek.github.io/random/basic-facts-about-gpus/">Basic facts about GPUs</a></li>
+</ul>
 
         </div>
 
@@ -470,10 +505,16 @@ document.addEventListener('DOMContentLoaded', function() {
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
-    <li><a href="#what-is-a-wavefront-ray-tracer">What is a wavefront ray tracer?</a></li>
+    <li><a href="#what-is-a-wavefront-ray-tracer">What is a wavefront ray tracer?</a>
+      <ul>
+        <li><a href="#the-monolithic-ray-tracer">The monolithic ray tracer</a></li>
+        <li><a href="#the-wavefront-ray-tracer">The wavefront ray tracer</a></li>
+      </ul>
+    </li>
     <li><a href="#time-measurements">Time measurements</a></li>
     <li><a href="#performance">Performance</a></li>
     <li><a href="#which-renderer-to-choose">Which renderer to choose?</a></li>
+    <li><a href="#references-and-further-reading">References and further reading</a></li>
   </ul>
 </nav>
         </div>

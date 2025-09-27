@@ -8,6 +8,18 @@
     <language>en-us</language>
     <lastBuildDate>Thu, 12 Jun 2025 08:30:16 +0300</lastBuildDate><atom:link href="https://nelari.us/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Projects</title>
+      <link>https://nelari.us/projects/</link>
+      <pubDate>Sat, 27 Sep 2025 00:00:00 +0000</pubDate>
+      
+      <guid>https://nelari.us/projects/</guid>
+      <description>Here is an overview of some of the bigger software projects I&amp;rsquo;ve worked on in my free time.
+Polycube A small, simple, voxel editor written from scratch in C. Posting intermittent updates about the project at https://bsky.app/profile/nelarius.bsky.social.
+Features:
+voxel editing with single voxel, box, and face extrusion brushes. a UI written using the Clay box layout library resulting in microsecond layout and rendering times. a path tracer written using Metal raytracing API.</description>
+    </item>
+    
+    <item>
       <title>Experiments with wavefront ray tracing on Apple silicon</title>
       <link>https://nelari.us/post/wavefront-ray-tracing/</link>
       <pubDate>Thu, 12 Jun 2025 08:30:16 +0300</pubDate>
@@ -130,18 +142,6 @@ I have done my fair share of playing around with Blender, but I wanted to play a
       <guid>https://nelari.us/post/raytracer_with_rust_and_zig/</guid>
       <description>I spend most of my programming time writing C++. And like many other C++ programmers, I&amp;rsquo;ve shot myself in the foot countless times with a feature I didn&amp;rsquo;t fully grok. And I&amp;rsquo;ve spent enormous amounts of time trying to understand the language. Like many other C++ developers in this position, I find myself frequently daydreaming about switching to another more modern and easily understood language.
 The two languages that I spent most of my time daydreaming about writing code in are Rust and Zig.</description>
-    </item>
-    
-    <item>
-      <title>Projects</title>
-      <link>https://nelari.us/projects/</link>
-      <pubDate>Mon, 25 Mar 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://nelari.us/projects/</guid>
-      <description>Here is an overview of some of the software projects I&amp;rsquo;ve worked on in my free time.
-Unnamed voxel project A small, simple voxel editor written in C. The goal is to bolt ray tracing into the editor eventually. I&amp;rsquo;m posting about it on bluesky occasionally: https://bsky.app/profile/nelarius.bsky.social.
-rayfinder An interactive WebGPU pathtracer, implemented for desktop platforms using the Dawn renderer.
-The goal was to learn how to implement path tracing for triangle meshes.</description>
     </item>
     
     <item>

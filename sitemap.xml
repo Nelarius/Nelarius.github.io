@@ -2,6 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://nelari.us/projects/</loc>
+    <lastmod>2025-09-27T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/post/wavefront-ray-tracing/</loc>
     <lastmod>2025-06-12T08:30:16+03:00</lastmod>
   </url><url>
@@ -88,9 +91,6 @@
   </url><url>
     <loc>https://nelari.us/tags/zig/</loc>
     <lastmod>2019-06-27T20:00:00+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/projects/</loc>
-    <lastmod>2019-03-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/c&#43;&#43;/</loc>
     <lastmod>2019-03-24T08:22:27+02:00</lastmod>

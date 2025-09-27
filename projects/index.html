@@ -64,17 +64,27 @@
         
         <div class="article-meta">
             <a href="/projects/" class="article-date">
-                <time datetime='2019-03-25T00:00:00.000&#43;00:00' itemprop="datePublished">2019-03-25</time>
+                <time datetime='2025-09-27T00:00:00.000&#43;00:00' itemprop="datePublished">2025-09-27</time>
             </a>
             
             
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <p>Here is an overview of some of the software projects I&rsquo;ve worked on in my free time.</p>
-<h2 id="unnamed-voxel-project">Unnamed voxel project</h2>
-<p>A small, simple voxel editor written in C. The goal is to bolt ray tracing into the editor eventually. I&rsquo;m posting about it on bluesky occasionally: <a href="https://bsky.app/profile/nelarius.bsky.social">https://bsky.app/profile/nelarius.bsky.social</a>.</p>
-<h2 id="rayfinder"><code>rayfinder</code></h2>
+            <p>Here is an overview of some of the bigger software projects I&rsquo;ve worked on in my free time.</p>
+<h2 id="polycube">Polycube</h2>
+<p>A small, simple, voxel editor written from scratch in C. Posting intermittent updates about the project at <a href="https://bsky.app/profile/nelarius.bsky.social">https://bsky.app/profile/nelarius.bsky.social</a>.</p>
+<p>Features:</p>
+<ul>
+<li>voxel editing with single voxel, box, and face extrusion brushes.</li>
+<li>a UI written using the <a href="https://github.com/nicbarker/clay">Clay</a> box layout library resulting in microsecond layout and rendering times.</li>
+<li>a path tracer written using Metal raytracing API.</li>
+<li>an implementation of the <a href="https://sebh.github.io/publications/egsr2020.pdf">Unreal Engine atmospheric rendering</a> model.</li>
+</ul>
+<p><img src="/img/projects/voxel-editor.jpg" alt="vxc"></p>
+<p><img src="/img/projects/atmosphere-rendering.png" alt="sky"></p>
+<h2 id="rayfinder">rayfinder</h2>
+<p>Find it on <a href="https://github.com/Nelarius/rayfinder">github</a>.</p>
 <p><img src="/img/pathtracer_devlog/sponza-pbs-1.png" alt="path-traced-sponza"></p>
 <p>An interactive WebGPU pathtracer, implemented for desktop platforms using the <a href="https://dawn.googlesource.com/dawn">Dawn</a> renderer.</p>
 <p>The goal was to learn how to implement path tracing for triangle meshes. The project contains</p>
@@ -84,11 +94,12 @@
 <li>using animated blue noise as sampling distributions</li>
 <li>simple lambertian diffuse material</li>
 </ul>
-<h2 id="imnodes"><code>imnodes</code></h2>
+<h2 id="imnodes">imnodes</h2>
+<p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
 <p><img src="/img/imnodes/imnodes-example.gif" alt="imnodes"></p>
 <p>A small, dependency-free node editor extension for <a href="https://github.com/ocornut/imgui">dear imgui</a>. It features a small immediate-mode API similar to <code>dear imgui</code> itself.</p>
-<p>Find it on <a href="https://github.com/Nelarius/imnodes">github</a>.</p>
 <h2 id="wren">Wren++</h2>
+<p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
 <table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
 <pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
@@ -118,8 +129,7 @@
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p>A C++ binding generator for the <a href="http://wren.io">Wren programming language</a>. It utilizes modern C++14 metaprogramming features and is fairly compact as a result. You can use Wren++ to wrap any C++ function or class in Wren code. Wren++ also provides access to Wren code from C++.</p>
-<p>I wrote a small tutorial on its usage <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
-<p>Find it on <a href="https://github.com/Nelarius/wrenpp">github</a>.</p>
+<p>A small tutorial on its usage can be found <a href="http://nelari.us/post/wren-embedding-2/">here</a>.</p>
 
         </div>
 
@@ -129,9 +139,9 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
-    <li><a href="#unnamed-voxel-project">Unnamed voxel project</a></li>
-    <li><a href="#rayfinder"><code>rayfinder</code></a></li>
-    <li><a href="#imnodes"><code>imnodes</code></a></li>
+    <li><a href="#polycube">Polycube</a></li>
+    <li><a href="#rayfinder">rayfinder</a></li>
+    <li><a href="#imnodes">imnodes</a></li>
     <li><a href="#wren">Wren++</a></li>
   </ul>
 </nav>
@@ -147,15 +157,9 @@
     
 <nav id="article-nav">
     
-    <a href="/post/raytracer_with_rust_and_zig/" id="article-nav-newer" class="article-nav-link-wrap">
-        <div class="article-nav-title"><span>&lt;</span>&nbsp;
-            Writing a small ray tracer in Rust and Zig
-        </div>
-    </a>
     
-    
-    <a href="/post/imnodes/" id="article-nav-older" class="article-nav-link-wrap">
-        <div class="article-nav-title">imnodes: writing an immediate mode node editor library&nbsp;<span>&gt;</span></div>
+    <a href="/post/wavefront-ray-tracing/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Experiments with wavefront ray tracing on Apple silicon&nbsp;<span>&gt;</span></div>
     </a>
     
 </nav>

@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://nelari.us/tags/c/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/dda/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/raytracing/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/tags/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
+    <loc>https://nelari.us/post/voxel-ray-tracing/</loc>
+    <lastmod>2026-06-28T20:19:07+03:00</lastmod>
+  </url><url>
     <loc>https://nelari.us/projects/</loc>
     <lastmod>2025-09-27T00:00:00+00:00</lastmod>
   </url><url>
@@ -11,26 +32,11 @@
     <loc>https://nelari.us/tags/metal/</loc>
     <lastmod>2025-06-12T08:30:16+03:00</lastmod>
   </url><url>
-    <loc>https://nelari.us/</loc>
-    <lastmod>2025-06-12T08:30:16+03:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/post/</loc>
-    <lastmod>2025-06-12T08:30:16+03:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/raytracing/</loc>
-    <lastmod>2025-06-12T08:30:16+03:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/</loc>
-    <lastmod>2025-06-12T08:30:16+03:00</lastmod>
-  </url><url>
     <loc>https://nelari.us/tags/blue-noise/</loc>
     <lastmod>2025-01-12T14:46:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/post/animated-blue-noise/</loc>
     <lastmod>2025-01-12T14:46:00+02:00</lastmod>
-  </url><url>
-    <loc>https://nelari.us/tags/c/</loc>
-    <lastmod>2025-01-04T16:11:00+02:00</lastmod>
   </url><url>
     <loc>https://nelari.us/tags/cmake/</loc>
     <lastmod>2025-01-04T16:11:00+02:00</lastmod>

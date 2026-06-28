@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>C // My thought repository</title>
+    <title>Voxel Raytracer Devlog // My thought repository</title>
 
     <meta charset="utf-8">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     
-    <meta name="description" content="This is where I write about the stuff that I&#39;ve been working on.">
+    <meta name="description" content="Raytracing voxels on the GPU using the DDA algorithm.">
     
 
-        <meta property="og:title" content="C" />
+        <meta property="og:title" content="Voxel Raytracer Devlog" />
     <meta property="og:description" content="This is where I write about the stuff that I&#39;ve been working on." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en" />
-    <meta property="og:url" content="https://nelari.us/tags/c/" />
+    <meta property="og:url" content="https://nelari.us/post/voxel-ray-tracing/" />
     
-<link href="https://nelari.us/tags/c/index.xml" rel="alternate" type="application/rss+xml" title="My thought repository" />
+
     <link rel="shortcut icon" href="/favicon.ico">
 
     <link href="https://nelari.us/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
@@ -30,6 +30,7 @@
 
     <meta name="generator" content="Hugo 0.119.0">
 </head>
+
 
 <body>
 <div id="container">
@@ -54,42 +55,89 @@
 </header>
 
     <section id="main" class="outer">
-        <section class="archives-wrap">
-            <div class="archive-tag-wrap">
-                <span class="archive-tag">#c</span>
-            </div>
-            <div class="archives">
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/voxel-ray-tracing/" class="archive-article-date">
-                <time datetime='2026-06-28T20:19:07.000&#43;03:00' itemprop="datePublished">2026 Jun 28</time>
-            </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/voxel-ray-tracing/">Voxel Raytracer Devlog</a>
-            </h1>
+        <article class="article article-type-post" itemscope itemprop="blogPost">
+    <div class="article-inner">
+        
+        <header class="article-header">
+            <h1 class="article-title" itemprop="name">Voxel Raytracer Devlog</h1>
         </header>
-    </div>
-</article>
-                
-                <article class="archive-article archive-type-post">
-    <div class="archive-article-inner">
-        <header class="archive-article-header">
-            <a href="/post/embedding_data_into_byte_arrays/" class="archive-article-date">
-                <time datetime='2025-01-04T16:11:00.000&#43;02:00' itemprop="datePublished">2025 Jan 4</time>
+        
+        <div class="article-meta">
+            <a href="/post/voxel-ray-tracing/" class="article-date">
+                <time datetime='2026-06-28T20:19:07.000&#43;03:00' itemprop="datePublished">2026-06-28</time>
             </a>
-            <h1 itemprop="name">
-                <a class="archive-article-title" href="/post/embedding_data_into_byte_arrays/">Embed data into C byte arrays at build time</a>
-            </h1>
-        </header>
-    </div>
-</article>
-                
-            </div></section>
+            
+            
+            
+        </div>
+        <div class="article-entry" itemprop="articleBody">
+            <h2 id="hello-sdl">Hello, SDL!</h2>
+<p><em>2026-06-28</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/03feb133a96a128daaa24ea55a67379945ef0a94">03feb13</a></p>
+<p>All projects have to start somewhere. The rendering infrastructure is set up to render a fullscreen quad.</p>
+<ul>
+<li><a href="https://wiki.libsdl.org/SDL3/CategoryGPU">SDL_GPU</a> is used as the rendering abstraction. The Metal backend is used on macOS, and the Vulkan backend on Windows.</li>
+<li><a href="https://github.com/libsdl-org/SDL_shadercross">SDL_shadercross</a> is used to compile/transpile HLSL shaders to SPIR-V and Metal.</li>
+<li>Shaders are compiled at build time and embedded as byte arrays into the source code.</li>
+</ul>
+<p>A window opens displaying the UV coordinates as the color.</p>
+<p><img src="/img/voxel-ray-tracing/fullscreen-quad.png" alt="fullscreen-quad"></p>
+
+        </div>
+
+        
+        
+        <div class="article-toc" >
+            <h3>Contents</h3>
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#hello-sdl">Hello, SDL!</a></li>
+  </ul>
+</nav>
+        </div>
+        
+        
+
         
 
 
+        
+        <footer class="article-footer">
+            <ul class="article-tag-list">
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/c">c
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/raytracing">raytracing
+                    </a>
+                </li>
+                
+                <li class="article-tag-list-item">
+                    <a class="article-tag-list-link" href="https://nelari.us/tags/dda">dda
+                    </a>
+                </li>
+                
+            </ul>
+        </footer>
+        
+    </div>
+    
+<nav id="article-nav">
+    
+    
+    <a href="/projects/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Projects&nbsp;<span>&gt;</span></div>
+    </a>
+    
+</nav>
+
+
+</article>
+
+        
     </section>
     <footer id="footer">
     <div class="outer">

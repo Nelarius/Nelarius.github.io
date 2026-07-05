@@ -13,10 +13,12 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Hello, SDL! 2026-06-28
-Commit: 03feb13
-All projects have to start somewhere. The rendering infrastructure is set up to render a fullscreen quad.
-SDL_GPU is used as the rendering abstraction. The Metal backend is used on macOS, and the Vulkan backend on Windows. SDL_shadercross is used to compile/transpile HLSL shaders to SPIR-V and Metal. Shaders are compiled at build time and embedded as byte arrays into the source code. A window opens displaying the UV coordinates as the color.</description>
+      <description>Naive DDA 2026-07-04
+Commit: 0014bd0
+Render Magicavoxel models with naive DDA.
+Adds ogt_vox.h for parsing Magicavoxel files. Introduces DDA rendering in the pixel shader. Here&amp;rsquo;s the gist of the DDA algorithm. For a ray with origin o and direction d, the point at t along the ray is given by
+p = o + t * d The first x-intersection is given by
+t = (ceil(o.x) - o.x) / d.x and similarly for the first y-intersection:</description>
     </item>
     
   </channel>

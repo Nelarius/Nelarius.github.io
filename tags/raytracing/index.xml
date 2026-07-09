@@ -13,12 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Naive DDA 2026-07-04
-Commit: 0014bd0
-Render Magicavoxel models with naive DDA.
-Adds ogt_vox.h for parsing Magicavoxel files. Introduces DDA rendering in the pixel shader. Here&amp;rsquo;s the gist of the DDA algorithm. For a ray with origin o and direction d, the point at t along the ray is given by
-p = o + t * d The first x-intersection is given by
-t = (ceil(o.x) - o.x) / d.x and similarly for the first y-intersection:</description>
+      <description>Pack voxels into byte buffer 2026-07-08
+Commit: 25b6fd2
+Voxels are stored as bytes instead of wasteful uints:
+1 2 -StructuredBuffer&amp;lt;uint&amp;gt; voxels : register(t0, space2); +ByteAddressBuffer voxels : register(t0, space2); Voxels are palette indices, with an index of 0 indicating empty space (hence, in Magicavoxel files, only palette indices &amp;gt; 0 are valid). The palette has 255 entries, so using a byte per voxel is sufficient.
+Although peak memory consumption is reduced, there is no impact on runtime performance on my M2 Macbook:</description>
     </item>
     
     <item>

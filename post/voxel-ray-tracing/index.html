@@ -71,7 +71,59 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="naive-dda">Naive DDA</h2>
+            <h2 id="pack-voxels-into-byte-buffer">Pack voxels into byte buffer</h2>
+<p><em>2026-07-08</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/25b6fd27d13dda0c46b8efecc3d9d91988d568d6">25b6fd2</a></p>
+<p>Voxels are stored as bytes instead of wasteful <code>uint</code>s:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-diff" data-lang="diff"><span style="display:flex;"><span>-StructuredBuffer&lt;uint&gt; voxels : register(t0, space2);
+</span></span><span style="display:flex;"><span>+ByteAddressBuffer      voxels : register(t0, space2);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Voxels are palette indices, with an index of <code>0</code> indicating empty space (hence, in Magicavoxel files, only palette indices &gt; 0 are valid). The palette has 255 entries, so using a byte per voxel is sufficient.</p>
+<p>Although peak memory consumption is reduced, there is no impact on runtime performance on my M2 Macbook:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">39.97</td>
+<td style="text-align:right">40.17</td>
+<td style="text-align:right">+0.20 / +0.5%</td>
+</tr>
+<tr>
+<td>On-GPU avg</td>
+<td style="text-align:right">37.07 ms</td>
+<td style="text-align:right">39.22 ms</td>
+<td style="text-align:right">+2.15 ms / 5.8% slower</td>
+</tr>
+<tr>
+<td>Peak app memory</td>
+<td style="text-align:right">115.80 MiB</td>
+<td style="text-align:right">104.09 MiB</td>
+<td style="text-align:right">-11.70 MiB / -10.1%</td>
+</tr>
+<tr>
+<td>Metal allocated size</td>
+<td style="text-align:right">61.50 MiB</td>
+<td style="text-align:right">61.50 MiB</td>
+<td style="text-align:right">0.00 MiB</td>
+</tr>
+</tbody>
+</table>
+<h2 id="naive-dda">Naive DDA</h2>
 <p><em>2026-07-04</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/0014bd024c72eec77704b1ca30ea3a30d66a1095">0014bd0</a></p>
 <p>Render Magicavoxel models with naive DDA.</p>
@@ -171,6 +223,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#pack-voxels-into-byte-buffer">Pack voxels into byte buffer</a></li>
     <li><a href="#naive-dda">Naive DDA</a></li>
     <li><a href="#hello-sdl">Hello, SDL!</a></li>
   </ul>

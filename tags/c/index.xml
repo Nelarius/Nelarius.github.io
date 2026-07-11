@@ -13,11 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Pack voxels into byte buffer 2026-07-08
-Commit: 25b6fd2
-Voxels are stored as bytes instead of wasteful uints:
-1 2 -StructuredBuffer&amp;lt;uint&amp;gt; voxels : register(t0, space2); +ByteAddressBuffer voxels : register(t0, space2); Voxels are palette indices, with an index of 0 indicating empty space (hence, in Magicavoxel files, only palette indices &amp;gt; 0 are valid). The palette has 255 entries, so using a byte per voxel is sufficient.
-Although peak memory consumption is reduced, there is no impact on runtime performance on my M2 Macbook:</description>
+      <description>3D voxel storage texture 2026-07-10
+Commit: 67bf4a0
+A 3D texture is used for storing the voxel grid.
+The voxels are laid out in memory as v = x + y * grid_extent + z * grid_extent². This makes it difficult to utilize the cache, as the ray tracing may have to access neighboring voxels grid_extent² apart from each other in memory. Using a 3D texture should help as it is designed for spatially adjacent data access.</description>
     </item>
     
     <item>

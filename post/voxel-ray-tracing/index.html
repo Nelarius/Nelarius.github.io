@@ -71,7 +71,37 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="pack-voxels-into-byte-buffer">Pack voxels into byte buffer</h2>
+            <h2 id="3d-voxel-storage-texture">3D voxel storage texture</h2>
+<p><em>2026-07-10</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/67bf4a04905de2b88c60a96475295e7f39285fe0">67bf4a0</a></p>
+<p>A 3D texture is used for storing the voxel grid.</p>
+<p>The voxels are laid out in memory as <code>v = x + y * grid_extent + z * grid_extent²</code>. This makes it difficult to utilize the cache, as the ray tracing may have to access neighboring voxels grid_extent² apart from each other in memory. Using a 3D texture should help as it is designed for spatially adjacent data access.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">37.9</td>
+<td style="text-align:right">41.8</td>
+<td style="text-align:right">10.3%</td>
+</tr>
+<tr>
+<td>Avg on-GPU</td>
+<td style="text-align:right">41.94 ms</td>
+<td style="text-align:right">35.99 ms</td>
+<td style="text-align:right">-14.2%</td>
+</tr>
+</tbody>
+</table>
+<p>Using a 3D texture results in less time spent on the GPU, although the improvement is not huge at this stage. A huge number of voxels are still being traversed by the algorithm.</p>
+<h2 id="pack-voxels-into-byte-buffer">Pack voxels into byte buffer</h2>
 <p><em>2026-07-08</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/25b6fd27d13dda0c46b8efecc3d9d91988d568d6">25b6fd2</a></p>
 <p>Voxels are stored as bytes instead of wasteful <code>uint</code>s:</p>
@@ -223,6 +253,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#3d-voxel-storage-texture">3D voxel storage texture</a></li>
     <li><a href="#pack-voxels-into-byte-buffer">Pack voxels into byte buffer</a></li>
     <li><a href="#naive-dda">Naive DDA</a></li>
     <li><a href="#hello-sdl">Hello, SDL!</a></li>

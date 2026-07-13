@@ -75,7 +75,42 @@
 <p><em>2026-07-10</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/67bf4a04905de2b88c60a96475295e7f39285fe0">67bf4a0</a></p>
 <p>A 3D texture is used for storing the voxel grid.</p>
-<p>The voxels are laid out in memory as <code>v = x + y * grid_extent + z * grid_extent²</code>. This makes it difficult to utilize the cache, as the ray tracing may have to access neighboring voxels grid_extent² apart from each other in memory. Using a 3D texture should help as it is designed for spatially adjacent data access.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-diff" data-lang="diff"><span style="display:flex;"><span>-ByteAddressBuffer      voxels : register(t0, space2);
+</span></span><span style="display:flex;"><span>+Texture3D&lt;uint&gt;        voxels : register(t0, space2);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Reading voxels from the texture is more straightforward than the byte buffer:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-diff" data-lang="diff"><span style="display:flex;"><span>-uint voxel_at(int3 const p)
+</span></span><span style="display:flex;"><span>-{
+</span></span><span style="display:flex;"><span>-    int const  i = p.x + p.y * uniforms.grid_ext + p.z * uniforms.grid_ext * uniforms.grid_ext;
+</span></span><span style="display:flex;"><span>-    uint const byte_idx = (uint)i;
+</span></span><span style="display:flex;"><span>-    uint const word = voxels.Load(byte_idx &amp; ~3u);
+</span></span><span style="display:flex;"><span>-    uint const byte_shift = 8u * (byte_idx &amp; 3u);
+</span></span><span style="display:flex;"><span>-    return (word &gt;&gt; byte_shift) &amp; 255u;
+</span></span><span style="display:flex;"><span>-}
+</span></span><span style="display:flex;"><span>+uint voxel_at(int3 const p) { return voxels.Load(int4(p, 0)).r; }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The voxels are laid out in memory as <code>v = x + y * grid_extent + z * grid_extent²</code>. This makes it difficult to utilize the cache, as the ray tracing may have to access neighboring voxels grid_extent² apart from each other in memory. Using a 3D texture should help as it is designed for spatially adjacent data access.</p>
 <table>
 <thead>
 <tr>

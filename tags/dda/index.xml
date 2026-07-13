@@ -16,7 +16,8 @@
       <description>3D voxel storage texture 2026-07-10
 Commit: 67bf4a0
 A 3D texture is used for storing the voxel grid.
-The voxels are laid out in memory as v = x + y * grid_extent + z * grid_extent². This makes it difficult to utilize the cache, as the ray tracing may have to access neighboring voxels grid_extent² apart from each other in memory. Using a 3D texture should help as it is designed for spatially adjacent data access.</description>
+1 2 -ByteAddressBuffer voxels : register(t0, space2); +Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); Reading voxels from the texture is more straightforward than the byte buffer:
+1 2 3 4 5 6 7 8 9 -uint voxel_at(int3 const p) -{ - int const i = p.x + p.y * uniforms.grid_ext + p.z * uniforms.grid_ext * uniforms.</description>
     </item>
     
   </channel>

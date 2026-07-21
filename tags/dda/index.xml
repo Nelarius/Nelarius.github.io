@@ -13,11 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>3D voxel storage texture 2026-07-10
-Commit: 67bf4a0
-A 3D texture is used for storing the voxel grid.
-1 2 -ByteAddressBuffer voxels : register(t0, space2); +Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); Reading voxels from the texture is more straightforward than the byte buffer:
-1 2 3 4 5 6 7 8 9 -uint voxel_at(int3 const p) -{ - int const i = p.x + p.y * uniforms.grid_ext + p.z * uniforms.grid_ext * uniforms.</description>
+      <description>Voxelized test scenes 2026-07-21
+This update does not contain changes in vxray.
+Using my fork of voxquant, the Sponza Atrium mesh is voxelized into Mavigavoxel .vox files at different resolutions. A small modification is applied to the voxquant tool. Color palettes are padded up to 256 entries, in order to satisfy conservative Magicavoxel importers like the one I am using.
+Here&amp;rsquo;s how I replaced the voxquant tool that I installed using cargo with my fork, cloned locally:</description>
     </item>
     
   </channel>

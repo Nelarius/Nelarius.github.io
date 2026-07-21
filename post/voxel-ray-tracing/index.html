@@ -71,7 +71,15 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="3d-voxel-storage-texture">3D voxel storage texture</h2>
+            <h2 id="voxelized-test-scenes">Voxelized test scenes</h2>
+<p><em>2026-07-21</em></p>
+<p>This update does not contain changes in vxray.</p>
+<p>Using my fork of <a href="https://github.com/Nelarius/voxquant"><code>voxquant</code></a>, the <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza">Sponza Atrium</a> mesh is voxelized into Mavigavoxel <code>.vox</code> files at different resolutions. A small modification is applied to the <code>voxquant</code> tool. Color palettes are padded up to 256 entries, in order to satisfy conservative Magicavoxel importers like the <a href="https://github.com/jpaver/opengametools">one</a> I am using.</p>
+<p>Here&rsquo;s how I replaced the <code>voxquant</code> tool that I installed using <code>cargo</code> with my fork, cloned locally:</p>
+<pre tabindex="0"><code>cargo install --path crates/voxquant --force
+</code></pre><p><em>The Sponza Atrium scene at a 1024 grid resolution</em></p>
+<p><img src="/img/voxel-ray-tracing/voxel-sponza.png" alt="voxel sponza"></p>
+<h2 id="3d-voxel-storage-texture">3D voxel storage texture</h2>
 <p><em>2026-07-10</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/67bf4a04905de2b88c60a96475295e7f39285fe0">67bf4a0</a></p>
 <p>A 3D texture is used for storing the voxel grid.</p>
@@ -288,6 +296,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#voxelized-test-scenes">Voxelized test scenes</a></li>
     <li><a href="#3d-voxel-storage-texture">3D voxel storage texture</a></li>
     <li><a href="#pack-voxels-into-byte-buffer">Pack voxels into byte buffer</a></li>
     <li><a href="#naive-dda">Naive DDA</a></li>

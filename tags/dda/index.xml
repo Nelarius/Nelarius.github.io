@@ -13,10 +13,12 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Voxelized test scenes 2026-07-21
-This update does not contain changes in vxray.
-Using my fork of voxquant, the Sponza Atrium mesh is voxelized into Mavigavoxel .vox files at different resolutions. A small modification is applied to the voxquant tool. Color palettes are padded up to 256 entries, in order to satisfy conservative Magicavoxel importers like the one I am using.
-Here&amp;rsquo;s how I replaced the voxquant tool that I installed using cargo with my fork, cloned locally:</description>
+      <description>Camera presets 2026-07-22
+Commit: f9e89c4
+A simple camera preset file is introduced. Pressing F2 prints the current camera orientation as text:
+1 2 3 position = 49.3564072 11.355504 87.3916855 yaw = 1.79596877 pitch = 0.212940127 Passing the text as a file to vxray spawns the camera at that position and orientation. This makes it easier to compare the performance at fixed locations with different models.
+Voxelized test scenes 2026-07-21
+This update does not contain changes in vxray.</description>
     </item>
     
   </channel>

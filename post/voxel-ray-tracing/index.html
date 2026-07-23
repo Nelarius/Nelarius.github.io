@@ -71,7 +71,24 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="voxelized-test-scenes">Voxelized test scenes</h2>
+            <h2 id="camera-presets">Camera presets</h2>
+<p><em>2026-07-22</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/f9e89c48ceaa938abf1f880df5ab8cad3bc61557">f9e89c4</a></p>
+<p>A simple camera preset file is introduced. Pressing F2 prints the current camera orientation as text:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>position = 49.3564072 11.355504 87.3916855
+</span></span><span style="display:flex;"><span>yaw = 1.79596877
+</span></span><span style="display:flex;"><span>pitch = 0.212940127
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Passing the text as a file to <code>vxray</code> spawns the camera at that position and orientation. This makes it easier to compare the performance at fixed locations with different models.</p>
+<h2 id="voxelized-test-scenes">Voxelized test scenes</h2>
 <p><em>2026-07-21</em></p>
 <p>This update does not contain changes in vxray.</p>
 <p>Using my fork of <a href="https://github.com/Nelarius/voxquant"><code>voxquant</code></a>, the <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza">Sponza Atrium</a> mesh is voxelized into Mavigavoxel <code>.vox</code> files at different resolutions. A small modification is applied to the <code>voxquant</code> tool. Color palettes are padded up to 256 entries, in order to satisfy conservative Magicavoxel importers like the <a href="https://github.com/jpaver/opengametools">one</a> I am using.</p>
@@ -296,6 +313,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#camera-presets">Camera presets</a></li>
     <li><a href="#voxelized-test-scenes">Voxelized test scenes</a></li>
     <li><a href="#3d-voxel-storage-texture">3D voxel storage texture</a></li>
     <li><a href="#pack-voxels-into-byte-buffer">Pack voxels into byte buffer</a></li>

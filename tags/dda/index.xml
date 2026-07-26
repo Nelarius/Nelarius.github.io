@@ -13,12 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Camera presets 2026-07-22
-Commit: f9e89c4
-A simple camera preset file is introduced. Pressing F2 prints the current camera orientation as text:
-1 2 3 position = 49.3564072 11.355504 87.3916855 yaw = 1.79596877 pitch = 0.212940127 Passing the text as a file to vxray spawns the camera at that position and orientation. This makes it easier to compare the performance at fixed locations with different models.
-Voxelized test scenes 2026-07-21
-This update does not contain changes in vxray.</description>
+      <description>2-level DDA 2026-07-24
+Commit: ed4004c
+An additional brick grid is introduced, indicating whether an 8 x 8 x 8 group of voxels (a brick) is occupied. Like the voxel grid, the brick grid is a 3D texture:
+1 2 Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); Texture3D&amp;lt;uint&amp;gt; bricks : register(t1, space2); And similarly, tracing the brick grid is identical to the voxel grid. However, when a brick is occupied, the brick is also traced using DDA:</description>
     </item>
     
   </channel>

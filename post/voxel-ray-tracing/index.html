@@ -71,7 +71,12 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="2-level-dda">2-level DDA</h2>
+            <h2 id="fullscreen-triangle">Fullscreen triangle</h2>
+<p><em>2026-07-27</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/dc0422d045d2a7ab07fadd13dc495b965cafc705">dc0422d</a></p>
+<p>Since per-pixel voxel ray tracing is expensive work, the fullscreen quad is replaced with a fullscreen triangle to avoid duplicated ray tracing along the quad edge. This is a good <a href="https://wallisc.github.io/rendering/2021/04/18/Fullscreen-Pass.html">blog post</a> explaining the method.</p>
+<p>While it&rsquo;s more optimal, there is no measurable difference at the granularity used here.</p>
+<h2 id="2-level-dda">2-level DDA</h2>
 <p><em>2026-07-24</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/ed4004ca12e91c0a2b9774550a08d8c42b1c8bc1">ed4004c</a></p>
 <p>An additional <em>brick grid</em> is introduced, indicating whether an 8 x 8 x 8 group of voxels (a brick) is occupied. Like the voxel grid, the brick grid is a 3D texture:</p>
@@ -456,6 +461,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#fullscreen-triangle">Fullscreen triangle</a></li>
     <li><a href="#2-level-dda">2-level DDA</a></li>
     <li><a href="#camera-presets">Camera presets</a></li>
     <li><a href="#voxelized-test-scenes">Voxelized test scenes</a></li>

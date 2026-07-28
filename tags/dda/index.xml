@@ -13,10 +13,13 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>2-level DDA 2026-07-24
+      <description>Fullscreen triangle 2026-07-27
+Commit: dc0422d
+Since per-pixel voxel ray tracing is expensive work, the fullscreen quad is replaced with a fullscreen triangle to avoid duplicated ray tracing along the quad edge. This is a good blog post explaining the method.
+While it&amp;rsquo;s more optimal, there is no measurable difference at the granularity used here.
+2-level DDA 2026-07-24
 Commit: ed4004c
-An additional brick grid is introduced, indicating whether an 8 x 8 x 8 group of voxels (a brick) is occupied. Like the voxel grid, the brick grid is a 3D texture:
-1 2 Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); Texture3D&amp;lt;uint&amp;gt; bricks : register(t1, space2); And similarly, tracing the brick grid is identical to the voxel grid. However, when a brick is occupied, the brick is also traced using DDA:</description>
+An additional brick grid is introduced, indicating whether an 8 x 8 x 8 group of voxels (a brick) is occupied.</description>
     </item>
     
   </channel>

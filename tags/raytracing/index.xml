@@ -13,13 +13,12 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Fullscreen triangle 2026-07-27
-Commit: dc0422d
-Since per-pixel voxel ray tracing is expensive work, the fullscreen quad is replaced with a fullscreen triangle to avoid duplicated ray tracing along the quad edge. This is a good blog post explaining the method.
-While it&amp;rsquo;s more optimal, there is no measurable difference at the granularity used here.
-2-level DDA 2026-07-24
-Commit: ed4004c
-An additional brick grid is introduced, indicating whether an 8 x 8 x 8 group of voxels (a brick) is occupied.</description>
+      <description>Interlude: performance 2026-07-31
+This update does not contain any changes in vxray.
+The voxel ray tracing has stable performance now, but could it run better? The Metal profiler reveals the following story when rendering the same scene and view used previously in Naive DDA.
+In particular, the shader&amp;rsquo;s occupancy is rather low:
+FS occupancy counter: 35.43 % Register allocation: 92 Before 2-level DDA, these numbers were:
+FS occupancy counter: 71.39 % Register allocation: 42 The DDA shader became a lot larger due to the nested loops.</description>
     </item>
     
     <item>

@@ -71,7 +71,24 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="fullscreen-triangle">Fullscreen triangle</h2>
+            <h2 id="interlude-performance">Interlude: performance</h2>
+<p><em>2026-07-31</em></p>
+<p>This update does not contain any changes in vxray.</p>
+<p>The voxel ray tracing has stable performance now, but could it run better? The Metal profiler reveals the following story when rendering the same scene and view used previously in <a href="/post/voxel-ray-tracing/#naive-dda">Naive DDA</a>.</p>
+<p><img src="/img/voxel-ray-tracing/performance-1.png" alt="performance-1"></p>
+<p>In particular, the shader&rsquo;s occupancy is rather low:</p>
+<ul>
+<li>FS occupancy counter: 35.43 %</li>
+<li>Register allocation: 92</li>
+</ul>
+<p>Before <a href="/post/voxel-ray-tracing/#2-level-dda">2-level DDA</a>, these numbers were:</p>
+<ul>
+<li>FS occupancy counter: 71.39 %</li>
+<li>Register allocation: 42</li>
+</ul>
+<p>The DDA shader became a lot larger due to the nested loops. More state is being carried over the loop in registers. Here is a great post explaining why the occupancy (and register allocation) matters: <a href="https://interplayoflight.wordpress.com/2020/11/11/what-is-shader-occupancy-and-why-do-we-care-about-it/">https://interplayoflight.wordpress.com/2020/11/11/what-is-shader-occupancy-and-why-do-we-care-about-it/</a> In short, the GPU is able to schedule fewer groups of work on an execution unit concurrently, so memory stalls affect the performance negatively.</p>
+<p>Reducing the size of the live state could bring the occupancy back up and improve the performance. But the ALU usage is also very high indicating that a lot of work is still being done despite the 2-level grid.</p>
+<h2 id="fullscreen-triangle">Fullscreen triangle</h2>
 <p><em>2026-07-27</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/dc0422d045d2a7ab07fadd13dc495b965cafc705">dc0422d</a></p>
 <p>Since per-pixel voxel ray tracing is expensive work, the fullscreen quad is replaced with a fullscreen triangle to avoid duplicated ray tracing along the quad edge. This is a good <a href="https://wallisc.github.io/rendering/2021/04/18/Fullscreen-Pass.html">blog post</a> explaining the method.</p>
@@ -461,6 +478,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#interlude-performance">Interlude: performance</a></li>
     <li><a href="#fullscreen-triangle">Fullscreen triangle</a></li>
     <li><a href="#2-level-dda">2-level DDA</a></li>
     <li><a href="#camera-presets">Camera presets</a></li>

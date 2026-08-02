@@ -13,12 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Interlude: performance 2026-07-31
-This update does not contain any changes in vxray.
-The voxel ray tracing has stable performance now, but could it run better? The Metal profiler reveals the following story when rendering the same scene and view used previously in Naive DDA.
-In particular, the shader&amp;rsquo;s occupancy is rather low:
-FS occupancy counter: 35.43 % Register allocation: 92 Before 2-level DDA, these numbers were:
-FS occupancy counter: 71.39 % Register allocation: 42 The DDA shader became a lot larger due to the nested loops.</description>
+      <description>Shader occupancy optimization 2026-08-01
+Commits:
+5d70988 c6e6210 c94b224 9a1a107 Fewer variables are carried over the loops and tdelta was deduplicated, reducing the register allocation by 20. In particular, using just the min cell inside both nested loops has a large impact:
+1 2 3 4 5 6 7 8 9 // Instead of this: int3 min_cell, max_cell; if (any(cell &amp;lt; min_cell) || any(cell &amp;gt; max_cell)) { // Do this: int3 local_cell; if (any(local_cell &amp;gt;= VX_BRICK_EXT)) { The middle two commits clean up some unnecessary work.</description>
     </item>
     
     <item>

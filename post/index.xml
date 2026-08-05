@@ -13,10 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Shader occupancy optimization 2026-08-01
-Commits:
-5d70988 c6e6210 c94b224 9a1a107 Fewer variables are carried over the loops and tdelta was deduplicated, reducing the register allocation by 20. In particular, using just the min cell inside both nested loops has a large impact:
-1 2 3 4 5 6 7 8 9 // Instead of this: int3 min_cell, max_cell; if (any(cell &amp;lt; min_cell) || any(cell &amp;gt; max_cell)) { // Do this: int3 local_cell; if (any((uint3)local_cell &amp;gt;= (uint)VX_BRICK_EXT)) { The middle two commits clean up some unnecessary work.</description>
+      <description>Voxel occupancy mask 2026-01-04
+Commit: fdf44f3
+The brick extent is reduced to 4x4x4. A voxel occupancy mask is introduced alongside the voxel grid:
+1 2 3 4 Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); -Texture3D&amp;lt;uint&amp;gt; bricks : register(t1, space2); +Texture3D&amp;lt;uint2&amp;gt; voxel_masks : register(t1, space2); StructuredBuffer&amp;lt;uint&amp;gt; palette_rgba : register(t2, space2); Each brick contains 64 voxels. If we store voxel occupancy using a single bit, a single 64-bit integer is enough to store the occupancy of a single brick and quickly skip over the entire brick without an additional data structure:</description>
     </item>
     
     <item>

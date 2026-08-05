@@ -71,7 +71,73 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="shader-occupancy-optimization">Shader occupancy optimization</h2>
+            <h2 id="voxel-occupancy-mask">Voxel occupancy mask</h2>
+<p><em>2026-01-04</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/fdf44f3f6c5a6de948758bba3674012beac79441">fdf44f3</a></p>
+<p>The brick extent is reduced to 4x4x4. A voxel occupancy mask is introduced alongside the voxel grid:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-diff" data-lang="diff"><span style="display:flex;"><span>Texture3D&lt;uint&gt;        voxels : register(t0, space2);
+</span></span><span style="display:flex;"><span>-Texture3D&lt;uint&gt;        bricks : register(t1, space2);
+</span></span><span style="display:flex;"><span>+Texture3D&lt;uint2&gt;       voxel_masks : register(t1, space2);
+</span></span><span style="display:flex;"><span>StructuredBuffer&lt;uint&gt; palette_rgba : register(t2, space2);
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Each brick contains 64 voxels. If we store voxel occupancy using a single bit, a single 64-bit integer is enough to store the occupancy of a single brick and quickly skip over the entire brick without an additional data structure:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">9
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span><span style="color:#2b91af">uint2</span> <span style="color:#00f">const</span> voxel_mask = voxel_masks.Load(<span style="color:#2b91af">int4</span>(brick_cell, 0)).rg;
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> (any(voxel_mask != <span style="color:#2b91af">uint2</span>(0u, 0u)))
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> voxel = trace_brick(origin, dir, inv_dir, tdelta, brick_cell, voxel_mask);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (voxel &gt; 0u)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> voxel;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>trace_brick</code> no longer needs to lookup occupancy in a texture, since it can now just use the <code>voxel_mask</code> value we loaded. If we find an occupied voxel along the ray, we can then look up the voxel grid and return the palette color:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span><span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> voxel_idx = (<span style="color:#2b91af">uint</span>)(local_cell.x + local_cell.y * VX_BRICK_EXT +
+</span></span><span style="display:flex;"><span>                              local_cell.z * VX_BRICK_EXT * VX_BRICK_EXT);
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> word = voxel_mask[voxel_idx &gt;&gt; 5u];
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> bit = 1u &lt;&lt; (voxel_idx &amp; 31u);
+</span></span><span style="display:flex;"><span><span style="color:#00f">if</span> ((word &amp; bit) != 0u)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> voxels.Load(<span style="color:#2b91af">int4</span>(brick_min + local_cell, 0)).r;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="shader-occupancy-optimization">Shader occupancy optimization</h2>
 <p><em>2026-08-01</em></p>
 <p><em>Commits:</em></p>
 <ul>
@@ -594,6 +660,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#voxel-occupancy-mask">Voxel occupancy mask</a></li>
     <li><a href="#shader-occupancy-optimization">Shader occupancy optimization</a></li>
     <li><a href="#interlude-performance">Interlude: performance</a></li>
     <li><a href="#fullscreen-triangle">Fullscreen triangle</a></li>

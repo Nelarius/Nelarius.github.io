@@ -71,8 +71,14 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="voxel-occupancy-mask">Voxel occupancy mask</h2>
-<p><em>2026-01-04</em></p>
+            <h2 id="revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</h2>
+<p><em>2026-08-05</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/8cb6aaef416c897c62d6f7684f4dd1fc4212aa04">8cb6aae</a></p>
+<p>Reverts the previous change. It was cherry-picked from an exploration branch, and when systematically measuring the performance against the current parent commit, it performed worse in every scene. Oops.</p>
+<p>The smaller brick granularity results in more bricks being visited along the ray, which slows down rendering especially when viewing the model from afar.</p>
+<p>It performs better than the current implemention with <code>VX_BRICK_EXT</code> set to 4 in some scenes, so there may be merit to circle back to this idea in the future.</p>
+<h2 id="voxel-occupancy-mask">Voxel occupancy mask</h2>
+<p><em>2026-08-04</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/fdf44f3f6c5a6de948758bba3674012beac79441">fdf44f3</a></p>
 <p>The brick extent is reduced to 4x4x4. A voxel occupancy mask is introduced alongside the voxel grid:</p>
 <div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
@@ -660,6 +666,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</a></li>
     <li><a href="#voxel-occupancy-mask">Voxel occupancy mask</a></li>
     <li><a href="#shader-occupancy-optimization">Shader occupancy optimization</a></li>
     <li><a href="#interlude-performance">Interlude: performance</a></li>

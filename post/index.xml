@@ -13,10 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Voxel occupancy mask 2026-01-04
-Commit: fdf44f3
-The brick extent is reduced to 4x4x4. A voxel occupancy mask is introduced alongside the voxel grid:
-1 2 3 4 Texture3D&amp;lt;uint&amp;gt; voxels : register(t0, space2); -Texture3D&amp;lt;uint&amp;gt; bricks : register(t1, space2); +Texture3D&amp;lt;uint2&amp;gt; voxel_masks : register(t1, space2); StructuredBuffer&amp;lt;uint&amp;gt; palette_rgba : register(t2, space2); Each brick contains 64 voxels. If we store voxel occupancy using a single bit, a single 64-bit integer is enough to store the occupancy of a single brick and quickly skip over the entire brick without an additional data structure:</description>
+      <description>Revert &amp;ldquo;Voxel occupancy mask&amp;rdquo; 2026-08-05
+Commit: 8cb6aae
+Reverts the previous change. It was cherry-picked from an exploration branch, and when systematically measuring the performance against the current parent commit, it performed worse in every scene. Oops.
+The smaller brick granularity results in more bricks being visited along the ray, which slows down rendering especially when viewing the model from afar.
+It performs better than the current implemention with VX_BRICK_EXT set to 4 in some scenes, so there may be merit to circle back to this idea in the future.</description>
     </item>
     
     <item>

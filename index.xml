@@ -13,11 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Revert &amp;ldquo;Voxel occupancy mask&amp;rdquo; 2026-08-05
-Commit: 8cb6aae
-Reverts the previous change. It was cherry-picked from an exploration branch, and when systematically measuring the performance against the current parent commit, it performed worse in every scene. Oops.
-The smaller brick granularity results in more bricks being visited along the ray, which slows down rendering especially when viewing the model from afar.
-It performs better than the current implemention with VX_BRICK_EXT set to 4 in some scenes, so there may be merit to circle back to this idea in the future.</description>
+      <description>Rasterize brick AABBs 2026-08-06
+Commit: c5b6bf4
+A hybrid renderer is implemented, significantly improving rendering performance. A billion voxels can now be rendered in real time 🎉 Each frame
+quads are generated for camera-facing brick faces the brick quads are rasterized into a depth buffer ray tracing uses the rasterized depth as the ray origin for DDA Here is a visualization of the rasterized brick AABB depth buffer along with the final render using ephtracy&amp;rsquo;s monu9.</description>
     </item>
     
     <item>

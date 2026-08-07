@@ -71,7 +71,79 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</h2>
+            <h2 id="rasterize-brick-aabbs">Rasterize brick AABBs</h2>
+<p><em>2026-08-06</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/c5b6bf48081c8900170234e6a735d1d0ec11e845">c5b6bf4</a></p>
+<p>A hybrid renderer is implemented, significantly improving rendering performance. A billion voxels can now be rendered in real time 🎉 Each frame</p>
+<ul>
+<li>quads are generated for camera-facing brick faces</li>
+<li>the brick quads are rasterized into a depth buffer</li>
+<li>ray tracing uses the rasterized depth as the ray origin for DDA</li>
+</ul>
+<p>Here is a visualization of the rasterized brick AABB depth buffer along with the final render using ephtracy&rsquo;s <em>monu9.vox</em> from <a href="https://github.com/ephtracy/voxel-model/tree/master/vox/monument">ephtracy/voxel-model</a>.</p>
+<p><img src="/img/voxel-ray-tracing/monu9-rasterized.png" alt="rasterized"></p>
+<p><img src="/img/voxel-ray-tracing/monu9-ray-traced.png" alt="ray-traced"></p>
+<p>Rasterized brick AABBs allow skipping over empty space much faster than traversing through bricks with DDA. While not necessary for rendering static models here, the quads are regenerated every frame to support dynamic voxel grids for future applications.</p>
+<p>The higher-resolution 1024x1024x1024 voxelization of the Sponza Atrium scene is now used to measure performance. Measurements are done using a Macbook Air (M2), on a 3840 x 1600 144 Hz monitor.</p>
+<p><em>sponza-1024-1</em></p>
+<p><img src="/img/voxel-ray-tracing/sponza-1024-1.png" alt="sponza-1024-1"></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">86.51</td>
+<td style="text-align:right">111.59</td>
+<td style="text-align:right">+28.99%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">18.51 ms</td>
+<td style="text-align:right">13.31 ms</td>
+<td style="text-align:right">−28.07%</td>
+</tr>
+</tbody>
+</table>
+<p><em>sponza-1024-2</em></p>
+<p><img src="/img/voxel-ray-tracing/sponza-1024-2.png" alt="sponza-1024-2"></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">104.64</td>
+<td style="text-align:right">142.99</td>
+<td style="text-align:right">+36.64%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">14.42 ms</td>
+<td style="text-align:right">5.49 ms</td>
+<td style="text-align:right">−61.91%</td>
+</tr>
+</tbody>
+</table>
+<p>Some notes on performance:</p>
+<ul>
+<li>when close to the model surface, a tighter fitting brick size (such as 4x4x4) improves performance</li>
+<li>when viewing the model from afar, a loose brick size (the current 8x8x8) is better</li>
+<li>rendering slows down significantly when looking along a surface inside a brick, as the DDA algorithm has to do the full brick + voxel traversal as before</li>
+</ul>
+<h2 id="revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</h2>
 <p><em>2026-08-05</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/8cb6aaef416c897c62d6f7684f4dd1fc4212aa04">8cb6aae</a></p>
 <p>Reverts the previous change. It was cherry-picked from an exploration branch, and when systematically measuring the performance against the current parent commit, it performed worse in every scene. Oops.</p>
@@ -666,6 +738,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#rasterize-brick-aabbs">Rasterize brick AABBs</a></li>
     <li><a href="#revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</a></li>
     <li><a href="#voxel-occupancy-mask">Voxel occupancy mask</a></li>
     <li><a href="#shader-occupancy-optimization">Shader occupancy optimization</a></li>

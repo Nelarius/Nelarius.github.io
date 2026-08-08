@@ -13,10 +13,14 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Rasterize brick AABBs 2026-08-06
-Commit: c5b6bf4
-A hybrid renderer is implemented, significantly improving rendering performance. A billion voxels can now be rendered in real time 🎉 Each frame
-quads are generated for camera-facing brick faces the brick quads are rasterized into a depth buffer ray tracing uses the rasterized depth as the ray origin for DDA Here is a visualization of the rasterized brick AABB depth buffer along with the final render using ephtracy&amp;rsquo;s monu9.</description>
+      <description>Shader occupancy optimization 2 2026-08-07
+Commit: 2975a50
+Another optimization pass is done to the shader to improve occupancy. Grid cell coordinates are converted to int16 (since the largest possible grid extent is 1024) and the loop counters are eliminated.
+Before:
+FS Occupancy: 36.05 % Register allocation: 88 After:
+FS Occupancy: 39.71 % Register allocation: 75 Additionally, ALU instruction count dropped by 10 %.
+sponza-1024-1
+Metric Before After Uplift FPS 111.59 137.</description>
     </item>
     
   </channel>

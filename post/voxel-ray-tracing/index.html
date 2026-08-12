@@ -71,7 +71,19 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="shader-occupancy-optimization-2">Shader occupancy optimization 2</h2>
+            <h2 id="gbuffer-pass">Gbuffer pass</h2>
+<p><em>2026-08-12</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/39ad9899cb1c5aaa1653351fc5b6284e972546ef">39ad989</a></p>
+<p>A gbuffer pass with albedo, normal, and depth targets is added. The depth is the rendered voxel depth, distinct from the AABB brick depth that we used to seed the DDA algorithm.</p>
+<p>The gbuffer pass consists of two steps:</p>
+<ol>
+<li>Perform DDA as before, using the brick AABB depth as the starting point.</li>
+<li>If the DDA returns a voxel cell, then the ray is intersected with the voxel&rsquo;s AABB.</li>
+</ol>
+<p>The intersection step is performed outside of the DDA loop in order to prevent the register allocation of the shader from growing further.</p>
+<p><img src="/img/voxel-ray-tracing/gbuffer-normals.png" alt="gbuffer-normals"></p>
+<p><img src="/img/voxel-ray-tracing/gbuffer-depth.png" alt="gbuffer-depth"></p>
+<h2 id="shader-occupancy-optimization-2">Shader occupancy optimization 2</h2>
 <p><em>2026-08-07</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/2975a502dde53396f6fa25658232e0eee34b20e0">2975a50</a></p>
 <p>Another optimization pass is done to the shader to improve occupancy. Grid cell coordinates are converted to int16 (since the largest possible grid extent is 1024) and the loop counters are eliminated.</p>
@@ -869,6 +881,7 @@
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#gbuffer-pass">Gbuffer pass</a></li>
     <li><a href="#shader-occupancy-optimization-2">Shader occupancy optimization 2</a></li>
     <li><a href="#rasterize-brick-aabbs">Rasterize brick AABBs</a></li>
     <li><a href="#revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</a></li>

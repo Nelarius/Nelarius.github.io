@@ -13,14 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Shader occupancy optimization 2 2026-08-07
-Commit: 2975a50
-Another optimization pass is done to the shader to improve occupancy. Grid cell coordinates are converted to int16 (since the largest possible grid extent is 1024) and the loop counters are eliminated.
-Before:
-FS Occupancy: 36.05 % Register allocation: 88 After:
-FS Occupancy: 39.71 % Register allocation: 75 Additionally, ALU instruction count dropped by 10 %.
-sponza-1024-1
-Metric Before After Uplift FPS 111.59 137.</description>
+      <description>Gbuffer pass 2026-08-12
+Commit: 39ad989
+A gbuffer pass with albedo, normal, and depth targets is added. The depth is the rendered voxel depth, distinct from the AABB brick depth that we used to seed the DDA algorithm.
+The gbuffer pass consists of two steps:
+Perform DDA as before, using the brick AABB depth as the starting point. If the DDA returns a voxel cell, then the ray is intersected with the voxel&amp;rsquo;s AABB.</description>
     </item>
     
     <item>

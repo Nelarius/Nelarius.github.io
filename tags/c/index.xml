@@ -13,11 +13,13 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Gbuffer pass 2026-08-12
-Commit: 39ad989
-A gbuffer pass with albedo, normal, and depth targets is added. The depth is the rendered voxel depth, distinct from the AABB brick depth that we used to seed the DDA algorithm.
-The gbuffer pass consists of two steps:
-Perform DDA as before, using the brick AABB depth as the starting point. If the DDA returns a voxel cell, then the ray is intersected with the voxel&amp;rsquo;s AABB.</description>
+      <description>Naive RTAO 2026-08-13
+Commit: 5087ab4
+The ambient occlusion integral
+$$ A(p) = \frac{1}{\pi} \int_{\Omega}V(p, \omega)(\mathbf{n} \cdot \omega)d\omega $$
+is ray-traced using cosine-weighted hemisphere sampling. The method is explained in better detail in my other devlog.
+4 samples per pixel are used, with a radius of 8. No filtering or anything fancy is done at this stage. This has a major impact on performance.
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 // The RTAO loop from rta.</description>
     </item>
     
     <item>

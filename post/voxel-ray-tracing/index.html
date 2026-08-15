@@ -71,7 +71,81 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="naive-rtao">Naive RTAO</h2>
+            <h2 id="spatially-cached-rtao">Spatially cached RTAO</h2>
+<p><em>2026-08-15</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/4a6c4b7ee3f9537dbf1b4e3ee98a21745cc15ad3">4a6c4b7</a></p>
+<p>Ambient occlusion values are stored in spatial cells in a hashmap, based on the method from <a href="https://interplayoflight.wordpress.com/2025/11/23/spatial-hashing-for-raytraced-ambient-occlusion/">Spatial Hashing for Raytraced Ambient Occlusion</a>.</p>
+<p>Since ambient occlusion is not view-dependent, it can be accumulated into a cell even if the camera moves without any reprojection.</p>
+<p>The implementation follows the blog post closely, using the same parameters for cell size, cell age limit, and the same hash functions. The hash map size, however, was increased to 16 million elements to prevent running out of space when moving the camera around rapidly. At 4k resolutions, the algorithm was sometimes not able to find a free slot older than 20 frames.</p>
+<p>Most of the code snippets from the blog post could be used almost verbatim. The code from the blog post is launched from a compute shader, which writes the occlusion count back into the hash map. The occlusion count and total sample count is fetched from the hashmap in a separate pass to shade the pixel.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span>    <span style="color:#008000">// spatial_hash_key is struct { uint hash, checksum; };</span>
+</span></span><span style="display:flex;"><span>    spatial_hash_key <span style="color:#00f">const</span> key = make_spatial_hash_key(face_pos, normal, cell_size);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>             index = spatial_hash_find_or_insert(key);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>             sample_count = hash_payloads[index] &amp; 0xFFFFu;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (index == 0xFFFFFFFFu || sample_count &gt;= VX_AO_SAMPLE_LIMIT)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> pos = offset_ray(face_pos, normal);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint2</span> <span style="color:#00f">const</span>  frame_seed =
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint2</span>(uniforms.frame_index * 0x9E3779B9u, pcg(uniforms.frame_index ^ 0xA511E9B3u));
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float2</span> <span style="color:#00f">const</span> pixel_noise = as_normalized_float(pcg2d(pixel ^ frame_seed));
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">uint</span>         occlusion_count = 0u;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">uint</span> i = 0u; i &lt; VX_AO_RAYS_PER_PIXEL; ++i)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float2</span> <span style="color:#00f">const</span> u = frac(pixel_noise + r2_sequence((<span style="color:#2b91af">float</span>)i));
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> direction =
+</span></span><span style="display:flex;"><span>            orient_sample_direction(sample_cosine_weighted_hemisphere(u), normal);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (dda(pos, direction, uniforms.rtao_radius))
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            ++occlusion_count;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> ex;
+</span></span><span style="display:flex;"><span>        InterlockedAdd(hash_payloads[index], (occlusion_count &lt;&lt; 16u) | VX_AO_RAYS_PER_PIXEL, ex);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/img/voxel-ray-tracing/sponza-rtao-visibility.png" alt="sponza-rtao-visibility"></p>
+<p><img src="/img/voxel-ray-tracing/sponza-rtao-shaded.png" alt="sponza-rtao-shaded"></p>
+<p>The cell size cascades are presented in this cell size visualization.</p>
+<p><img src="/img/voxel-ray-tracing/sponza-rtao-cell-size.png" alt="sponza-rtao-visibility"></p>
+<p><img src="/img/voxel-ray-tracing/pc-jr-rtao-shaded.png" alt="sponza-rtao-visibility"></p>
+<h2 id="naive-rtao">Naive RTAO</h2>
 <p><em>2026-08-13</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/5087ab4394a2477e1ae64e434406a638dc97bc5a">5087ab4</a></p>
 <p>The ambient occlusion integral</p>
@@ -103,7 +177,7 @@ $$</p>
 </span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
 </span></code></pre></td>
 <td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
-<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span>    <span style="color:#008000">// The RTAO loop from rta.ps.hlsl</span>
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span>    <span style="color:#008000">// The RTAO loop from rtao.ps.hlsl</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float2</span> <span style="color:#00f">const</span> pxl_noise = as_normalized_float(pcg2d(pixel));
 </span></span><span style="display:flex;"><span>
@@ -529,7 +603,7 @@ $$</p>
 </tbody>
 </table>
 <p>The smaller monu2 scene (128³ resolution) performs comfortably at 144 Hz refresh rates and beyond. But nearby voxels in the <em>sponza-256-1</em> scene/view are still expensive to render.</p>
-<h2 id="interlude-performance">Interlude: performance</h2>
+<h2 id="performance-interlude">Performance interlude</h2>
 <p><em>2026-07-31</em></p>
 <p>This update does not contain any changes in vxray.</p>
 <p>The voxel ray tracing has stable performance now, but could it run better? The Metal profiler reveals the following story when rendering the same scene and view used previously in <a href="/post/voxel-ray-tracing/#naive-dda">Naive DDA</a>.</p>
@@ -936,6 +1010,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#spatially-cached-rtao">Spatially cached RTAO</a></li>
     <li><a href="#naive-rtao">Naive RTAO</a></li>
     <li><a href="#gbuffer-pass">Gbuffer pass</a></li>
     <li><a href="#shader-occupancy-optimization-2">Shader occupancy optimization 2</a></li>
@@ -943,7 +1018,7 @@ $$</p>
     <li><a href="#revert-voxel-occupancy-mask">Revert &ldquo;Voxel occupancy mask&rdquo;</a></li>
     <li><a href="#voxel-occupancy-mask">Voxel occupancy mask</a></li>
     <li><a href="#shader-occupancy-optimization">Shader occupancy optimization</a></li>
-    <li><a href="#interlude-performance">Interlude: performance</a></li>
+    <li><a href="#performance-interlude">Performance interlude</a></li>
     <li><a href="#fullscreen-triangle">Fullscreen triangle</a></li>
     <li><a href="#2-level-dda">2-level DDA</a></li>
     <li><a href="#camera-presets">Camera presets</a></li>

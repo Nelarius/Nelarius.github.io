@@ -13,13 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Naive RTAO 2026-08-13
-Commit: 5087ab4
-The ambient occlusion integral
-$$ A(p) = \frac{1}{\pi} \int_{\Omega}V(p, \omega)(\mathbf{n} \cdot \omega)d\omega $$
-is ray-traced using cosine-weighted hemisphere sampling. The method is explained in better detail in my other devlog.
-4 samples per pixel are used, with a radius of 8. No filtering or anything fancy is done at this stage. This has a major impact on performance.
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 // The RTAO loop from rta.</description>
+      <description>Spatially cached RTAO 2026-08-15
+Commit: 4a6c4b7
+Ambient occlusion values are stored in spatial cells in a hashmap, based on the method from Spatial Hashing for Raytraced Ambient Occlusion.
+Since ambient occlusion is not view-dependent, it can be accumulated into a cell even if the camera moves without any reprojection.
+The implementation follows the blog post closely, using the same parameters for cell size, cell age limit, and the same hash functions.</description>
     </item>
     
   </channel>

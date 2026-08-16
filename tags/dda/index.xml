@@ -13,11 +13,10 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Spatially cached RTAO 2026-08-15
-Commit: 4a6c4b7
-Ambient occlusion values are stored in spatial cells in a hashmap, based on the method from Spatial Hashing for Raytraced Ambient Occlusion.
-Since ambient occlusion is not view-dependent, it can be accumulated into a cell even if the camera moves without any reprojection.
-The implementation follows the blog post closely, using the same parameters for cell size, cell age limit, and the same hash functions.</description>
+      <description>Performance interlude 2 2026-08-16
+This update doesn&amp;rsquo;t contain changes to vxray.
+While the spatially cached RTAO both looks better and improves performance, the performance on the Macbook Air (M2) is still not amazing when moving around the interiors of the Sponza scene compared to before.
+A look at the Metal profiler timeline reveals that the RTAO hashmap update pass takes the most time during the frame. It also reveals that the gbuffer pass, which casts rays against the voxels, has a bloated register allocation of 89, up from 77.</description>
     </item>
     
   </channel>

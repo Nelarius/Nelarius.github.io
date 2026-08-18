@@ -13,10 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Performance interlude 2 2026-08-16
-This update doesn&amp;rsquo;t contain changes to vxray.
-While the spatially cached RTAO both looks better and improves performance, the performance on the Macbook Air (M2) is still not amazing when moving around the interiors of the Sponza scene compared to before.
-A look at the Metal profiler timeline reveals that the RTAO hashmap update pass takes the most time during the frame. It also reveals that the gbuffer pass, which casts rays against the voxels, has a bloated register allocation of 89, up from 77.</description>
+      <description>Shader optimizations 2026-08-17
+Commits:
+53164da e9c4900 5980cbc This update contains three commits which improve performance.
+Increase cell size from 5 to 10. Increasing the cell size means fewer resident hash map entries, with more pixels contributing to the value of the hash map entry (collaborative ray tracing, faster cell convergence). This change has a noticeable visual impact, although on a retina monitor it&amp;rsquo;s not a huge difference.
+Cell size 5 Cell size 10 Update spatial hash map using a checkerboard pattern.</description>
     </item>
     
     <item>

@@ -71,7 +71,75 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="performance-interlude-2">Performance interlude 2</h2>
+            <h2 id="shader-optimizations">Shader optimizations</h2>
+<p><em>2026-08-17</em></p>
+<p><em>Commits:</em></p>
+<ul>
+<li><a href="https://github.com/Nelarius/vxray/commit/53164da4feadd3209886afb405bd0086af11d5be">53164da</a></li>
+<li><a href="https://github.com/Nelarius/vxray/commit/e9c490036081615eecd67a79d74ba5c78c3ab785">e9c4900</a></li>
+<li><a href="https://github.com/Nelarius/vxray/commit/5980cbcfc09f89a4e3c07e1177b9e76a9c901228">5980cbc</a></li>
+</ul>
+<p>This update contains three commits which improve performance.</p>
+<p><strong>Increase cell size from 5 to 10.</strong> Increasing the cell size means fewer resident hash map entries, with more pixels contributing to the value of the hash map entry (collaborative ray tracing, faster cell convergence). This change has a noticeable visual impact, although on a retina monitor it&rsquo;s not a huge difference.</p>
+<p><em>Cell size 5</em>
+<img src="/img/voxel-ray-tracing/cell-size-5.png" alt="cell-size-5"></p>
+<p><em>Cell size 10</em>
+<img src="/img/voxel-ray-tracing/cell-size-10.png" alt="cell-size-10"></p>
+<p><strong>Update spatial hash map using a checkerboard pattern.</strong> Instead of mapping each pixel of the gbuffer to a spatial hash map cell, only every other pixel is mapped to a cell and sampled for RTAO. Two RTAO samples are per pixel, to keep the same overall RTAO sample count. On alternating frames, the pixel pattern changes to cover all pixels. The motivation of this change is to reduce the impact of spatial hash search + update.</p>
+<pre tabindex="0"><code>Frame 0:  X . X .
+          . X . X
+          X . X .
+
+Frame 1:  . X . X
+          X . X .
+          . X . X
+</code></pre><p><strong>Rasterize brick coordinates.</strong> The rasterized brick AABB depth is replaced with rasterized brick coordinates. The somewhat complex code to reconstruct the brick position from the depth buffer was completely removed, and the brick coordinate is passed straight to the DDA algorithm.</p>
+<p>Before:</p>
+<ul>
+<li>FS Occupancy: 34.30 %</li>
+<li>Register allocation: 89</li>
+</ul>
+<p>After:</p>
+<ul>
+<li>FS Occupancy: 40.13 %</li>
+<li>Register allocation: 76</li>
+</ul>
+<p><em>A visual of the rasterized brick coordinates</em></p>
+<p><img src="/img/voxel-ray-tracing/brick-raster.png" alt="brick-raster"></p>
+<p>The performance was again measured in <em>sponza-1024-1</em> on a Macbook Air (M2).</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th style="text-align:right">FPS</th>
+<th style="text-align:right">GPU walltime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline</td>
+<td style="text-align:right">39.04</td>
+<td style="text-align:right">46.16 ms</td>
+</tr>
+<tr>
+<td>Cell size 5 → 10</td>
+<td style="text-align:right">71.73 (+83.72%)</td>
+<td style="text-align:right">23.50 ms (−49.10%)</td>
+</tr>
+<tr>
+<td>Checkerboard spatial hash update</td>
+<td style="text-align:right">71.96 (+84.33%)</td>
+<td style="text-align:right">20.03 ms (−56.60%)</td>
+</tr>
+<tr>
+<td>Rasterized brick coordinates</td>
+<td style="text-align:right">72.00 (+84.42%)</td>
+<td style="text-align:right">19.33 ms (−58.12%)</td>
+</tr>
+</tbody>
+</table>
+<p>The improvement compared to before is significant, with the largest improvement coming from the increase in cell size! The overall frame rate is still much lower than the previous best (137.20) at the same scene and view, but that was measured while rendering only the albedo. The renderer is doing a lot more now.</p>
+<h2 id="performance-interlude-2">Performance interlude 2</h2>
 <p><em>2026-08-16</em></p>
 <p>This update doesn&rsquo;t contain changes to vxray.</p>
 <p>While the spatially cached RTAO both looks better and improves performance, the performance on the Macbook Air (M2) is still not amazing when moving around the interiors of the Sponza scene compared to before.</p>
@@ -1086,6 +1154,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#shader-optimizations">Shader optimizations</a></li>
     <li><a href="#performance-interlude-2">Performance interlude 2</a></li>
     <li><a href="#spatially-cached-rtao">Spatially cached RTAO</a></li>
     <li><a href="#naive-rtao">Naive RTAO</a></li>

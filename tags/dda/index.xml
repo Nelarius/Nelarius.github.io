@@ -13,11 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Shader optimizations 2026-08-17
-Commits:
-53164da e9c4900 5980cbc This update contains three commits which improve performance.
-Increase cell size from 5 to 10. Increasing the cell size means fewer resident hash map entries, with more pixels contributing to the value of the hash map entry (collaborative ray tracing, faster cell convergence). This change has a noticeable visual impact, although on a retina monitor it&amp;rsquo;s not a huge difference.
-Cell size 5 Cell size 10 Update spatial hash map using a checkerboard pattern.</description>
+      <description>Experiment: Atrous spatial filtering 2026-08-18
+Commit: 8a67b2d
+Experimental spatial filtering is implemented using Atrous wavelet filtering. This update is for posterity, as the performance was so terrible that this change is reverted.
+Atrous filtering works in iterations. Each successive iteration increases the filtering radius.
+1 2 3 4 5 6 7 for (int dy = -2; dy &amp;lt;= 2; ++dy) { for (int dx = -2; dx &amp;lt;= 2; ++dx) { // int step_width = (1 &amp;lt;&amp;lt; iteration); // 2^i: 1, 2, 4, 8, 16 int2 const offset = int2(dx, dy) * (int)uniforms.</description>
     </item>
     
   </channel>

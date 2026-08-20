@@ -71,7 +71,177 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="shader-optimizations">Shader optimizations</h2>
+            <h2 id="experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</h2>
+<p><em>2026-08-18</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/8a67b2d92703d7336d2980646d2d338ef0438655">8a67b2d</a></p>
+<p>Experimental spatial filtering is implemented using Atrous wavelet filtering. This update is for posterity, as the performance was so terrible that this change is reverted.</p>
+<p>Atrous filtering works in iterations. Each successive iteration increases the filtering radius.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span><span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> dy = -2; dy &lt;= 2; ++dy)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> dx = -2; dx &lt;= 2; ++dx)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// int step_width =  (1 &lt;&lt; iteration); // 2^i: 1, 2, 4, 8, 16</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">int2</span> <span style="color:#00f">const</span> offset = <span style="color:#2b91af">int2</span>(dx, dy) * (<span style="color:#2b91af">int</span>)uniforms.step_width;
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">int2</span> <span style="color:#00f">const</span> neighbor = <span style="color:#2b91af">int2</span>(pixel) + offset;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><em>Baseline</em></p>
+<p><img src="/img/voxel-ray-tracing/atrous-0.png" alt="atrous-0"></p>
+<p><em>1 iteration</em></p>
+<p><img src="/img/voxel-ray-tracing/atrous-1.png" alt="atrous-1"></p>
+<p><em>2 iterations</em></p>
+<p><img src="/img/voxel-ray-tracing/atrous-2.png" alt="atrous-2"></p>
+<p><em>3 iterations</em></p>
+<p><img src="/img/voxel-ray-tracing/atrous-3.png" alt="atrous-3"></p>
+<p><em>4 iterations</em></p>
+<p><img src="/img/voxel-ray-tracing/atrous-4.png" alt="atrous-4"></p>
+<p>4 iterations of atrous filtering removes visible noise, and even allows further increasing the cell size to 16 with very little visual impact. Unfortunately, running a single iteration took almost half as long as all the rest of the rendering combined (8 - 10 ms). 4 iterations made the rendering a slide show.</p>
+<p>I am not intersted in heavily optimizing spatial filtering now, so this change is reverted. I will embrace the slightly blocky visual artifacts of spatial hashing.</p>
+<p>This is my kernel. My edge-stopping function accounts for normals and depth. The depth term is borrowed from the SVGF literature.</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">63
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span>    <span style="color:#008000">// Inside main()</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> normal_c = unpack_normal(normal_tex.Load(<span style="color:#2b91af">int3</span>(pixel, 0)).r);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Calculating the depth gradient based on the view-space normals:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// ∇z = (nx / √(1 - nx²), ny / √(1 - ny²))</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Source: https://chrismile.net/blog/2024/svgf-nabla-depth/</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">//</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Unlike a difference estimate, this estimate of the gradient is not neighborhood-based and</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// yields much better results at the edges of a surface.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// float2 const grad_z = svgf_depth_gradient(normal_c, params.view_mat);</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> n = mul((<span style="color:#2b91af">float3x3</span>)uniforms.view_matrix, normal_c);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  dzdx = n.x / (sqrt(max(1.0 - n.x * n.x, 0.0)) + EPSILON);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  dzdy = n.y / (sqrt(max(1.0 - n.y * n.y, 0.0)) + EPSILON);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float2</span> <span style="color:#00f">const</span> grad_z = <span style="color:#2b91af">float2</span>(dzdx, dzdy);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  depth_c =
+</span></span><span style="display:flex;"><span>        linear_view_depth(device_depth_c, uniforms.near_plane, uniforms.far_plane);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">static</span> <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> kernel[3] = {3.0 / 8.0, 1.0 / 4.0, 1.0 / 16.0};
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span>              visibility_sum = 0.0;
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span>              weight_sum = 0.0;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> dy = -2; dy &lt;= 2; ++dy)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> dx = -2; dx &lt;= 2; ++dx)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">int2</span> <span style="color:#00f">const</span> offset = <span style="color:#2b91af">int2</span>(dx, dy) * (<span style="color:#2b91af">int</span>)uniforms.step_width;
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">int2</span> <span style="color:#00f">const</span> neighbor = <span style="color:#2b91af">int2</span>(pixel) + offset;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (any(neighbor &lt; 0) || any(neighbor &gt;= <span style="color:#2b91af">int2</span>(width, height)))
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">continue</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> visibility_n = visibility_tex.Load(<span style="color:#2b91af">int3</span>(neighbor, 0)).r;
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> device_depth_n = depth_tex.Load(<span style="color:#2b91af">int3</span>(neighbor, 0)).r;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (visibility_n &lt;= CACHE_FAILURE_VISIBILITY || device_depth_n &gt;= 1.0)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">continue</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Normal weight: n(p) · n(q)</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> normal_n = unpack_normal(normal_tex.Load(<span style="color:#2b91af">int3</span>(neighbor, 0)).r);
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span>  normal_weight = max(0.0, dot(normal_c, normal_n));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">// Depth weight: exp(-|z(p) - z(q)| / (sigma_z * |∇z(p) · (p - q)| + e))</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> depth_n =
+</span></span><span style="display:flex;"><span>                linear_view_depth(device_depth_n, uniforms.near_plane, uniforms.far_plane);
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> depth_delta = abs(depth_c - depth_n);
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> projected_depth_delta = abs(dot(grad_z, <span style="color:#2b91af">float2</span>(offset)));
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> depth_weight =
+</span></span><span style="display:flex;"><span>                exp(-depth_delta /
+</span></span><span style="display:flex;"><span>                    ((<span style="color:#2b91af">float</span>)uniforms.step_width * uniforms.sigma_depth * projected_depth_delta +
+</span></span><span style="display:flex;"><span>                     EPSILON));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> filter_weight = kernel[abs(dx)] * kernel[abs(dy)];
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> weight = normal_weight * depth_weight * filter_weight;
+</span></span><span style="display:flex;"><span>            visibility_sum += visibility_n * weight;
+</span></span><span style="display:flex;"><span>            weight_sum += weight;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> weight_sum &gt; EPSILON ? visibility_sum / weight_sum : visibility_c;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="shader-optimizations">Shader optimizations</h2>
 <p><em>2026-08-17</em></p>
 <p><em>Commits:</em></p>
 <ul>
@@ -1154,6 +1324,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</a></li>
     <li><a href="#shader-optimizations">Shader optimizations</a></li>
     <li><a href="#performance-interlude-2">Performance interlude 2</a></li>
     <li><a href="#spatially-cached-rtao">Spatially cached RTAO</a></li>

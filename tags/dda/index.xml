@@ -13,11 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Experiment: Atrous spatial filtering 2026-08-18
-Commit: 8a67b2d
-Experimental spatial filtering is implemented using Atrous wavelet filtering. This update is for posterity, as the performance was so terrible that this change is reverted.
-Atrous filtering works in iterations. Each successive iteration increases the filtering radius.
-1 2 3 4 5 6 7 for (int dy = -2; dy &amp;lt;= 2; ++dy) { for (int dx = -2; dx &amp;lt;= 2; ++dx) { // int step_width = (1 &amp;lt;&amp;lt; iteration); // 2^i: 1, 2, 4, 8, 16 int2 const offset = int2(dx, dy) * (int)uniforms.</description>
+      <description>Merge RTAO pipelines 2026-08-22
+The compute and pixel shaders are merged into one pixel shader. Earlier, a compute pass was introduced, which accumulated samples into the spatial hash using a screenspace checkerboard pattern. It turned out that just a single simple per-pixel sample in a pixel shader was slightly faster overall.
+FPS jumped from 74 to 80.
+Before: both the compute and render pass accumulate to roughly 5 ms.
+After: a single pixel shader was always a little faster.</description>
     </item>
     
   </channel>

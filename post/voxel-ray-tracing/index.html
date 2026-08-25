@@ -71,7 +71,15 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</h2>
+            <h1 id="merge-rtao-pipelines">Merge RTAO pipelines</h1>
+<p><em>2026-08-22</em></p>
+<p>The compute and pixel shaders are merged into one pixel shader. Earlier, a compute pass was introduced, which accumulated samples into the spatial hash using a screenspace checkerboard pattern. It turned out that just a single simple per-pixel sample in a pixel shader was slightly faster overall.</p>
+<p>FPS jumped from 74 to 80.</p>
+<p><em>Before: both the compute and render pass accumulate to roughly 5 ms.</em></p>
+<p><img src="/img/voxel-ray-tracing/before-rtao-merge.png" alt="before-rtao-merge"></p>
+<p><em>After: a single pixel shader was always a little faster.</em></p>
+<p><img src="/img/voxel-ray-tracing/after-rtao-merge.png" alt="after-rtao-merge"></p>
+<h2 id="experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</h2>
 <p><em>2026-08-18</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/8a67b2d92703d7336d2980646d2d338ef0438655">8a67b2d</a></p>
 <p>Experimental spatial filtering is implemented using Atrous wavelet filtering. This update is for posterity, as the performance was so terrible that this change is reverted.</p>

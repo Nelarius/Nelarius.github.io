@@ -13,11 +13,9 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Merge RTAO pipelines 2026-08-22
-The compute and pixel shaders are merged into one pixel shader. Earlier, a compute pass was introduced, which accumulated samples into the spatial hash using a screenspace checkerboard pattern. It turned out that just a single simple per-pixel sample in a pixel shader was slightly faster overall.
-FPS jumped from 74 to 80.
-Before: both the compute and render pass accumulate to roughly 5 ms.
-After: a single pixel shader was always a little faster.</description>
+      <description>Sparse ray marching with axis-aligned distance fields 2026-08-25
+Commits:
+b87de9a c191bb8 a251277 f332529 The existing DDA renderer is completely rewritten. A sparse raymarcher, using nested axis-aligned distance fields (NAADFs) is implemented, inspired by Globally Illuminated Voxel Worlds Accelerated with Nested Axis‐Aligned Distance Fields. Brick coordinate rasterization is removed in favor of a simpler pipeline. This method seems like a really promising way to implement both the basic gbuffer + RTAO rendering, as well as a potential path tracer.</description>
     </item>
     
   </channel>

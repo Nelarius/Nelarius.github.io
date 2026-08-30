@@ -71,13 +71,234 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h1 id="merge-rtao-pipelines">Merge RTAO pipelines</h1>
+            <h2 id="sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</h2>
+<p><em>2026-08-25</em></p>
+<p><em>Commits:</em></p>
+<ul>
+<li><a href="https://github.com/Nelarius/vxray/commit/b87de9a1d24ca8752bfcad1a39dd08ec39be3df4">b87de9a</a></li>
+<li><a href="https://github.com/Nelarius/vxray/commit/c191bb8bbdc9af874ff49a1668bc5bbc6bbccc29">c191bb8</a></li>
+<li><a href="https://github.com/Nelarius/vxray/commit/a25127721d8fb2d0ca45ec6aa2d4e50a79bd4449">a251277</a></li>
+<li><a href="https://github.com/Nelarius/vxray/commit/f33252909caed0ed8771abc3bc203ae030220d1b">f332529</a></li>
+</ul>
+<p>The existing DDA renderer is completely rewritten. A sparse raymarcher, using nested axis-aligned distance fields (NAADFs) is implemented, inspired by <a href="https://www.cg.tuwien.ac.at/research/publications/2026/ulschmid-2026-naadf/">Globally Illuminated Voxel Worlds Accelerated with Nested Axis‐Aligned Distance Fields</a>. Brick coordinate rasterization is removed in favor of a simpler pipeline. This method seems like a really promising way to implement both the basic gbuffer + RTAO rendering, as well as a potential path tracer.</p>
+<p>The three-level grid from the NAADF paper is adopted, with the existing bottom level voxel grid, a brick grid with each brick containing 4³ voxels, and a chunk grid with each chunk containing 4³ bricks.</p>
+<p>An axis-aligned distance field is a grid, where each cell contains six distances, two per axis. The distances are the number of free cells along the axis. An AADF is computed per grid. <strong>Naive axis-aligned distance fields are computed</strong>, i.e. the grid compression method from the paper is not implemented. This means that empty space, especially at the voxel grid level, contains significant redundancy. For a 1024³ voxel grid, the voxel AADF alone weighs <strong>4 GiB</strong>, which means that this is not av ery scalable method in its current form. But for smaller 256³, such as the grids in my <a href="https://polycube.app">Polycube</a> voxel editor, the AADF weighs only 64 MiB.</p>
+<p>Traversal is similar in spirit to DDA, but instead of stepping across one cell boundary each step, we step over the largest empty space, calculated from the AADF. The RTAO shader is a simple way to demo the method, as it performs a ray march only at the voxel grid granularity:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">33
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">34
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">35
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">36
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">37
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">38
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">39
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">40
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">41
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">42
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">43
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">44
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">45
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">46
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">47
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">48
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">49
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">50
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">51
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">52
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">53
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">54
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">55
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">56
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">57
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">58
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">59
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">60
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">61
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">62
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">63
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">64
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">65
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">66
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">67
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">68
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">69
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">70
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span><span style="color:#2b91af">bool</span> sparse_ray_march(<span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> ray_origin, <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> ray_dir, <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> t_max)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span> inv_dir = 1.0 / (ray_dir + (<span style="color:#2b91af">float3</span>)(ray_dir == 0.0) * 1e-30);
+</span></span><span style="display:flex;"><span>    int16_t3     ipos = int16_t3(floor(ray_origin));
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float3</span>       local_pos = ray_origin - <span style="color:#2b91af">float3</span>(ipos);
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">float</span>        distance = 0.0;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (<span style="color:#2b91af">int</span> i = 0; i &lt; 3 * uniforms.grid_ext; ++i)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (any((uint16_t3)ipos &gt;= (uint16_t)uniforms.grid_ext))
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> <span style="color:#00f">false</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> mask = voxel_masks.Load(<span style="color:#2b91af">int4</span>(ipos / VX_MASK_EXT, 0)).r;
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> idx = mask_linear_idx(ipos);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> ((mask &amp; (1u &lt;&lt; idx)) != 0u)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> <span style="color:#00f">true</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Axis-aligned distance fields are packed as:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">//</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">//  0 ..  4  -X</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">//  5 ..  9  +X</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// 10 .. 14  -Y</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// 15 .. 19  +Y</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// 20 .. 24  -Z</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// 25 .. 29  +Z</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>     aadf = voxel_aadf.Load(<span style="color:#2b91af">int4</span>(ipos, 0)).r;
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>     shift_x = ray_dir.x &lt; 0.0 ? 0u : 5u;
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>     shift_y = ray_dir.y &lt; 0.0 ? 10u : 15u;
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span>     shift_z = ray_dir.z &lt; 0.0 ? 20u : 25u;
+</span></span><span style="display:flex;"><span>        int16_t3 <span style="color:#00f">const</span> bounds =
+</span></span><span style="display:flex;"><span>            int16_t3((aadf &gt;&gt; shift_x) &amp; 31u, (aadf &gt;&gt; shift_y) &amp; 31u, (aadf &gt;&gt; shift_z) &amp; 31u);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// Calculate the empty region</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        int16_t3 <span style="color:#00f">const</span> cell_min = max(ipos - int16_t3(bounds), (int16_t3)0);
+</span></span><span style="display:flex;"><span>        int16_t3 <span style="color:#00f">const</span> cell_max =
+</span></span><span style="display:flex;"><span>            min(ipos + 1 + int16_t3(bounds), (int16_t3)uniforms.grid_ext);
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span>   exit_plane = <span style="color:#2b91af">float3</span>(ray_dir.x &lt; 0.0 ? cell_min.x : cell_max.x,
+</span></span><span style="display:flex;"><span>                                           ray_dir.y &lt; 0.0 ? cell_min.y : cell_max.y,
+</span></span><span style="display:flex;"><span>                                           ray_dir.z &lt; 0.0 ? cell_min.z : cell_max.z);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">// March across the empty region</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float3</span> side_dist = (exit_plane - <span style="color:#2b91af">float3</span>(ipos) - local_pos) * inv_dir;
+</span></span><span style="display:flex;"><span>        side_dist.x = ray_dir.x == 0.0 ? 3e+38 : side_dist.x;  <span style="color:#008000">// guard against zero step</span>
+</span></span><span style="display:flex;"><span>        side_dist.y = ray_dir.y == 0.0 ? 3e+38 : side_dist.y;
+</span></span><span style="display:flex;"><span>        side_dist.z = ray_dir.z == 0.0 ? 3e+38 : side_dist.z;
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float</span> <span style="color:#00f">const</span> t = min(side_dist.x, min(side_dist.y, side_dist.z));
+</span></span><span style="display:flex;"><span>        distance += t;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (distance &gt; t_max)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> <span style="color:#00f">false</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span>   crossed = step(side_dist, t);
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">float3</span> <span style="color:#00f">const</span>   advanced = local_pos + t * ray_dir;
+</span></span><span style="display:flex;"><span>        int16_t3 <span style="color:#00f">const</span> cell_delta = int16_t3(floor(advanced + crossed * sign(ray_dir) * 0.5));
+</span></span><span style="display:flex;"><span>        ipos += cell_delta;
+</span></span><span style="display:flex;"><span>        local_pos = advanced - <span style="color:#2b91af">float3</span>(cell_delta);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> <span style="color:#00f">false</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>The performance regresses a little bit compared to earlier in both small and especially larger scenes on a Macbook Air (M2). The ability to render sponza-1024.vox, with 1 billion voxels and ray tracing, at 60 FPS on a large monitor is still impressive, given the relative simplicity of the rendering pipeline.</p>
+<p><em>monu2</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">144.00</td>
+<td style="text-align:right">144.05</td>
+<td style="text-align:right">+0.03%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">5.11 ms</td>
+<td style="text-align:right">6.35 ms</td>
+<td style="text-align:right">+24.30%</td>
+</tr>
+</tbody>
+</table>
+<p><em>sponza-1024</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">81.41</td>
+<td style="text-align:right">64.73</td>
+<td style="text-align:right">−20.48%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">20.72 ms</td>
+<td style="text-align:right">26.28 ms</td>
+<td style="text-align:right">+26.86%</td>
+</tr>
+</tbody>
+</table>
+<p>The occupancy of the gbuffer pipeline is much better now:</p>
+<ul>
+<li>FS Occupancy: 52.02 % (up from 40.13 %)</li>
+<li>Register allocation: 60 (down from 76)</li>
+</ul>
+<p>But I inadvertently tanked the performance of the RTAO shader in commit <code>f332529</code> by introducing a loop around the sparse ray march:</p>
+<ul>
+<li>FS Occupancy: 36.38 %</li>
+<li>Register allocation: 82 (up from 55)</li>
+</ul>
+<p>That is to be fixed in a future commit.</p>
+<h2 id="merge-rtao-pipelines">Merge RTAO pipelines</h2>
 <p><em>2026-08-22</em></p>
-<p>The compute and pixel shaders are merged into one pixel shader. Earlier, a compute pass was introduced, which accumulated samples into the spatial hash using a screenspace checkerboard pattern. It turned out that just a single simple per-pixel sample in a pixel shader was slightly faster overall.</p>
+<p>The compute and pixel shaders are merged into one pixel shader. Earlier, a compute pass was introduced, which accumulated samples into the spatial hash using a screenspace checkerboard pattern. This was done to reduce the impact of the spatial hash lookup. It turned out that just a single simple per-pixel sample in a pixel shader was actually faster overall.</p>
 <p>FPS jumped from 74 to 80.</p>
 <p><em>Before: both the compute and render pass accumulate to roughly 5 ms.</em></p>
 <p><img src="/img/voxel-ray-tracing/before-rtao-merge.png" alt="before-rtao-merge"></p>
-<p><em>After: a single pixel shader was always a little faster.</em></p>
+<p><em>After: a single pixel shader was slightly faster.</em></p>
 <p><img src="/img/voxel-ray-tracing/after-rtao-merge.png" alt="after-rtao-merge"></p>
 <h2 id="experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</h2>
 <p><em>2026-08-18</em></p>
@@ -1332,6 +1553,8 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</a></li>
+    <li><a href="#merge-rtao-pipelines">Merge RTAO pipelines</a></li>
     <li><a href="#experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</a></li>
     <li><a href="#shader-optimizations">Shader optimizations</a></li>
     <li><a href="#performance-interlude-2">Performance interlude 2</a></li>

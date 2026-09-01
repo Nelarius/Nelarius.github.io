@@ -71,7 +71,104 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</h2>
+            <h2 id="reproject-spatial-hash-map-indices">Reproject spatial hash map indices</h2>
+<p><em>2026-09-01</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/c41b36670d17c0c115f5df9ae3bb974babe28725">c41b366</a></p>
+<p>Splits the RTAO pass into two steps:</p>
+<ol>
+<li>Hash indices from the previous frame are reprojected to the current frame if the history and checksum is valid. The hash index is looked up otherwise. The current frame&rsquo;s hash index is written to a texture.</li>
+<li>A fullscreen RTAO pass is done using the gbuffers and the hashmap index texture.</li>
+</ol>
+<p><em>A view of the index texture</em></p>
+<p><img src="/img/voxel-ray-tracing/rgb-temple-reprojected-indices-2.png" alt="spatial-hash-indices"></p>
+<p>The intention is again to try reduce the impact of the spatial hash lookup. I tried splitting the spatial hash lookup into a separate pass to improve shader occupancy, but looking up the index and rendering it to a texture was taking over <em>6 milliseconds</em> on a Macbook Air (M2). See the highlighted pass from the Metal debugger:</p>
+<p><img src="/img/voxel-ray-tracing/index-pass-perf.png" alt="rtao-index-pass"></p>
+<p>There is higher MMU activity during the index pass than for other passes. From the memory counters:</p>
+<ul>
+<li>Last Level Cache Miss Rate: 8.31 % (much better than the other render passes!)</li>
+<li>Device Atomic Bytes Read: 309.19 MiB</li>
+<li>Device Atomic Bytes Written: 617.13 MiB</li>
+</ul>
+<p>It seems that the atomic reads and writes used to write to the hash map data structure does come with a penalty.</p>
+<p>By reprojecting the indices from the previous frame and only going down the code path with the atomic reads and writes if the history is invalid or there is a mismatching checksum, the index pass duration is reduced to <em>2 milliseconds</em>. The memory counters now say:</p>
+<ul>
+<li>Device Atomic Bytes Read: 4 KiB</li>
+<li>Device Atomic Bytes Written: 19.16 MiB</li>
+</ul>
+<p>Even if a valid hash entry is reprojected, the frame counter has to be updated atomically. But it doesn&rsquo;t have to be updated every frame:</p>
+<div class="highlight"><div style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">
+<table style="border-spacing:0;padding:0;margin:0;border:0;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span><span style="white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;;width:100%">
+<pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hlsl" data-lang="hlsl"><span style="display:flex;"><span>    <span style="color:#2b91af">uint</span> <span style="color:#00f">const</span> touch_mask = VX_AO_HASH_TOUCH_PERIOD - 1u;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// NOTE: scramble frame update phase using hash to spread updates</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> ((uniforms.frame_index &amp; touch_mask) == (hash &amp; touch_mask))
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">uint</span> ex_frame;
+</span></span><span style="display:flex;"><span>        InterlockedExchange(hash_frames[index], uniforms.frame_index, ex_frame);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Performance numbers:</p>
+<p><em>monu2.vox</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">144.00</td>
+<td style="text-align:right">143.90</td>
+<td style="text-align:right">−0.07%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">6.46 ms</td>
+<td style="text-align:right">5.88 ms</td>
+<td style="text-align:right">−9.01%</td>
+</tr>
+</tbody>
+</table>
+<p><em>sponza-1024.vox</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align:right">Before</th>
+<th style="text-align:right">After</th>
+<th style="text-align:right">Uplift</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FPS</td>
+<td style="text-align:right">64.81</td>
+<td style="text-align:right">67.72</td>
+<td style="text-align:right">+4.49%</td>
+</tr>
+<tr>
+<td>Average GPU walltime</td>
+<td style="text-align:right">26.17 ms</td>
+<td style="text-align:right">24.95 ms</td>
+<td style="text-align:right">−4.68%</td>
+</tr>
+</tbody>
+</table>
+<p>OK, it&rsquo;s not a night-and-day difference, especially in the heavy Sponza scene with a billion voxels, but it&rsquo;s good to know the renderer isn&rsquo;t doing 6 milliseconds of work that it doesn&rsquo;t need to.</p>
+<h2 id="sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</h2>
 <p><em>2026-08-25</em></p>
 <p><em>Commits:</em></p>
 <ul>
@@ -1553,6 +1650,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#reproject-spatial-hash-map-indices">Reproject spatial hash map indices</a></li>
     <li><a href="#sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</a></li>
     <li><a href="#merge-rtao-pipelines">Merge RTAO pipelines</a></li>
     <li><a href="#experiment-atrous-spatial-filtering">Experiment: Atrous spatial filtering</a></li>

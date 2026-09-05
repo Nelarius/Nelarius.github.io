@@ -13,10 +13,11 @@
       <pubDate>Sun, 28 Jun 2026 20:19:07 +0300</pubDate>
       
       <guid>https://nelari.us/post/voxel-ray-tracing/</guid>
-      <description>Reproject spatial hash map indices 2026-09-01
-Commit: c41b366
-Splits the RTAO pass into two steps:
-Hash indices from the previous frame are reprojected to the current frame if the history and checksum is valid. The hash index is looked up otherwise. The current frame&amp;rsquo;s hash index is written to a texture. A fullscreen RTAO pass is done using the gbuffers and the hashmap index texture. A view of the index texture</description>
+      <description>Sky view LUT 2026-09-02
+Commit: 4be4ee7
+The raymarched atmosphere shaders from github.com/Fewes/MinimalAtmosphere are ported to vxray. The sky view LUT with angular compression is implemented from Seb Hillaire&amp;rsquo;s A Scalable and Production Ready Sky and Atmosphere Rendering Technique.
+Here is what the 400 x 400 LUT looks like. It is rendering a sky at an altitude of 20 km, with sun just below the planet&amp;rsquo;s horizon.
+Reproject spatial hash map indices 2026-09-01</description>
     </item>
     
     <item>

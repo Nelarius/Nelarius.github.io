@@ -71,7 +71,14 @@
             
         </div>
         <div class="article-entry" itemprop="articleBody">
-            <h2 id="reproject-spatial-hash-map-indices">Reproject spatial hash map indices</h2>
+            <h2 id="sky-view-lut">Sky view LUT</h2>
+<p><em>2026-09-02</em></p>
+<p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/4be4ee791d1f5930f08a7299b20d7796dc975214">4be4ee7</a></p>
+<p>The raymarched atmosphere shaders from <a href="https://github.com/Fewes/MinimalAtmosphere">github.com/Fewes/MinimalAtmosphere</a> are ported to vxray. The sky view LUT with angular compression is implemented from Seb Hillaire&rsquo;s <a href="https://sebh.github.io/publications/egsr2020.pdf">A Scalable and Production Ready
+Sky and Atmosphere Rendering Technique</a>.</p>
+<p>Here is what the 400 x 400 LUT looks like. It is rendering a sky at an altitude of 20 km, with sun just below the planet&rsquo;s horizon.</p>
+<p><img src="/img/voxel-ray-tracing/sky-view-lut.png" alt="sky-view-lut"></p>
+<h2 id="reproject-spatial-hash-map-indices">Reproject spatial hash map indices</h2>
 <p><em>2026-09-01</em></p>
 <p><em>Commit:</em> <a href="https://github.com/Nelarius/vxray/commit/c41b36670d17c0c115f5df9ae3bb974babe28725">c41b366</a></p>
 <p>Splits the RTAO pass into two steps:</p>
@@ -1650,6 +1657,7 @@ $$</p>
             <h3>Contents</h3>
             <nav id="TableOfContents">
   <ul>
+    <li><a href="#sky-view-lut">Sky view LUT</a></li>
     <li><a href="#reproject-spatial-hash-map-indices">Reproject spatial hash map indices</a></li>
     <li><a href="#sparse-ray-marching-with-axis-aligned-distance-fields">Sparse ray marching with axis-aligned distance fields</a></li>
     <li><a href="#merge-rtao-pipelines">Merge RTAO pipelines</a></li>
